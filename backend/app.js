@@ -4,6 +4,8 @@ const GoogleStrategy = require('passport-google-oauth2').Strategy;
 const session = require('express-session')
 require('dotenv').config() // Environment variables stored in .env file
 
+const db = require('./db');
+
 const port = 5500;
 // Passport Google OAuth environment variables
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
@@ -20,8 +22,16 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Authenticates user.
+// Google Auth. Creates new user account if necessary. Authenticates user.
 const authUser = (request, accessToken, refreshToken, profile, done) => {
+  console.log(profile);
+  try {
+    db.googleAuth(profile.id);
+  } catch (err) {
+    // Don't authenticate if error
+    console.log("Database Connection Error");
+    return;
+  }
   return done(null, profile); // Authenticates anyone with google acc.
 };
 
