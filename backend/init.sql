@@ -19,6 +19,7 @@ CREATE TABLE sessions (
   session_title varchar(50) NOT NULL,
   session_desc varchar (255),
   max_session_members int NOT NULL DEFAULT 10,
+  PRIMARY KEY (id),
   FOREIGN KEY (group_id) REFERENCES group(id) -- Consider deleting session is reference group is deleted
 );
 
@@ -28,7 +29,9 @@ CREATE TABLE group (
   group_name varchar (50) NOTNULL,
   dt_created datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
   max_group_members int NOT NULL DEFAULT 20,
-  active boolean NOT NULL DEFAULT TRUE 
+  active boolean NOT NULL DEFAULT TRUE,
+  PRIMARY KEY (id)
+)
 
 DROP TABLE IF EXISTS group_invitation;
 CREATE TABLE group_invitation (

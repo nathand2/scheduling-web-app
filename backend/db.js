@@ -19,6 +19,8 @@ function dbConnection(db_query) {
                 }
             });
         });
+    }, (result) => {
+      return result;
     })
 }
 
@@ -27,13 +29,23 @@ function dbConnection(db_query) {
  * @param {*} googleID string representing session id
  */
 exports.googleAuth = async (googleID) => {
+
+  // Check if google user exists in database.
   const results = await dbConnection(`SELECT * FROM users WHERE google_id = ${googleID};`);
   console.log("Query Results:", results);
 
-  // If no results, add user to db.
+  // If google user doesn't yet exist, add google user to db.
   if (!results.length > 0) {
     await dbConnection(`INSERT INTO users (google_id) VALUES (${googleID});`);
     console.log("Added user to db with google_id:", googleID);
+    const userID = (await dbConnection(`SELECT * FROM users WHERE google_id = ${googleID};`))[0].id;
+    return userID;
+  } else {
+     console.log("Existing Google User logged in.");
+    // const userID = await dbConnection(`SELECT * FROM users WHERE google_id = ${googleID};`);
+    const userID = results[0].id;
+    console.log("User ID on login:", userID);
+    return userID;
   }
-  console.log("Google User logged in.");
+ 
   };

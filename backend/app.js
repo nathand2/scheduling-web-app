@@ -23,16 +23,19 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // Google Auth. Creates new user account if necessary. Authenticates user.
-const authUser = (request, accessToken, refreshToken, profile, done) => {
-  console.log(profile);
+const authUser = async (request, accessToken, refreshToken, profile, done) => {
+  // console.log("Old profile", profile);
+  var user_id;
   try {
-    db.googleAuth(profile.id);
+    user_id = await db.googleAuth(profile.id);
   } catch (err) {
     // Don't authenticate if error
     console.log("Database Connection Error");
     return;
   }
-  return done(null, profile); // Authenticates anyone with google acc.
+  request.session.userID = user_id;
+  console.log("Session Data", request.session);
+  return done(null, profile);
 };
 
 // Passport config
@@ -51,8 +54,8 @@ passport.deserializeUser((user, done) => {
 });
 
 app.get('/auth/google',
-  passport.authenticate('google', { scope: [ 'email', 'profile' ]
-}));
+  passport.authenticate('google', { scope: [ 'email', 'profile' ]})
+);
 
 app.get('/auth/google/callback', passport.authenticate( 'google', {
   successRedirect: '/dashboard',
@@ -62,12 +65,14 @@ app.get('/auth/google/callback', passport.authenticate( 'google', {
 // Checks authentication using Express Session
 // If auth successful, redirects to passport's callbackURL
 const checkAuthenticated = (req, res, next) => {
-  if (req.isAuthenticated()) { return next() }
+  if (req.isAuthenticated()) {
+    return next()
+  }
   res.redirect("/login")
 };
 
 app.get("/dashboard", checkAuthenticated, (req, res) => {
-  res.send(`Auth Successful. Welcome, ${req.user.displayName}!
+  res.send(`Auth Successful. Welcome, ${JSON.stringify(req.user)}<br/>${JSON.stringify(req.session)}!
   <form action="/logout" method="post">
     <button type="submit">Logout</button>
   </form>`);
