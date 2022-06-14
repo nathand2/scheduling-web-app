@@ -10,7 +10,9 @@ function dbConnection(db_query) {
     return new Promise((resolve, reject) => {
         let db = mysql.createConnection(dbUser);
         db.connect((err) => {
-            if (err) throw err;
+            if (err) {
+              throw err;
+            }
             console.log("Database query");
             db.query(db_query, (err, result) => {
                 if (err) reject(err)
