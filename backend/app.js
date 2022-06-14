@@ -1,66 +1,38 @@
 const express = require('express');
 const passport = require('passport');
-const GoogleStrategy = require('passport-google-oauth2').Strategy;
-const session = require('express-session')
 require('dotenv').config() // Environment variables stored in .env file
 
 const db = require('./db');
+// const jwtAuth = require('./services/jwtAuth');
 
 const port = 5500;
-// Passport Google OAuth environment variables
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
-const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 
 const app = express();
 
 //Middleware
-app.use(session({
-  secret: process.env.EXPRESS_SESSION_SECRET,
-  resave: false ,
-  saveUninitialized: true
-}))
 app.use(passport.initialize());
-app.use(passport.session());
+require('./services/googleStrategy');
 
-// Google Auth. Creates new user account if necessary. Authenticates user.
-const authUser = async (request, accessToken, refreshToken, profile, done) => {
-  // console.log("Old profile", profile);
-  var user_id;
-  try {
-    user_id = await db.googleAuth(profile.id);
-  } catch (err) {
-    // Don't authenticate if error
-    console.log("Database Connection Error");
-    return;
-  }
-  request.session.userID = user_id;
-  console.log("Session Data", request.session);
-  return done(null, profile);
-};
-
-// Passport config
-passport.use(new GoogleStrategy({
-  clientID:     GOOGLE_CLIENT_ID,
-  clientSecret: GOOGLE_CLIENT_SECRET,
-  callbackURL: "http://localhost:5500/auth/google/callback",
-  passReqToCallback   : true
-}, authUser));
-
-passport.serializeUser( (user, done) => {
-  done(null, user)
-});
-passport.deserializeUser((user, done) => {
-  done (null, user)
-});
+// Don't want to add serializers because don't want to use session. Want to use JWT.
+// passport.serializeUser( (user, done) => {
+//   done(null, user)
+// });
+// passport.deserializeUser((user, done) => {
+//   done (null, user)
+// });
 
 app.get('/auth/google',
   passport.authenticate('google', { scope: [ 'email', 'profile' ]})
 );
 
 app.get('/auth/google/callback', passport.authenticate( 'google', {
-  successRedirect: '/dashboard',
-  failureRedirect: '/login'
-}));
+  // successRedirect: '/dashboard',
+  failureRedirect: '/login',
+  session: false
+}), (req, res) => {
+  console.log("Successful login? User stuff:", req.user);
+  res.redirect("/dashboard");
+});
 
 // Checks authentication using Express Session
 // If auth successful, redirects to passport's callbackURL
@@ -72,10 +44,22 @@ const checkAuthenticated = (req, res, next) => {
 };
 
 app.get("/dashboard", checkAuthenticated, (req, res) => {
+  // jwtAuth.generateAccessToken(req.user.id);
+  // if (null === req.authData) {
+  //   res.sendStatus(403);
+  // } else {
+  //   // res.json(req.authData);
+  //   res.send(`Auth Successful. Welcome, ${JSON.stringify(req.user)}<br/>${JSON.stringify(req.session)}!
+  // <form action="/logout" method="post">
+  //   <button type="submit">Logout</button>
+  // </form>`);
+  // }
   res.send(`Auth Successful. Welcome, ${JSON.stringify(req.user)}<br/>${JSON.stringify(req.session)}!
   <form action="/logout" method="post">
     <button type="submit">Logout</button>
   </form>`);
+
+  
 });
 
 
