@@ -4,8 +4,8 @@
   "description": "",
   "main": "app.js",
   "scripts": {
-    "start:dev": "node app.js",
-    "start:dev2": "node authServer.js",
+    "start:dev": "nodemon app.js",
+    "start:dev2": "nodemon authServer.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -18,5 +18,8 @@
     "mysql": "^2.18.1",
     "passport": "^0.6.0",
     "passport-google-oauth2": "^0.2.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.16"
   }
 }

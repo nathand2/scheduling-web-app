@@ -8,14 +8,16 @@ const refreshTokenSecret = process.env.REFRESH_TOKEN_SECRET;
  * @param {*} req a request
  * @param {*} res a response
  */
-exports.authenticateToken = (req, res) => {
+exports.authenticateToken = (req, res, next) => {
+  console.log("Trying to authenticate token")
   const authHeader = req.headers['authorization']
   const token = authHeader && authHeader.split(' ')[1]
-  if (token == null) throw 401;
+  if (token == null) return res.sendStatus(401);
 
   jwt.verify(token, accessTokenSecret, (err, user) => {
-    if (err) throw 403;
+    if (err) return res.sendStatus(403);
     req.user = user
+    next();
   })
 }
 

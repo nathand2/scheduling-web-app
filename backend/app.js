@@ -2,8 +2,6 @@ const express = require('express');
 const passport = require('passport');
 require('dotenv').config() // Environment variables stored in .env file
 
-const db = require('./db');
-const auth = require('./services/jwtAuth');
 
 const port = 5500;
 
@@ -13,8 +11,11 @@ const app = express();
 app.use(express.json());
 app.use(passport.initialize());
 require('./services/googleStrategy');
+const auth = require('./services/jwtAuth');
 
 app.get("/dashboard", auth.authenticateToken, (req, res) => {
+  // console.log("Request user:", req.user)
+  
   res.send(`Auth Successful. Welcome, ${JSON.stringify(req.user)}!
   <form action="/logout" method="post">
     <button type="submit">Logout</button>

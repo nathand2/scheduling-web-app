@@ -4,6 +4,7 @@ const passport = require('passport');
 require('dotenv').config() // Environment variables stored in .env file
 
 const auth = require('./services/jwtAuth');
+const db = require('./db');
 
 const port = 6500;
 
@@ -24,6 +25,7 @@ app.post('/token', (req, res) => {
 
   // Check if refresh token exists in collection of valid refresh tokens.
   if(!refreshTokens.includes(refreshToken)) return res.sendStatus(403)
+  // if (!db.refreshTokenExists(refreshToken)) return res.sendStatus(403)
 
   // Can't move to jwtAuth.js
   jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
@@ -65,7 +67,11 @@ app.get('/auth/google/callback', passport.authenticate( 'google', {
   const user = {name: req.user.id}
   const accessToken = auth.generateAccessToken(user);
   const refreshToken = auth.generateRefreshToken(user);
+  
+  // Add token to db
   refreshTokens.push(refreshToken);
+  // db.insertRefreshToken(refreshToken);
+
   res.json({ accessToken: accessToken, refreshToken: refreshToken });
 });
 
@@ -73,8 +79,10 @@ app.get('/auth/google/callback', passport.authenticate( 'google', {
  * Deletes Refresh Tokens
  */
 app.delete("/logout", (req,res) => {
-  // Remove refresh token from refreshToken collection
+  // Remove refresh token from db
   refreshTokens = refreshTokens.filter(token => token !== req.body.token)
+  // db.deleteRefreshToken(req.body.token)
+
   res.sendStatus(204)
 })
 
