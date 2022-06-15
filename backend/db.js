@@ -16,9 +16,8 @@ function dbConnection(db_query) {
         let db = mysql.createConnection(dbUser);
         db.connect((err) => {
             if (err) {
-              throw err;
+              reject(err);
             }
-            console.log("Database query");
             db.query(db_query, (err, result) => {
                 if (err) reject(err)
                 if (result) {
@@ -28,7 +27,9 @@ function dbConnection(db_query) {
         });
     }, (result) => {
       return result;
-    })
+    }), (err) => {
+      throw err;
+    }
 }
 
 /**
@@ -68,7 +69,7 @@ exports.insertRefreshToken = async (token) => {
  * @returns refresh tokan as string or undefined
  */
 exports.findRefreshToken = async (token) => {
-  const result = await dbConnection(`SELECT * FROM refresh_token WHERE token = ${token} LIMIT 1;`)
+  const result = await dbConnection(`SELECT * FROM refresh_token WHERE token = "${token}" LIMIT 1;`)
   if (results.length > 0) {
     return result[0];
   }
@@ -80,7 +81,7 @@ exports.findRefreshToken = async (token) => {
  * @returns if refresh token exists as a boolean
  */
 exports.refreshTokenExists = async (token) => {
-  const result = await dbConnection(`SELECT * FROM refresh_token WHERE token = ${token} LIMIT 1;`)
+  const result = await dbConnection(`SELECT * FROM refresh_token WHERE token = "${token}" LIMIT 1;`)
   return result.length > 0
 }
 
@@ -89,5 +90,5 @@ exports.refreshTokenExists = async (token) => {
  * @param {*} token jwt token as a string
  */
 exports.deleteRefreshToken = async (token) => {
-  await dbConnection(`DELETE FROM refresh_token WHERE token = ${token} LIMIT 1;`)
+  await dbConnection(`DELETE FROM refresh_token WHERE token = "${token}" LIMIT 1;`)
 }

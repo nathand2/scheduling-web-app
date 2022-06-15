@@ -7,33 +7,38 @@ const auth = require('./services/jwtAuth');
 const db = require('./db');
 
 const port = 6500;
-
 const app = express();
 
 // Middleware
 app.use(express.json());
 
-// Local array of refresh tokens. Implement using db
-let refreshTokens = [];
-
 /**
  * Route to refresh access token using refresh token
  */
-app.post('/token', (req, res) => {
+app.post('/token', async (req, res) => {
+  console.log("Token endpoint start")
   const refreshToken = req.body.token
-  if (refreshToken == null) return res.sendStatus(401)
+  if (refreshToken == null) {
+    res.sendStatus(401)
+    return
+  }
 
   // Check if refresh token exists in collection of valid refresh tokens.
-  if(!refreshTokens.includes(refreshToken)) return res.sendStatus(403)
-  // if (!db.refreshTokenExists(refreshToken)) return res.sendStatus(403)
-
+  // if(!refreshTokens.includes(refreshToken)) return res.sendStatus(403)
+  if (!await db.refreshTokenExists(refreshToken)) {
+    res.sendStatus(403)
+    return
+  }
   // Can't move to jwtAuth.js
   jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
-    if (err) return res.sendStatus(403)
+    if (err) {
+      res.sendStatus(403)
+      return
+    } 
     const accessToken = auth.generateAccessToken({ name: user.name })
-    res.json({ accesToken: accessToken })
+    res.json({ accessToken: accessToken })
   })
-
+  
   // Attempt to try move functionality to jwtAuth.js
   // try {
   //   console.log('refreshTokens', refreshTokens)
@@ -46,7 +51,6 @@ app.post('/token', (req, res) => {
   // } finally {
   //   console.log("so.... again", accessToken)
   // }
-
 })
 
 //Middleware
@@ -69,8 +73,7 @@ app.get('/auth/google/callback', passport.authenticate( 'google', {
   const refreshToken = auth.generateRefreshToken(user);
   
   // Add token to db
-  refreshTokens.push(refreshToken);
-  // db.insertRefreshToken(refreshToken);
+  db.insertRefreshToken(refreshToken);
 
   res.json({ accessToken: accessToken, refreshToken: refreshToken });
 });
@@ -80,8 +83,7 @@ app.get('/auth/google/callback', passport.authenticate( 'google', {
  */
 app.delete("/logout", (req,res) => {
   // Remove refresh token from db
-  refreshTokens = refreshTokens.filter(token => token !== req.body.token)
-  // db.deleteRefreshToken(req.body.token)
+  db.deleteRefreshToken(req.body.token)
 
   res.sendStatus(204)
 })

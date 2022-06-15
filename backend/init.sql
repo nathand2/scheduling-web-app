@@ -96,7 +96,7 @@ USE scheduler;
 DROP TABLE IF EXISTS refresh_token;
 CREATE TABLE refresh_token (
   id bigint NOT NULL AUTO_INCREMENT UNIQUE,
-  token varchar(512) NOT NULL
+  token varchar(512) NOT NULL UNIQUE
 )
 
 USE scheduler; SELECT * FROM user WHERE google_id = "112150195852534406291";
