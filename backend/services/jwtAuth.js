@@ -3,13 +3,11 @@ const jwt = require('jsonwebtoken');
 const accessTokenSecret = process.env.ACCESS_TOKEN_SECRET;
 const refreshTokenSecret = process.env.REFRESH_TOKEN_SECRET;
 
-
-// exports.generateAccessToken = (username) => {
-//   const user = {name: username};
-//   const accessToken = jwt.sign(user, accessTokenSecret);
-//   return accessToken;
-// }
-
+/**
+ * Authenticates token is authorization header
+ * @param {*} req a request
+ * @param {*} res a response
+ */
 exports.authenticateToken = (req, res) => {
   const authHeader = req.headers['authorization']
   const token = authHeader && authHeader.split(' ')[1]

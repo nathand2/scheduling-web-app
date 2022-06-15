@@ -3,7 +3,6 @@ const jwt = require('jsonwebtoken');
 const passport = require('passport');
 require('dotenv').config() // Environment variables stored in .env file
 
-// const db = require('./db');
 const auth = require('./services/jwtAuth');
 
 const port = 6500;
