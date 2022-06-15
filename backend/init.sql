@@ -92,6 +92,7 @@ CREATE TABLE session_invitation (
   FOREIGN KEY user_id REFERENCES user(id) ON DELETE CASCADE
 )
 
+USE scheduler;
 DROP TABLE IF EXISTS refresh_token;
 CREATE TABLE refresh_token (
   id bigint NOT NULL AUTO_INCREMENT UNIQUE,
