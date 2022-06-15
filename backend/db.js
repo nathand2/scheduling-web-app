@@ -49,5 +49,24 @@ exports.googleAuth = async (googleID) => {
     console.log("User ID on login:", userID);
     return userID;
   }
- 
-  };
+};
+
+/**
+ * Returns refresh token from db if exists
+ * @param {*} token JWT token as string
+ * @returns refresh tokan as string or undefined
+ */
+exports.findRefreshToken = (token) => {
+  const result = await dbConnection(`SELECT * FROM refresh_token WHERE token = ${token} LIMIT 1;`)
+  if (results.length > 0) {
+    return result[0];
+  }
+}
+
+/**
+ * Deletes a JWT refresh token from db
+ * @param {*} token jwt token as a string
+ */
+exports.deleteRefreshToken = (token) => {
+  await dbConnection(`DELETE FROM refresh_token WHERE token = ${token} LIMIT 1;`)
+}
