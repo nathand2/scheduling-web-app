@@ -14,30 +14,6 @@ app.use(express.json());
 app.use(passport.initialize());
 require('./services/googleStrategy');
 
-// app.get('/auth/google',
-//   passport.authenticate('google', { scope: [ 'email', 'profile' ]})
-// );
-
-// app.get('/auth/google/callback', passport.authenticate( 'google', {
-//   // successRedirect: '/dashboard',
-//   failureRedirect: '/login',
-//   session: false
-// }), (req, res) => {
-//   console.log("Successful login? User stuff:", req.user);
-//   const accessToken = auth.generateAccessToken(req.user.id);
-//   res.json({accessToken: accessToken});
-//   // res.redirect("/dashboard");
-// });
-
-// // Checks authentication using Express Session
-// // If auth successful, redirects to passport's callbackURL
-// const checkAuthenticated = (req, res, next) => {
-//   if (req.isAuthenticated()) {
-//     return next()
-//   }
-//   res.redirect("/login")
-// };
-
 app.get("/dashboard", auth.authenticateToken, (req, res) => {
   res.send(`Auth Successful. Welcome, ${JSON.stringify(req.user)}!
   <form action="/logout" method="post">

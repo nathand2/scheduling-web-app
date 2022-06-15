@@ -1,76 +1,56 @@
 const jwt = require('jsonwebtoken');
 
 const accessTokenSecret = process.env.ACCESS_TOKEN_SECRET;
+const refreshTokenSecret = process.env.REFRESH_TOKEN_SECRET;
 
-exports.generateAccessToken = (username) => {
-  const user = {name: username};
-  const accessToken = jwt.sign(user, accessTokenSecret);
-  return accessToken;
-}
 
-exports.authenticateToken = (req, res, next) => {
+// exports.generateAccessToken = (username) => {
+//   const user = {name: username};
+//   const accessToken = jwt.sign(user, accessTokenSecret);
+//   return accessToken;
+// }
+
+exports.authenticateToken = (req, res) => {
   const authHeader = req.headers['authorization']
   const token = authHeader && authHeader.split(' ')[1]
-  if (token == null) return res.sendStatus(401)
+  if (token == null) throw 401;
 
   jwt.verify(token, accessTokenSecret, (err, user) => {
-    if (err) return res.sendStatus(403)
+    if (err) throw 403;
     req.user = user
-    next()
   })
 }
 
-// // check if Token exists on request Header and attach token to request as attribute
-// exports.checkTokenMW = (req, res, next) => {
-//     // Get auth header value
-//     const bearerHeader = req.headers['authorization'];
-//     if (typeof bearerHeader !== 'undefined') {
-//         req.token = bearerHeader.split(' ')[1];
-//         next();
-//     } else {
-//         res.sendStatus(403);
-//     }
-// };
+/**
+ * Generates JWT access token
+ * @param {*} user JS object with name key
+ * @returns jwt access token
+ */
+exports.generateAccessToken = (user) => {
+  const accessToken = jwt.sign(user, accessTokenSecret, { expiresIn: '15s' });
+  return accessToken;
+}
 
-// // Verify Token validity and attach token data as request attribute
-// exports.verifyToken = (req, res) => {
-//     jwt.verify(req.token, jwt_secret, (err, authData) => {
-//         if(err) {
-//             res.sendStatus(403);
-//         } else {
-//             return req.authData = authData;
-//         }
-//     })
-// };
+/**
+ * Generates JWT refresh token
+ * @param {*} user JS object with name key
+ * @returns jwt refresh token
+ */
+exports.generateRefreshToken = (user) => {
+  const accessToken = jwt.sign(user, refreshTokenSecret);
+  return accessToken;
+}
 
-// // Issue Token
-// exports.signToken = (req, res) => {
-//     jwt.sign({userId: req.user.id}, jwt_secret, {expiresIn:'5 min'}, (err, token) => {
-//         if(err){
-//             res.sendStatus(500);
-//         } else {
-//             res.json({token});
-//         }
-//     });
-// }
-
-// exports.generateAccessToken = (username) => {
-//   return jwt.sign(username, jwt_secret, { expiresIn: '1800s' });
-// }
-
-// exports.authenticateToken = (req, res, next) => {
-//   const authHeader = req.headers['authorization']
-//   const token = authHeader && authHeader.split(' ')[1]
-
-//   if (token == null) return res.sendStatus(401)
-
-//   jwt.verify(token, process.env.TOKEN_SECRET, (err, user) => {
-//     console.log(err)
-
-//     if (err) return res.sendStatus(403)
-
-//     req.user = user
-
-//     next()
-//   })
-// }
+/**
+ * Refreshes access token
+ * @param {*} refreshToken JWT refresh token
+ * @returns JWT access token
+ */
+exports.refreshAccessToken = (refreshToken) => {
+  jwt.verify(refreshToken, refreshTokenSecret, (err, user) => {
+    if (err) throw err;
+    const accessToken = this.generateAccessToken({ name: user.name })
+    console.log("Generated access token:", accessToken)
+    return accessToken
+  })
+}
