@@ -92,6 +92,12 @@ CREATE TABLE session_invitation (
   FOREIGN KEY user_id REFERENCES user(id) ON DELETE CASCADE
 )
 
+DROP TABLE IF EXISTS refresh_token;
+CREATE TABLE refresh_token (
+  id bigint NOT NULL AUTO_INCREMENT UNIQUE,
+  refresh_token varchar(512) NOT NULL
+)
+
 USE scheduler; SELECT * FROM user WHERE google_id = "112150195852534406291";
 
 INSERT INTO user (username, password, nickname) VALUES ("Nathan", "potatoman", "Nate");
