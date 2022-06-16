@@ -23,8 +23,7 @@ app.post('/token', async (req, res) => {
     return
   }
 
-  // Check if refresh token exists in collection of valid refresh tokens.
-  // if(!refreshTokens.includes(refreshToken)) return res.sendStatus(403)
+  // Check if refresh token exists in db of valid refresh tokens.
   if (!await db.refreshTokenExists(refreshToken)) {
     res.sendStatus(403)
     return
@@ -38,12 +37,15 @@ app.post('/token', async (req, res) => {
     const accessToken = auth.generateAccessToken({ name: user.name })
     res.json({ accessToken: accessToken })
   })
-  
+
+  // Res.local to pass variable to middleware.
+  // res.locals.refreshToken = refreshToken;
+  // next()
+
   // Attempt to try move functionality to jwtAuth.js
   // try {
   //   console.log('refreshTokens', refreshTokens)
   //   const accessToken = auth.refreshAccessToken(refreshToken)
-  //   res.json({ fucker: "fucker" })
   //   console.log("so....", accessToken)
   // } catch (err) {
   //   console.log(err)
@@ -51,7 +53,9 @@ app.post('/token', async (req, res) => {
   // } finally {
   //   console.log("so.... again", accessToken)
   // }
-})
+}
+// , auth.refreshAccessToken
+)
 
 //Middleware
 app.use(express.json());
@@ -73,9 +77,14 @@ app.get('/auth/google/callback', passport.authenticate( 'google', {
   const refreshToken = auth.generateRefreshToken(user);
   
   // Add token to db
-  db.insertRefreshToken(refreshToken);
+  try {
+    db.insertRefreshToken(refreshToken);
+    res.json({ accessToken: accessToken, refreshToken: refreshToken });
+  } catch(err) {
+    console.log("Caught db error in authServer.js")
+    res.json({ status: "Database Error" })
+  }
 
-  res.json({ accessToken: accessToken, refreshToken: refreshToken });
 });
 
 /**

@@ -1,35 +1,42 @@
 const mysql = require('mysql')
 const dbUser = {
-    host: 'localhost',
-    user: 'root',
-    password: '',
-    database: 'scheduler'
+  host: 'localhost',
+  user: 'root',
+  password: '',
+  database: 'scheduler',
+  // connectionLimit : 10,
+  // debug    :  false
 };
+
 
 /**
  * Executes a db connection to make a sql query
  * @param {*} db_query sql query as a string
  * @returns query results in an array
  */
-function dbConnection(db_query) {
-    return new Promise((resolve, reject) => {
-        let db = mysql.createConnection(dbUser);
-        db.connect((err) => {
-            if (err) {
-              reject(err);
-            }
-            db.query(db_query, (err, result) => {
-                if (err) reject(err)
-                if (result) {
-                    resolve(result);
-                }
-            });
-        });
-    }, (result) => {
-      return result;
-    }), (err) => {
-      throw err;
-    }
+function dbConnection(query) {
+  // TODO: Error handling on db connection and query.
+  return new Promise((resolve, reject) => {
+      let db = mysql.createConnection(dbUser);
+      db.connect((err) => {
+          if (err) {
+            console.log("Database Connection Error:", err.code);
+            resolve();
+          }
+          console.log("Database connected");
+          db.query(query, (err, result) => {
+              if (err) {
+                console.log("Database Connection Error:", err.code);
+                resolve();
+              }
+              if (result) {
+                  resolve(result);
+              }
+          });
+      });
+  }, (result) => {
+    return result;
+  })
 }
 
 /**
@@ -42,6 +49,12 @@ exports.googleAuth = async (googleID) => {
   // Check if google user exists in database.
   const results = await dbConnection(`SELECT * FROM users WHERE google_id = ${googleID};`);
   console.log("Query Results:", results);
+
+  // TODO: Handle db errors through errors, try, catch...
+  if (results == undefined) {
+    console.log("Throw")
+    throw new Error("Google Auth Database Error");
+  }
 
   // If google user doesn't yet exist, add google user to db.
   if (!results.length > 0) {
@@ -60,7 +73,11 @@ exports.googleAuth = async (googleID) => {
 };
 
 exports.insertRefreshToken = async (token) => {
-  await dbConnection(`INSERT INTO refresh_token (token) VALUES ("${token}");`)
+  try {
+    await dbConnection(`INSERT INTO refresh_token (token) VALUES ("${token}");`)
+  } catch(err) {
+    throw err;
+  }
 }
 
 /**

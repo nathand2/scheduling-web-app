@@ -46,11 +46,15 @@ exports.generateRefreshToken = (user) => {
  * @param {*} refreshToken JWT refresh token
  * @returns JWT access token
  */
-exports.refreshAccessToken = (refreshToken) => {
+exports.refreshAccessToken = (req, res) => {
+  const refreshToken = res.local.refreshToken
   jwt.verify(refreshToken, refreshTokenSecret, (err, user) => {
-    if (err) throw err;
+    if (err){
+      res.sendStatus(403);
+      return;
+    }
     const accessToken = this.generateAccessToken({ name: user.name })
     console.log("Generated access token:", accessToken)
-    return accessToken
+    res.json({ accessToken: accessToken })
   })
 }
