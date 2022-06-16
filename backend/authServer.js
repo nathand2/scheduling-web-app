@@ -20,9 +20,14 @@ app.post('/token', async (req, res, next) => {
     res.sendStatus(401)
     return
   }
-  // Check if refresh token exists in db of valid refresh tokens.
-  if (!await db.refreshTokenExists(refreshToken)) {
-    res.sendStatus(403)
+  try {
+    // Check if refresh token exists in db of valid refresh tokens.
+    if (!await db.refreshTokenExists(refreshToken)) {
+      res.sendStatus(403)
+      return
+    } 
+  } catch(err) {
+    res.sendStatus(500) // Internal db error.
     return
   }
   // Res.locals to pass variable to middleware.
@@ -71,8 +76,10 @@ app.delete("/logout", (req,res) => {
   try {
     db.deleteRefreshToken(req.body.token)
     res.sendStatus(204)
+    return
   } catch(err) {
-    res.sendStatus(500);
+    res.sendStatus(500) // Internal db error.
+    return
   }
 })
 

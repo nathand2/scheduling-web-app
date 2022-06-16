@@ -6,6 +6,9 @@ const dbUser = {
   database: 'scheduler'
 };
 
+/**
+ * TODO: Error checking if MySQL server is down not fully implemented
+ */
 
 /**
  * Executes a db connection to make a sql query
@@ -36,10 +39,15 @@ function dbConnection(query) {
       });
   }, (result) => {
     // Resolve
+    db.end(function(err) {
+      if (err) {
+        return console.log('error:' + err.message);
+      }
+      console.log('Close the database connection.');
+    });
     return result;
   }, (err) => {
     // Reject
-    console.log("Tried to catch error")
     throw err
   })
 }
@@ -51,7 +59,7 @@ function dbConnection(query) {
  */
 exports.googleAuth = async (googleID) => {
 
-  // try {
+  try {
     // Check if google user exists in database.
     const results = await dbConnection(`SELECT * FROM users WHERE google_id = ${googleID};`);
     console.log("Query Results:", results);
@@ -69,17 +77,17 @@ exports.googleAuth = async (googleID) => {
       const userID = results[0].id;
       return userID;
     }
-  // } catch(err) {
-  //   throw err;
-  // }
+  } catch(err) {
+    throw err;
+  }
 };
 
 exports.insertRefreshToken = async (token) => {
-  // try {
+  try {
     await dbConnection(`INSERT INTO refresh_token (token) VALUES ("${token}");`)
-  // } catch(err) {
-    // throw err;
-  // }
+  } catch(err) {
+    throw err;
+  }
 }
 
 /**
@@ -88,9 +96,13 @@ exports.insertRefreshToken = async (token) => {
  * @returns refresh tokan as string or undefined
  */
 exports.findRefreshToken = async (token) => {
-  const result = await dbConnection(`SELECT * FROM refresh_token WHERE token = "${token}" LIMIT 1;`)
-  if (results.length > 0) {
-    return result[0];
+  try {
+    const result = await dbConnection(`SELECT * FROM refresh_token WHERE token = "${token}" LIMIT 1;`)
+    if (results.length > 0) {
+      return result[0];
+    }
+  } catch(err) {
+    throw err;
   }
 }
 
@@ -100,8 +112,12 @@ exports.findRefreshToken = async (token) => {
  * @returns if refresh token exists as a boolean
  */
 exports.refreshTokenExists = async (token) => {
-  const result = await dbConnection(`SELECT * FROM refresh_token WHERE token = "${token}" LIMIT 1;`)
-  return result.length > 0
+  try {
+    const result = await dbConnection(`SELECT * FROM refresh_token WHERE token = "${token}" LIMIT 1;`)
+    return result.length > 0
+  } catch(err) {
+    throw err
+  }
 }
 
 /**
@@ -111,6 +127,7 @@ exports.refreshTokenExists = async (token) => {
 exports.deleteRefreshToken = async (token) => {
   try {
     await dbConnection(`DELETE FROM refresh_token WHERE token = "${token}" LIMIT 1;`)
+    return;
   } catch (err) {
     throw err;
   }
