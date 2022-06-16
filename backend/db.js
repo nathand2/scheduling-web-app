@@ -3,9 +3,7 @@ const dbUser = {
   host: 'localhost',
   user: 'root',
   password: '',
-  database: 'scheduler',
-  // connectionLimit : 10,
-  // debug    :  false
+  database: 'scheduler'
 };
 
 
@@ -16,6 +14,7 @@ const dbUser = {
  */
 function dbConnection(query) {
   // TODO: Error handling on db connection and query.
+  // TODO: Consider using pool queries?
   return new Promise((resolve, reject) => {
       let db = mysql.createConnection(dbUser);
       db.connect((err) => {
@@ -52,7 +51,6 @@ exports.googleAuth = async (googleID) => {
 
   // TODO: Handle db errors through errors, try, catch...
   if (results == undefined) {
-    console.log("Throw")
     throw new Error("Google Auth Database Error");
   }
 
