@@ -1,5 +1,4 @@
 const express = require('express');
-const jwt = require('jsonwebtoken');
 const passport = require('passport');
 require('dotenv').config() // Environment variables stored in .env file
 
@@ -15,46 +14,21 @@ app.use(express.json());
 /**
  * Route to refresh access token using refresh token
  */
-app.post('/token', async (req, res) => {
-  console.log("Token endpoint start")
+app.post('/token', async (req, res, next) => {
   const refreshToken = req.body.token
   if (refreshToken == null) {
     res.sendStatus(401)
     return
   }
-
   // Check if refresh token exists in db of valid refresh tokens.
   if (!await db.refreshTokenExists(refreshToken)) {
     res.sendStatus(403)
     return
   }
-  // Can't move to jwtAuth.js
-  jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
-    if (err) {
-      res.sendStatus(403)
-      return
-    } 
-    const accessToken = auth.generateAccessToken({ name: user.name })
-    res.json({ accessToken: accessToken })
-  })
-
-  // Res.local to pass variable to middleware.
-  // res.locals.refreshToken = refreshToken;
-  // next()
-
-  // Attempt to try move functionality to jwtAuth.js
-  // try {
-  //   console.log('refreshTokens', refreshTokens)
-  //   const accessToken = auth.refreshAccessToken(refreshToken)
-  //   console.log("so....", accessToken)
-  // } catch (err) {
-  //   console.log(err)
-  //   res.sendStatus(403)
-  // } finally {
-  //   console.log("so.... again", accessToken)
-  // }
-}
-// , auth.refreshAccessToken
+  // Res.locals to pass variable to middleware.
+  res.locals.refreshToken = refreshToken;
+  next()
+}, auth.refreshAccessToken // Callback
 )
 
 //Middleware
