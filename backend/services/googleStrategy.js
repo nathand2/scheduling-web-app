@@ -13,10 +13,9 @@ const authUser = async (request, accessToken, refreshToken, profile, done) => {
     user_id = await db.googleAuth(profile.id);
   } catch (err) {
     // Don't authenticate if error
-    console.log("Google Strategy Connection Error:", err);
+    console.log("Google Strategy Caught error:", err.code);
     return done(null, null); // Reject Authentication
   }
-  // console.log("Generating JWT Token");
   return done(null, profile);
 };
 
@@ -25,5 +24,6 @@ passport.use(new GoogleStrategy({
   clientID:     GOOGLE_CLIENT_ID,
   clientSecret: GOOGLE_CLIENT_SECRET,
   callbackURL: "http://localhost:6500/auth/google/callback",
-  passReqToCallback   : true
+  passReqToCallback   : true,
+  scope: ['profile', 'email']
 }, authUser));

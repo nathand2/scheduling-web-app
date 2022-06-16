@@ -41,9 +41,10 @@ app.get('/auth/google',
 );
 
 app.get('/auth/google/callback', passport.authenticate( 'google', {
-  failureRedirect: 'http://localhost:5500/login',
+  // failureRedirect: 'http://localhost:5500/login',
+  failWithError: true,
   session: false
-}), (req, res) => {
+}), (req, res, next) => {
 
   // On successful authentication, respond with JWT token.
   const user = {name: req.user.id}
@@ -55,10 +56,11 @@ app.get('/auth/google/callback', passport.authenticate( 'google', {
     db.insertRefreshToken(refreshToken);
     res.json({ accessToken: accessToken, refreshToken: refreshToken });
   } catch(err) {
-    console.log("Caught db error in authServer.js")
-    res.json({ status: "Database Error" })
+    res.sendStatus(500); // Internal Error (database error)
   }
-
+}, (err, req, res, next) => {
+  // Handle auth error.
+  res.sendStatus(500); // Internal Error (database error)
 });
 
 /**
@@ -66,9 +68,12 @@ app.get('/auth/google/callback', passport.authenticate( 'google', {
  */
 app.delete("/logout", (req,res) => {
   // Remove refresh token from db
-  db.deleteRefreshToken(req.body.token)
-
-  res.sendStatus(204)
+  try {
+    db.deleteRefreshToken(req.body.token)
+    res.sendStatus(204)
+  } catch(err) {
+    res.sendStatus(500);
+  }
 })
 
 app.listen(port, () => {

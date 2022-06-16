@@ -17,16 +17,17 @@ function dbConnection(query) {
   // TODO: Consider using pool queries?
   return new Promise((resolve, reject) => {
       let db = mysql.createConnection(dbUser);
+      db.on('error', (err) => {
+        reject(err)
+      })
       db.connect((err) => {
           if (err) {
-            console.log("Database Connection Error:", err.code);
-            resolve();
+            reject(err)
           }
           console.log("Database connected");
           db.query(query, (err, result) => {
               if (err) {
-                console.log("Database Connection Error:", err.code);
-                resolve();
+                reject(err)
               }
               if (result) {
                   resolve(result);
@@ -34,7 +35,11 @@ function dbConnection(query) {
           });
       });
   }, (result) => {
+    // Resolve
     return result;
+  }, (err) => {
+    // Reject
+    throw err
   })
 }
 
@@ -45,37 +50,35 @@ function dbConnection(query) {
  */
 exports.googleAuth = async (googleID) => {
 
-  // Check if google user exists in database.
-  const results = await dbConnection(`SELECT * FROM users WHERE google_id = ${googleID};`);
-  console.log("Query Results:", results);
+  // try {
+    // Check if google user exists in database.
+    const results = await dbConnection(`SELECT * FROM users WHERE google_id = ${googleID};`);
+    console.log("Query Results:", results);
 
-  // TODO: Handle db errors through errors, try, catch...
-  if (results == undefined) {
-    throw new Error("Google Auth Database Error");
-  }
+    // If google user doesn't yet exist, add google user to db.
+    if (!results.length > 0) {
+      await dbConnection(`INSERT INTO users (google_id) VALUES (${googleID});`);
+      console.log("Added user to db with google_id:", googleID);
 
-  // If google user doesn't yet exist, add google user to db.
-  if (!results.length > 0) {
-    await dbConnection(`INSERT INTO users (google_id) VALUES (${googleID});`);
-    console.log("Added user to db with google_id:", googleID);
-
-    // Returns userID of first user found in db
-    const userID = (await dbConnection(`SELECT * FROM users WHERE google_id = ${googleID} LIMIT 1;`))[0].id;
-    return userID;
-  } else {
-    console.log("Existing Google User logged in.");
-    const userID = results[0].id;
-    console.log("User ID on login:", userID);
-    return userID;
-  }
+      // Returns userID of first user found in db
+      const userID = (await dbConnection(`SELECT * FROM users WHERE google_id = ${googleID} LIMIT 1;`))[0].id;
+      return userID;
+    } else {
+      console.log("Existing Google User logged in.");
+      const userID = results[0].id;
+      return userID;
+    }
+  // } catch(err) {
+  //   throw err;
+  // }
 };
 
 exports.insertRefreshToken = async (token) => {
-  try {
+  // try {
     await dbConnection(`INSERT INTO refresh_token (token) VALUES ("${token}");`)
-  } catch(err) {
-    throw err;
-  }
+  // } catch(err) {
+    // throw err;
+  // }
 }
 
 /**
@@ -105,5 +108,9 @@ exports.refreshTokenExists = async (token) => {
  * @param {*} token jwt token as a string
  */
 exports.deleteRefreshToken = async (token) => {
-  await dbConnection(`DELETE FROM refresh_token WHERE token = "${token}" LIMIT 1;`)
+  try {
+    await dbConnection(`DELETE FROM refresh_token WHERE token = "${token}" LIMIT 1;`)
+  } catch (err) {
+    throw err;
+  }
 }
