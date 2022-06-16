@@ -16,7 +16,7 @@ function dbConnection(query) {
   // TODO: Error handling on db connection and query.
   // TODO: Consider using pool queries?
   return new Promise((resolve, reject) => {
-      let db = mysql.createConnection(dbUser);
+      const db = mysql.createConnection(dbUser);
       db.on('error', (err) => {
         reject(err)
       })
@@ -39,6 +39,7 @@ function dbConnection(query) {
     return result;
   }, (err) => {
     // Reject
+    console.log("Tried to catch error")
     throw err
   })
 }
