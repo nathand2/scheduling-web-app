@@ -1,3 +1,10 @@
+/**
+ * Authentication Server
+ * 
+ * Responsible to authenticating, generating, and maintaining JWT
+ * access and refresh tokens.
+ */
+
 const jwt = require('jsonwebtoken');
 
 const accessTokenSecret = process.env.ACCESS_TOKEN_SECRET;

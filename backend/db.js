@@ -82,6 +82,10 @@ exports.googleAuth = async (googleID) => {
   }
 };
 
+/**
+ * Insert refresh token into db
+ * @param {string} token JWT access token
+ */
 exports.insertRefreshToken = async (token) => {
   try {
     await dbConnection(`INSERT INTO refresh_token (token) VALUES ("${token}");`)
