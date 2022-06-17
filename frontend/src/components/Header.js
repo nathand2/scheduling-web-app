@@ -5,7 +5,7 @@ const Header = () => {
     <div className="header-container">
       <Navbar bg="light" expand="lg">
   <Container fluid>
-    <Navbar.Brand href="#">Valorant Scheduler</Navbar.Brand>
+    <Navbar.Brand href="/">Valorant Scheduler</Navbar.Brand>
     <Navbar.Toggle aria-controls="navbarScroll" />
     <Navbar.Collapse id="navbarScroll">
       <Nav
@@ -13,23 +13,22 @@ const Header = () => {
         style={{ maxHeight: '100px' }}
         navbarScroll
       >
-      <Nav.Link href="#action1">Home</Nav.Link>
-      <Nav.Link href="#action1">Sessions</Nav.Link>
-      <Nav.Link href="#action1">Groups</Nav.Link>
+      <Nav.Link href="#home">Home</Nav.Link>
+      <Nav.Link href="#session">Sessions</Nav.Link>
+      <Nav.Link href="#groups">Groups</Nav.Link>
         
       </Nav>
       <div className="d-flex">
-      <Button variant="light">Sign In</Button>
+        
+      <Nav.Link variant="light" href="/login">Login</Nav.Link>
+      <Nav.Link variant="light" href="/signup">Sign Up</Nav.Link>
       <NavDropdown title="Username" key='down' id='dropdown-menu-align-end'
         align='end'>
           <NavDropdown.Item href="#action3">Profile</NavDropdown.Item>
           <NavDropdown.Item href="#action4">Settings</NavDropdown.Item>
           <NavDropdown.Divider />
-          <NavDropdown.Item href="#action5">
-            Login
-          </NavDropdown.Item>
-          <NavDropdown.Item href="#action5">
-            Sign Up
+          <NavDropdown.Item href="#logout">
+            Logout
           </NavDropdown.Item>
         </NavDropdown>
       </div>

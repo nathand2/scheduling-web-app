@@ -1,8 +1,15 @@
 import React from 'react'
+// import FcGoogle from 'react-icons/fc'
+
 
 const LogIn = () => {
   return (
-    <div>LogIn</div>
+    <div>
+      LogIn
+      <br />
+      {/* <FcGoogle></FcGoogle> */}
+    </div>
+    
   )
 }
 
