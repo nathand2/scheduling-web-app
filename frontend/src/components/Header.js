@@ -1,4 +1,4 @@
-import { Navbar, Container, Nav, NavDropdown, Button, Form } from 'react-bootstrap';
+import { Navbar, Container, Nav, NavDropdown, Button } from 'react-bootstrap';
 
 const Header = () => {
   return (
@@ -18,7 +18,7 @@ const Header = () => {
       <Nav.Link href="#action1">Groups</Nav.Link>
         
       </Nav>
-      <Form className="d-flex">
+      <div className="d-flex">
       <Button variant="light">Sign In</Button>
       <NavDropdown title="Username" key='down' id='dropdown-menu-align-end'
         align='end'>
@@ -26,10 +26,13 @@ const Header = () => {
           <NavDropdown.Item href="#action4">Settings</NavDropdown.Item>
           <NavDropdown.Divider />
           <NavDropdown.Item href="#action5">
-            Logout
+            Login
+          </NavDropdown.Item>
+          <NavDropdown.Item href="#action5">
+            Sign Up
           </NavDropdown.Item>
         </NavDropdown>
-      </Form>
+      </div>
     </Navbar.Collapse>
   </Container>
 </Navbar>
