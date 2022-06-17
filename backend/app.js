@@ -12,6 +12,7 @@
 
 const express = require('express');
 const passport = require('passport');
+const cors = require('cors')
 require('dotenv').config() // Environment variables stored in .env file
 
 
@@ -21,6 +22,7 @@ const app = express();
 
 //Middleware
 app.use(express.json());
+app.use(cors());
 app.use(passport.initialize());
 require('./services/googleStrategy');
 const auth = require('./services/jwtAuth');

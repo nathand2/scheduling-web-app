@@ -1,5 +1,6 @@
 const express = require('express');
 const passport = require('passport');
+const cors = require('cors')
 require('dotenv').config() // Environment variables stored in .env file
 
 const auth = require('./services/jwtAuth');
@@ -9,6 +10,7 @@ const port = 6500;
 const app = express();
 
 // Middleware
+app.use(cors());
 app.use(express.json());
 
 /**
