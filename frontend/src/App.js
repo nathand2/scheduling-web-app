@@ -28,8 +28,16 @@ function App() {
     }
   }
 
-  const testRequest = () => {
-    const stuff = fetch('http://localhost:6500/testauth')
+  const testRequest = async () => {
+    const stuff = await fetch('http://localhost:6500/testauth', {
+      method: 'POST',
+      credentials: 'include', // Include cookies in request
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({accessToken: window.sessionStorage.getItem('accessToken')})
+    })
     console.log('Testing Auth results:', stuff)
   }
 
@@ -38,9 +46,9 @@ function App() {
   const [loggedIn, setLoggedIn] = useState(false)
   
   useEffect(() => {
+    setJWTLocalStorage();
     if (isLoggedIn()) {
       setLoggedIn(true)
-      setJWTLocalStorage();
     } else {
       setLoggedIn(false)
     }

@@ -6,6 +6,7 @@
  */
 
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt')
 
 const accessTokenSecret = process.env.ACCESS_TOKEN_SECRET;
 const refreshTokenSecret = process.env.REFRESH_TOKEN_SECRET;
@@ -20,6 +21,9 @@ exports.authenticateToken = (req, res, next) => {
   // const authHeader = req.headers['authorization']
   // const token = authHeader && authHeader.split(' ')[1]
   const token = req.body.accessToken;
+  console.log("cookies:", req.cookies)
+  console.log("token?", token)
+  console.log("body", req.body)
   const userContext = req.cookies.userContext;
 
 
@@ -28,13 +32,18 @@ exports.authenticateToken = (req, res, next) => {
   jwt.verify(token, accessTokenSecret, (err, user) => {
     if (err) return res.sendStatus(403);
 
+    const userContextHashed = user.hash;
+    console.log("Context:")
+    console.log(userContextHashed)
+    console.log(userContext)
     // Verify user context.
-    bcrypt.compare(req.body.password, user.password, function(err, res) {
+    bcrypt.compare(userContext, userContextHashed, function(err, result) {
       if (err){
         res.sendStatus(500)
         return
       }
-      if (res) {
+      console.log("bcrypt result:", result)
+      if (result) {
         next() // Serve content using next callback
       } else {
         res.sendStatus(401)

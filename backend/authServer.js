@@ -3,6 +3,7 @@ const passport = require('passport');
 const cors = require('cors')
 const crypto = require('crypto')
 const bcrypt = require('bcrypt')
+const cookieParser = require('cookie-parser');
 require('dotenv').config() // Environment variables stored in .env file
 
 const auth = require('./services/jwtAuth');
@@ -23,9 +24,11 @@ const secureCookieConfig = {
 
 // Middleware
 app.use(cors({
-  origin: 'http://localhost:3000'
+  origin: 'http://localhost:3000',
+  credentials: true
 }));
 app.use(express.json());
+app.use(cookieParser());
 
 //Middleware
 app.use(express.json());
@@ -39,7 +42,7 @@ require('./services/googleStrategy');
  */
 const getRandomString = async () => {
   return await new Promise((resolve, reject) => {
-    crypto.randomBytes(48, (err, buffer) => {
+    crypto.randomBytes(24, (err, buffer) => {
       if (err) {
         reject(-1);
       }
@@ -53,16 +56,22 @@ const getRandomString = async () => {
  * @param {string} input 
  * @returns hashed string
  */
-const hashString = (input) => {
-  // const hash = crypto.createHash('sha256').update(input).digest('base64');
-  // return hash
-  bcrypt.hash(input, saltRounds, function(err, hash) {
-    if (err) {
-      throw err
-    } else {
-      return hash
-    }
-  });
+const hashString = async (input) => {
+  // bcrypt.hash(input, saltRounds, function(err, hash) {
+  //   if (err) {
+  //     throw err
+  //   } else {
+  //     return hash
+  //   }
+  // });
+
+  const hashedPassword = new Promise((resolve, reject) => {
+    bcrypt.hash(input, saltRounds, function(err, hash) {
+      if (err) reject(err)
+      resolve(hash)
+    });
+  })
+  return hashedPassword
 }
 
 
@@ -121,11 +130,11 @@ app.get('/auth/google/callback', passport.authenticate( 'google', {
   // Generate random string and hash for user context verification.
   const randomString = await getRandomString();
   console.log("Random String:", randomString)
-  
+
   let hash;
   // If hash fails, return status 500.
   try {
-    hash = hashString(randomString);
+    hash = await hashString(randomString);
   } catch(err) {
     res.sendStatus(500);
     return
