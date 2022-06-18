@@ -1,0 +1,14 @@
+$oauth-icon-width: 60px;
+$oauth-icon-height: 60px;
+
+.login-icon {
+  width: $oauth-icon-width;
+  height: $oauth-icon-height;
+  border-radius: 100%;
+
+  &:hover {
+    background-color: rgb(241, 241, 241);
+    transition-timing-function: ease;
+  }
+
+}
