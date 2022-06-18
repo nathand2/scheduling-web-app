@@ -16,15 +16,31 @@ const refreshTokenSecret = process.env.REFRESH_TOKEN_SECRET;
  * @param {*} res a response
  */
 exports.authenticateToken = (req, res, next) => {
-  console.log("Trying to authenticate token")
-  const authHeader = req.headers['authorization']
-  const token = authHeader && authHeader.split(' ')[1]
+  // console.log("Trying to authenticate token")
+  // const authHeader = req.headers['authorization']
+  // const token = authHeader && authHeader.split(' ')[1]
+  const token = req.body.accessToken;
+  const userContext = req.cookies.userContext;
+
+
   if (token == null) return res.sendStatus(401);
 
   jwt.verify(token, accessTokenSecret, (err, user) => {
     if (err) return res.sendStatus(403);
-    req.user = user
-    next();
+
+    // Verify user context.
+    bcrypt.compare(req.body.password, user.password, function(err, res) {
+      if (err){
+        res.sendStatus(500)
+        return
+      }
+      if (res) {
+        next() // Serve content using next callback
+      } else {
+        res.sendStatus(401)
+        return
+      }
+    });
   })
 }
 
@@ -34,7 +50,7 @@ exports.authenticateToken = (req, res, next) => {
  * @returns jwt access token
  */
 exports.generateAccessToken = (user) => {
-  const accessToken = jwt.sign(user, accessTokenSecret, { expiresIn: '15s' });
+  const accessToken = jwt.sign(user, accessTokenSecret, { expiresIn: '5m' });
   return accessToken;
 }
 

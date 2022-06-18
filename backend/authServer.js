@@ -2,12 +2,15 @@ const express = require('express');
 const passport = require('passport');
 const cors = require('cors')
 const crypto = require('crypto')
+const bcrypt = require('bcrypt')
 require('dotenv').config() // Environment variables stored in .env file
 
 const auth = require('./services/jwtAuth');
 const db = require('./db');
 
 const port = 6500;
+const saltRounds = 5;
+
 const app = express();
 
 // For Cookie security
@@ -51,8 +54,15 @@ const getRandomString = async () => {
  * @returns hashed string
  */
 const hashString = (input) => {
-  const hash = crypto.createHash('sha256').update(input).digest('base64');
-  return hash
+  // const hash = crypto.createHash('sha256').update(input).digest('base64');
+  // return hash
+  bcrypt.hash(input, saltRounds, function(err, hash) {
+    if (err) {
+      throw err
+    } else {
+      return hash
+    }
+  });
 }
 
 
@@ -63,6 +73,15 @@ app.get('/test', async (req, res) => {
   // console.log("Hashed String:", hash)
   res.json({stuff: "potato"})
 })
+
+app.post("/testauth", auth.authenticateToken, (req, res) => {
+  
+  // res.send(`Auth Successful. Welcome, ${JSON.stringify(req.user)}!
+  // <form action="/logout" method="post">
+  //   <button type="submit">Logout</button>
+  // </form>`);
+  res.json({status: "Authentication Successful"})
+});
 
 /**
  * Route to refresh access token using refresh token
@@ -102,7 +121,16 @@ app.get('/auth/google/callback', passport.authenticate( 'google', {
   // Generate random string and hash for user context verification.
   const randomString = await getRandomString();
   console.log("Random String:", randomString)
-  const hash = hashString(randomString);
+  
+  let hash;
+  // If hash fails, return status 500.
+  try {
+    hash = hashString(randomString);
+  } catch(err) {
+    res.sendStatus(500);
+    return
+  }
+
   console.log("Hashed String:", hash)
 
   // On successful authentication, respond with JWT token.
