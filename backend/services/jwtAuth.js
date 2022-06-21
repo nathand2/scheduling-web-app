@@ -7,9 +7,12 @@
 
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt')
+const crypto = require('crypto')
 
 const accessTokenSecret = process.env.ACCESS_TOKEN_SECRET;
 const refreshTokenSecret = process.env.REFRESH_TOKEN_SECRET;
+const jwtExpiresIn = '10m';
+const saltRounds = 5;
 
 /**
  * Authenticates token is authorization header
@@ -17,15 +20,8 @@ const refreshTokenSecret = process.env.REFRESH_TOKEN_SECRET;
  * @param {*} res a response
  */
 exports.authenticateToken = (req, res, next) => {
-  // console.log("Trying to authenticate token")
-  // const authHeader = req.headers['authorization']
-  // const token = authHeader && authHeader.split(' ')[1]
   const token = req.body.accessToken;
-  console.log("cookies:", req.cookies)
-  console.log("token?", token)
-  console.log("body", req.body)
   const userContext = req.cookies.userContext;
-
 
   if (token == null) return res.sendStatus(401);
 
@@ -59,7 +55,7 @@ exports.authenticateToken = (req, res, next) => {
  * @returns jwt access token
  */
 exports.generateAccessToken = (user) => {
-  const accessToken = jwt.sign(user, accessTokenSecret, { expiresIn: '5m' });
+  const accessToken = jwt.sign(user, accessTokenSecret, { expiresIn: jwtExpiresIn });
   return accessToken;
 }
 
@@ -90,4 +86,34 @@ exports.refreshAccessToken = (req, res, next) => {
     res.json({ accessToken: accessToken })
     next()
   })
+}
+
+/**
+ * Gets random string.
+ * @returns random string
+ */
+ exports.getRandomString = async () => {
+  return await new Promise((resolve, reject) => {
+    crypto.randomBytes(24, (err, buffer) => {
+      if (err) {
+        reject(-1);
+      }
+      resolve(buffer.toString('base64'));
+    });
+  });
+}
+
+/**
+ * Hashes a string using crypto. TODO: Consider using bcrypt
+ * @param {string} input 
+ * @returns hashed string
+ */
+exports.hashString = async (input) => {
+  const hashedPassword = new Promise((resolve, reject) => {
+    bcrypt.hash(input, saltRounds, function(err, hash) {
+      if (err) reject(err)
+      resolve(hash)
+    });
+  })
+  return hashedPassword
 }
