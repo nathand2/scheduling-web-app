@@ -1,6 +1,6 @@
 import { Navbar, Container, Nav, NavDropdown } from 'react-bootstrap';
 
-const Header = () => {
+const Header = ({ logOut, loggedIn }) => {
   return (
     <div className="header-container">
       <Navbar bg="light" expand="lg">
@@ -19,18 +19,28 @@ const Header = () => {
         
       </Nav>
       <div className="d-flex">
-        
-      <Nav.Link variant="light" href="/login">Login</Nav.Link>
-      <Nav.Link variant="light" href="/signup">Sign Up</Nav.Link>
-      <NavDropdown title="Username" key='down' id='dropdown-menu-align-end'
-        align='end'>
-          <NavDropdown.Item href="#action3">Profile</NavDropdown.Item>
-          <NavDropdown.Item href="#action4">Settings</NavDropdown.Item>
-          <NavDropdown.Divider />
-          <NavDropdown.Item href="#logout">
-            Logout
-          </NavDropdown.Item>
-        </NavDropdown>
+        { !loggedIn &&
+          <>
+            <Nav.Link variant="light" href="/login">Login</Nav.Link>
+            <Nav.Link variant="light" href="/signup">Sign Up</Nav.Link>
+          </>
+          
+        }
+
+        { loggedIn &&
+          <>
+            <NavDropdown title="Username" key='down' id='dropdown-menu-align-end'
+              align='end'>
+                <NavDropdown.Item href="#action3">Profile</NavDropdown.Item>
+                <NavDropdown.Item href="#action4">Settings</NavDropdown.Item>
+                <NavDropdown.Divider />
+                <NavDropdown.Item onClick={ logOut }>
+                  Logout
+                </NavDropdown.Item>
+              </NavDropdown>
+            
+          </>
+        }
       </div>
     </Navbar.Collapse>
   </Container>

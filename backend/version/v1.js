@@ -1,10 +1,17 @@
-const versionEndpoint = "/v1";
+/**
+ * Module for API functionality and routes.
+ */
 
+const versionEndpoint = "/v1";
 
 // For Cookie security
 const secureCookieConfig = {
   secure: true,
   httpOnly: true,
+  sameSite: 'strict' // Won't work if api and auth on different domains. Helps against CSRF attacks.
+}
+const semiSecureCookieConfig = {
+  secure: true,
   sameSite: 'strict' // Won't work if api and auth on different domains. Helps against CSRF attacks.
 }
 
@@ -85,8 +92,8 @@ module.exports = (app, db, auth, passport) => {
       db.insertRefreshToken(refreshToken);
 
       // Unsecure cookies for tokens to be stored in session storage.
-      res.cookie('accessToken', accessToken)
-      res.cookie('refreshToken', refreshToken)
+      res.cookie('accessToken', accessToken, semiSecureCookieConfig)
+      res.cookie('refreshToken', refreshToken, semiSecureCookieConfig)
 
       // Secure, hardened cookies
       res.cookie('userContext', randomString, secureCookieConfig);
@@ -105,10 +112,18 @@ module.exports = (app, db, auth, passport) => {
    * Deletes Refresh Tokens
    */
   app.delete("/logout", (req,res) => {
+    // Get refresh token from authorization headers
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      res.sendStatus(401); // No authorization header
+      return;
+    }
+    const token = authHeader.split(' ')[1]; // Extract token.
+
     // Remove refresh token from db
     try {
-      db.deleteRefreshToken(req.body.token)
-      res.sendStatus(204)
+      db.deleteRefreshToken(token)
+      res.sendStatus(200)
       return
     } catch(err) {
       res.sendStatus(500) // Internal db error.

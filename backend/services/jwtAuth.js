@@ -20,10 +20,18 @@ const saltRounds = 5;
  * @param {*} res a response
  */
 exports.authenticateToken = (req, res, next) => {
-  const token = req.body.accessToken;
-  const userContext = req.cookies.userContext;
+  // const token = req.body.accessToken;
+  const authHeader = req.headers.authorization;
 
-  if (token == null) return res.sendStatus(401);
+  if (!authHeader) {
+    res.sendStatus(401); // No authorization header
+    return;
+  }
+
+  // Get JWT from Authorization header
+  const token = authHeader.split(' ')[1];
+
+  const userContext = req.cookies.userContext;
 
   jwt.verify(token, accessTokenSecret, (err, user) => {
     if (err) return res.sendStatus(403);
@@ -32,6 +40,7 @@ exports.authenticateToken = (req, res, next) => {
     console.log("Context:")
     console.log(userContextHashed)
     console.log(userContext)
+    
     // Verify user context.
     bcrypt.compare(userContext, userContextHashed, function(err, result) {
       if (err){
