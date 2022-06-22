@@ -30,7 +30,14 @@ module.exports = (app, db, auth, passport) => {
    * Route to refresh access token using refresh token
    */
   app.post('/token', async (req, res, next) => {
-    const refreshToken = req.body.token
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      res.sendStatus(401); // No authorization header
+      return;
+    }
+    // Get JWT from Authorization header
+    const refreshToken = authHeader.split(' ')[1];
+    
     if (refreshToken == null) {
       res.sendStatus(401)
       return
@@ -48,7 +55,19 @@ module.exports = (app, db, auth, passport) => {
     // Res.locals to pass variable to middleware.
     res.locals.refreshToken = refreshToken;
     next()
-  }, auth.refreshAccessToken // Callback
+  }, auth.refreshAccessToken, async (req, res, next) => {
+      let randStringAccess, hashAccess;
+      [randStringAccess, hashAccess] = await auth.getRandomStringAndHash();
+      const newUser = {
+        name: res.locals.user.name,
+        hash: hashAccess
+      }
+      const newAccessToken = auth.generateAccessToken(newUser);
+      
+      // Secure, hardened cookies
+      res.cookie('userContextAccess', randStringAccess, secureCookieConfig);
+      res.json({ token: newAccessToken});
+  }
   )
 
   app.get('/auth/google',
@@ -61,29 +80,34 @@ module.exports = (app, db, auth, passport) => {
     session: false
   }), async (req, res, next) => {
 
-    // Generate random string and hash for user context verification.
-    const randomString = await auth.getRandomString();
-    console.log("Random String:", randomString)
-
-    let hash;
-    // If hash fails, return status 500.
+    // // Generate random string and hash for user context verification.
+    let randStringAccess, hashAccess;
+    let randStringRefresh, hashRefresh;
     try {
-      hash = await auth.hashString(randomString);
+      [randStringAccess, hashAccess] = await auth.getRandomStringAndHash();
+      [randStringRefresh, hashRefresh] = await auth.getRandomStringAndHash();
     } catch(err) {
       res.sendStatus(500);
       return
     }
 
-    console.log("Hashed String:", hash)
+    console.log("User context access?:", randStringAccess, hashAccess)
+    console.log("User context refresh?:", randStringRefresh, hashRefresh)
+    console.log("Hashed access String:", hashAccess)
+    console.log("Hashed refresh String:", hashRefresh)
 
     // On successful authentication, respond with JWT token.
-    const user = {
+    const userAccess = {
       name: req.user.id,
-      hash: hash
+      hash: hashAccess
+    }
+    const userRefresh = {
+      name: req.user.id,
+      hash: hashRefresh
     }
 
-    const accessToken = auth.generateAccessToken(user);
-    const refreshToken = auth.generateRefreshToken(user);
+    const accessToken = auth.generateAccessToken(userAccess);
+    const refreshToken = auth.generateRefreshToken(userRefresh);
     console.log("accessToken:", accessToken)
     console.log("refreshToken:", refreshToken)
 
@@ -96,7 +120,8 @@ module.exports = (app, db, auth, passport) => {
       res.cookie('refreshToken', refreshToken, semiSecureCookieConfig)
 
       // Secure, hardened cookies
-      res.cookie('userContext', randomString, secureCookieConfig);
+      res.cookie('userContextAccess', randStringAccess, secureCookieConfig);
+      res.cookie('userContextRefresh', randStringRefresh, secureCookieConfig);
 
       res.redirect('http://localhost:3000/')
 

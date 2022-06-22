@@ -70,15 +70,30 @@ function App() {
     }
   }
 
+  const refreshAccessToken = async () => {
+    const res = await fetch('http://localhost:6500/token', {
+      method: 'POST',
+      credentials: 'include', // Include cookies in request
+      headers: {
+        Authorization: `token ${window.sessionStorage.getItem('refreshToken')}`
+      }
+    })
+    const data = await res.json()
+    console.log('Testing Auth results:', data)
+    await window.sessionStorage.setItem('accessToken', data.token);
+    setAccessToken(data.token)
+  }
+
   const testRequest = async () => {
-    const stuff = await fetch('http://localhost:6500/testauth', {
+    const res = await fetch('http://localhost:6500/testauth', {
       method: 'POST',
       credentials: 'include', // Include cookies in request
       headers: {
         Authorization: `token ${window.sessionStorage.getItem('accessToken')}`
       }
     })
-    console.log('Testing Auth results:', stuff)
+    const data = await res.json()
+    console.log('Testing Auth results:', data)
   }
 
   const [accessToken, setAccessToken] = useState('')
@@ -100,7 +115,9 @@ function App() {
             Logged In: { loggedIn.toString() }<br />
             Access Token: { accessToken }<br />
             Refresh Token:  { refreshToken }<br />
-            <button onClick={testRequest}>Test auth stuff</button>
+            <button onClick={testRequest}>Test auth stuff</button><br />
+            
+            <button onClick={refreshAccessToken}>Refresh Access token?</button>
             </>
           } />
           <Route path="/login" element={

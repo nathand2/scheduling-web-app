@@ -20,7 +20,6 @@ const saltRounds = 5;
  * @param {*} res a response
  */
 exports.authenticateToken = (req, res, next) => {
-  // const token = req.body.accessToken;
   const authHeader = req.headers.authorization;
 
   if (!authHeader) {
@@ -31,16 +30,16 @@ exports.authenticateToken = (req, res, next) => {
   // Get JWT from Authorization header
   const token = authHeader.split(' ')[1];
 
-  const userContext = req.cookies.userContext;
+  const userContext = req.cookies.userContextAccess;
 
   jwt.verify(token, accessTokenSecret, (err, user) => {
     if (err) return res.sendStatus(403);
 
-    const userContextHashed = user.hash;
+    const userContextHashed = user.hash; // User context for access token
     console.log("Context:")
     console.log(userContextHashed)
     console.log(userContext)
-    
+
     // Verify user context.
     bcrypt.compare(userContext, userContextHashed, function(err, result) {
       if (err){
@@ -85,16 +84,46 @@ exports.generateRefreshToken = (user) => {
  */
 exports.refreshAccessToken = (req, res, next) => {
   const refreshToken = res.locals.refreshToken
+  
+  const userContext = req.cookies.userContextRefresh;
+  console.log("PLEASE REFRESH TOKEN:", refreshToken)
+
+  // Verify user context
   jwt.verify(refreshToken, refreshTokenSecret, (err, user) => {
-    if (err){
-      res.sendStatus(403);
-      return;
-    }
-    const accessToken = this.generateAccessToken({ name: user.name })
-    console.log("Generated access token:", accessToken)
-    res.json({ accessToken: accessToken })
-    next()
+    if (err) return res.sendStatus(403);
+
+    const userContextHashed = user.hash; // User context for access token
+    console.log("Context:")
+    console.log(userContextHashed)
+    console.log(userContext)
+
+    // Verify user context.
+    bcrypt.compare(userContext, userContextHashed, function(err, result) {
+      if (err){
+        res.sendStatus(500)
+        return
+      }
+      console.log("bcrypt result:", result)
+      if (result) {
+        res.locals.user = user;
+        next();
+      } else {
+        res.sendStatus(401)
+        return
+      }
+    });
   })
+
+  // jwt.verify(refreshToken, refreshTokenSecret, (err, user) => {
+  //   if (err){
+  //     res.sendStatus(403);
+  //     return;
+  //   }
+  //   const accessToken = this.generateAccessToken({ name: user.name })
+  //   console.log("Generated access token:", accessToken)
+  //   res.json({ accessToken: accessToken })
+  //   next()
+  // })
 }
 
 /**
@@ -105,7 +134,7 @@ exports.refreshAccessToken = (req, res, next) => {
   return await new Promise((resolve, reject) => {
     crypto.randomBytes(24, (err, buffer) => {
       if (err) {
-        reject(-1);
+        throw err
       }
       resolve(buffer.toString('base64'));
     });
@@ -125,4 +154,14 @@ exports.hashString = async (input) => {
     });
   })
   return hashedPassword
+}
+
+exports.getRandomStringAndHash = async () => {
+  try {
+    const randString = await this.getRandomString();
+    const stringHash = await this.hashString(randString);
+    return [randString, stringHash];
+  } catch (err) {
+    throw err
+  }
 }
