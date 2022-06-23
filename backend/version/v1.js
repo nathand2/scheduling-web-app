@@ -28,24 +28,29 @@ module.exports = (app, db, auth, passport) => {
 
   /**
    * Route to refresh access token using refresh token
+   * 
+   * Requests needs refresh token included in authorization header.
+   * Requests need valid fingerprint(user context) in hardened http-only cookie.
+   * 
    */
-  app.post('/token', async (req, res, next) => {
+  app.post('/token', auth.checkIfFingerPrintExists, async (req, res, next) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) {
+      console.log("401: No auth header")
       res.sendStatus(401); // No authorization header
       return;
     }
     // Get JWT from Authorization header
     const refreshToken = authHeader.split(' ')[1];
-    
-    if (refreshToken == null) {
-      res.sendStatus(401)
+    if (!refreshToken) {
+      console.log("401: No refresh token")
+      res.sendStatus(401) // No refresh token in auth header
       return
     }
     try {
       // Check if refresh token exists in db of valid refresh tokens.
       if (!await db.refreshTokenExists(refreshToken)) {
-        res.sendStatus(403)
+        res.sendStatus(403) //
         return
       } 
     } catch(err) {
@@ -55,18 +60,22 @@ module.exports = (app, db, auth, passport) => {
     // Res.locals to pass variable to middleware.
     res.locals.refreshToken = refreshToken;
     next()
-  }, auth.refreshAccessToken, async (req, res, next) => {
-      let randStringAccess, hashAccess;
-      [randStringAccess, hashAccess] = await auth.getRandomStringAndHash();
-      const newUser = {
-        name: res.locals.user.name,
-        hash: hashAccess
-      }
-      const newAccessToken = auth.generateAccessToken(newUser);
-      
-      // Secure, hardened cookies
-      res.cookie('userContextAccess', randStringAccess, secureCookieConfig);
-      res.json({ token: newAccessToken});
+  },
+  auth.refreshAccessToken
+  ,
+  async (req, res, next) => {
+    let randStringAccess, hashAccess;
+    // Gets random string and it's hash for fingerprint
+    [randStringAccess, hashAccess] = await auth.getRandomStringAndHash();
+    const newUser = {
+      name: res.locals.user.name,
+      hash: hashAccess
+    }
+    const newAccessToken = auth.generateAccessToken(newUser);
+    
+    // Secure, hardened cookies
+    res.cookie('userContextAccess', randStringAccess, secureCookieConfig);
+    res.json({ token: newAccessToken});
   }
   )
 
@@ -136,7 +145,7 @@ module.exports = (app, db, auth, passport) => {
   /**
    * Deletes Refresh Tokens
    */
-  app.delete("/logout", (req,res) => {
+  app.delete("/logout", (req, res) => {
     // Get refresh token from authorization headers
     const authHeader = req.headers.authorization;
     if (!authHeader) {

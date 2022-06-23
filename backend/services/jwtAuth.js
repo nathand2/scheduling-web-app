@@ -20,8 +20,14 @@ const saltRounds = 5;
  * @param {*} res a response
  */
 exports.authenticateToken = (req, res, next) => {
-  const authHeader = req.headers.authorization;
+  // Check fingerprint (user context)
+  if(!req.cookies.userContextAccess) {
+    console.log("401: No fingerprint")
+    res.sendStatus(401); // No fingerprint
+    return;
+  }
 
+  const authHeader = req.headers.authorization;
   if (!authHeader) {
     res.sendStatus(401); // No authorization header
     return;
@@ -86,7 +92,6 @@ exports.refreshAccessToken = (req, res, next) => {
   const refreshToken = res.locals.refreshToken
   
   const userContext = req.cookies.userContextRefresh;
-  console.log("PLEASE REFRESH TOKEN:", refreshToken)
 
   // Verify user context
   jwt.verify(refreshToken, refreshTokenSecret, (err, user) => {
@@ -113,17 +118,15 @@ exports.refreshAccessToken = (req, res, next) => {
       }
     });
   })
+}
 
-  // jwt.verify(refreshToken, refreshTokenSecret, (err, user) => {
-  //   if (err){
-  //     res.sendStatus(403);
-  //     return;
-  //   }
-  //   const accessToken = this.generateAccessToken({ name: user.name })
-  //   console.log("Generated access token:", accessToken)
-  //   res.json({ accessToken: accessToken })
-  //   next()
-  // })
+exports.checkIfFingerPrintExists = (req, res, next) => {
+  if(!req.cookies.userContextAccess && !req.cookies.userContextRefresh) {
+    console.log("401: No fingerprint")
+    res.sendStatus(401); // No fingerprint
+    return;
+  }
+  next();
 }
 
 /**

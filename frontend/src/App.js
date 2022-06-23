@@ -7,6 +7,15 @@ import LogIn from './components/LogIn'
 import SignUp from './components/SignUp'
 
 function App() {
+  
+  const [accessToken, setAccessToken] = useState('')
+  const [refreshToken, setRefreshToken] = useState('')
+  const [loggedIn, setLoggedIn] = useState(false)
+  
+  useEffect(() => {
+    processJWTTokens();
+  }, [])
+  
   const getCookie = (name) => {
     const value = `; ${document.cookie}`;
     const parts = value.split(`; ${name}=`);
@@ -95,15 +104,6 @@ function App() {
     const data = await res.json()
     console.log('Testing Auth results:', data)
   }
-
-  const [accessToken, setAccessToken] = useState('')
-  const [refreshToken, setRefreshToken] = useState('')
-  const [loggedIn, setLoggedIn] = useState(false)
-  
-  useEffect(() => {
-    processJWTTokens();
-  }, [])
-
   return (
     <Router>
       <div className="App">
