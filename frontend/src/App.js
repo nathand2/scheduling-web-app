@@ -5,6 +5,8 @@ import { useState, useEffect } from 'react'
 import Header from './components/Header'
 import LogIn from './components/LogIn'
 import SignUp from './components/SignUp'
+import Sessions from './components/Sessions'
+import Groups from './components/Groups'
 
 import {RequestHandler} from './js/requestHandler'
 
@@ -152,6 +154,16 @@ function App() {
             <button onClick={testRequest}>Test auth stuff</button><br />
             
             <button onClick={refreshAccessToken}>Refresh Access token?</button>
+            </>
+          } />
+          <Route path="/sessions" element={
+            <>
+            <Sessions />
+            </>
+          } />
+          <Route path="/groups" element={
+            <>
+            <Groups />
             </>
           } />
           <Route path="/login" element={

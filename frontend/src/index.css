@@ -9,4 +9,16 @@
   -webkit-transition-timing-function: ease;
           transition-timing-function: ease;
 }
+
+.link-plain {
+  text-decoration: none;
+}
+
+.sessions-preview {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -ms-flex-wrap: wrap;
+      flex-wrap: wrap;
+}
 /*# sourceMappingURL=index.css.map */
