@@ -68,7 +68,7 @@ export class RequestHandler {
         method: 'POST',
         credentials: 'include', // Include cookies in request
         headers: {
-          Authorization: `token ${window.sessionStorage.getItem('refreshToken')}`
+          Authorization: `token ${window.localStorage.getItem('refreshToken')}`
         }
       })
       if (res.status === 200 || res.status === 204) {
@@ -78,7 +78,7 @@ export class RequestHandler {
         return await this.followUpReq(resource, reqMethod, body);
       } else if (res.status === 401 || res.status === 403) {
         // Invalid refresh token
-        return {status: "Invalid Refresh Token"}
+        throw new Error("Invalid refresh token")
       } else {
         throw new Error("Internal error");
       }
