@@ -89,12 +89,6 @@ function App() {
         Authorization: `token ${window.sessionStorage.getItem('refreshToken')}`
       }
     })
-    // let res;
-    // try {
-    //   res = await RequestHandler.req('/token', 'POST')
-    // } catch(err) {
-    //   console.log("Error:", err);
-    // }
     const data = await res.json()
     console.log('Testing Auth results:', data)
     await window.sessionStorage.setItem('accessToken', data.token);
@@ -102,14 +96,6 @@ function App() {
   }
 
   const testRequest = async () => {
-    // const res = await fetch('http://localhost:6500/testauth', {
-    //   method: 'POST',
-    //   credentials: 'include', // Include cookies in request
-    //   headers: {
-    //     Authorization: `token ${window.sessionStorage.getItem('accessToken')}`
-    //   }
-    // })
-
     let data;
     try {
       data = await RequestHandler.req('/testauth', 'POST')
