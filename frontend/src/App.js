@@ -14,7 +14,9 @@ function App() {
   const [refreshToken, setRefreshToken] = useState('')
   const [loggedIn, setLoggedIn] = useState(false)
   
+  // When app loaded, manage login state
   useEffect(() => {
+    attemptLogIn();
     processJWTTokens();
   }, [])
   
@@ -28,8 +30,17 @@ function App() {
     document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
   }
 
-  const setSessionStorageJWTTokens = async () => {
+  const attemptLogIn = () => {
+    if (window.localStorage.getItem('refreshToken')) {
+      console.log("localStorage Refresh token found")
+      refreshAccessToken()
+    } else {
+      console.log("No localStorage refresh token")
+    }
+  }
 
+  const setSessionStorageJWTTokens = async () => {
+    // Get JWT and refresh token from cookies.
     const accessToken = getCookie('accessToken');
     const refreshToken = getCookie('refreshToken');
 
@@ -37,7 +48,7 @@ function App() {
       await window.sessionStorage.setItem('accessToken', accessToken);
     }
     if (refreshToken !== undefined) {
-      await window.sessionStorage.setItem('refreshToken', refreshToken);
+      await window.localStorage.setItem('refreshToken', refreshToken);
     }
   }
 
@@ -47,7 +58,7 @@ function App() {
     deleteCookie('refreshToken')
 
     setAccessToken(window.sessionStorage.getItem('accessToken'))
-    setRefreshToken(window.sessionStorage.getItem('refreshToken'))
+    setRefreshToken(window.localStorage.getItem('refreshToken'))
 
     if (isLoggedIn()) {
       setLoggedIn(true)
@@ -59,21 +70,26 @@ function App() {
 
   const logOut = async () => {
     console.log("attempt to log out")
-    await fetch('http://localhost:6500/logout', {
-      method: 'DELETE',
-      headers: {
-        Authorization: `token ${window.sessionStorage.getItem('refreshToken')}`
-      }
-    });
-    sessionStorage.removeItem('refreshToken');
-    sessionStorage.removeItem('accessToken');
-    setLoggedIn(false)
-    setAccessToken("")
-    setRefreshToken("")
+    try {
+      await fetch('http://localhost:6500/logout', {
+        method: 'DELETE',
+        headers: {
+          Authorization: `token ${window.localStorage.getItem('refreshToken')}`
+        }
+      });
+      localStorage.removeItem('refreshToken');
+      sessionStorage.removeItem('accessToken');
+      setLoggedIn(false)
+      setAccessToken("")
+      setRefreshToken("")
+    } catch(err) {
+      console.log("Error when logging out")
+    }
   }
 
+  // Determine if user logged in
   const isLoggedIn = () => {
-    if (sessionStorage.getItem("refreshToken") === null) {
+    if (localStorage.getItem("refreshToken") === null) {
       console.log("No refreshtoken found")
       return false
     } else {
@@ -81,19 +97,34 @@ function App() {
     }
   }
 
+  // Manually refresh JWT
   const refreshAccessToken = async () => {
-    const res = await fetch('http://localhost:6500/token', {
-      method: 'POST',
-      credentials: 'include', // Include cookies in request
-      headers: {
-        Authorization: `token ${window.sessionStorage.getItem('refreshToken')}`
+    try {
+      const res = await fetch('http://localhost:6500/token', {
+        method: 'POST',
+        credentials: 'include', // Include cookies in request
+        headers: {
+          Authorization: `token ${window.localStorage.getItem('refreshToken')}`
+        }
+      })
+      if (res.status === 200 || res.status === 204) {
+        const data = await res.json();
+
+        // Set new accessToken in sessionStorage and resend original request
+        await window.sessionStorage.setItem('accessToken', data.token);
+        setAccessToken(data.token);
+      } else if (res.status === 401 || res.status === 403) {
+        // Invalid refresh token
+        throw new Error("Invalid refresh token")
+      } else {
+        throw new Error("Internal error");
       }
-    })
-    const data = await res.json()
-    console.log('Testing Auth results:', data)
-    await window.sessionStorage.setItem('accessToken', data.token);
-    setAccessToken(data.token)
+    } catch(err) {
+      console.log(err)
+      logOut()
+    }
   }
+  
 
   const testRequest = async () => {
     let data;
@@ -106,6 +137,7 @@ function App() {
     console.log('Testing Auth results data:', data)
     setAccessToken(await window.sessionStorage.getItem('accessToken'))
   }
+
   return (
     <Router>
       <div className="App">
