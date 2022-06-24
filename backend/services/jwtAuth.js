@@ -7,9 +7,12 @@
 
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt')
+const crypto = require('crypto')
 
 const accessTokenSecret = process.env.ACCESS_TOKEN_SECRET;
 const refreshTokenSecret = process.env.REFRESH_TOKEN_SECRET;
+const jwtExpiresIn = '10m';
+const saltRounds = 5;
 
 /**
  * Authenticates token is authorization header
@@ -17,25 +20,32 @@ const refreshTokenSecret = process.env.REFRESH_TOKEN_SECRET;
  * @param {*} res a response
  */
 exports.authenticateToken = (req, res, next) => {
-  // console.log("Trying to authenticate token")
-  // const authHeader = req.headers['authorization']
-  // const token = authHeader && authHeader.split(' ')[1]
-  const token = req.body.accessToken;
-  console.log("cookies:", req.cookies)
-  console.log("token?", token)
-  console.log("body", req.body)
-  const userContext = req.cookies.userContext;
+  // Check fingerprint (user context)
+  if(!req.cookies.userContextAccess) {
+    console.log("401: No fingerprint")
+    res.sendStatus(401); // No fingerprint
+    return;
+  }
 
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    res.sendStatus(401); // No authorization header
+    return;
+  }
 
-  if (token == null) return res.sendStatus(401);
+  // Get JWT from Authorization header
+  const token = authHeader.split(' ')[1];
+
+  const userContext = req.cookies.userContextAccess;
 
   jwt.verify(token, accessTokenSecret, (err, user) => {
     if (err) return res.sendStatus(403);
 
-    const userContextHashed = user.hash;
+    const userContextHashed = user.hash; // User context for access token
     console.log("Context:")
     console.log(userContextHashed)
     console.log(userContext)
+
     // Verify user context.
     bcrypt.compare(userContext, userContextHashed, function(err, result) {
       if (err){
@@ -59,7 +69,7 @@ exports.authenticateToken = (req, res, next) => {
  * @returns jwt access token
  */
 exports.generateAccessToken = (user) => {
-  const accessToken = jwt.sign(user, accessTokenSecret, { expiresIn: '5m' });
+  const accessToken = jwt.sign(user, accessTokenSecret, { expiresIn: jwtExpiresIn });
   return accessToken;
 }
 
@@ -80,14 +90,81 @@ exports.generateRefreshToken = (user) => {
  */
 exports.refreshAccessToken = (req, res, next) => {
   const refreshToken = res.locals.refreshToken
+  
+  const userContext = req.cookies.userContextRefresh;
+
+  // Verify user context
   jwt.verify(refreshToken, refreshTokenSecret, (err, user) => {
-    if (err){
-      res.sendStatus(403);
-      return;
-    }
-    const accessToken = this.generateAccessToken({ name: user.name })
-    console.log("Generated access token:", accessToken)
-    res.json({ accessToken: accessToken })
-    next()
+    if (err) return res.sendStatus(403);
+
+    const userContextHashed = user.hash; // User context for access token
+    console.log("Context:")
+    console.log(userContextHashed)
+    console.log(userContext)
+
+    // Verify user context.
+    bcrypt.compare(userContext, userContextHashed, function(err, result) {
+      if (err){
+        res.sendStatus(500)
+        return
+      }
+      console.log("bcrypt result:", result)
+      if (result) {
+        res.locals.user = user;
+        next();
+      } else {
+        res.sendStatus(401)
+        return
+      }
+    });
   })
+}
+
+exports.checkIfFingerPrintExists = (req, res, next) => {
+  if(!req.cookies.userContextAccess && !req.cookies.userContextRefresh) {
+    console.log("401: No fingerprint")
+    res.sendStatus(401); // No fingerprint
+    return;
+  }
+  next();
+}
+
+/**
+ * Gets random string.
+ * @returns random string
+ */
+ exports.getRandomString = async () => {
+  return await new Promise((resolve, reject) => {
+    crypto.randomBytes(24, (err, buffer) => {
+      if (err) {
+        throw err
+      }
+      resolve(buffer.toString('base64'));
+    });
+  });
+}
+
+/**
+ * Hashes a string using crypto. TODO: Consider using bcrypt
+ * @param {string} input 
+ * @returns hashed string
+ */
+exports.hashString = async (input) => {
+  const hashedPassword = new Promise((resolve, reject) => {
+    bcrypt.hash(input, saltRounds, function(err, hash) {
+      if (err) reject(err)
+      resolve(hash)
+    });
+  })
+  return hashedPassword
+}
+
+exports.getRandomStringAndHash = async () => {
+  try {
+    const randString = await this.getRandomString();
+    const stringHash = await this.hashString(randString);
+    return [randString, stringHash];
+  } catch (err) {
+    throw err
+  }
 }
