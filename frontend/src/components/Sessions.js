@@ -58,7 +58,7 @@ const Sessions = () => {
     <div>
       Sessions
       <Container className='sessions-preview d-flex flex-wrap bd-highlight'>
-      
+      {/* <a href='/sessioncreate'> */}
         <Card style={{ width: '18rem' }} bg="secondary" text="white">
             <Link to='/sessioncreate' className='link-plain'>
             <Card.Body>
@@ -69,6 +69,7 @@ const Sessions = () => {
             </Card.Body>
           </Link>
         </Card>
+        {/* </a> */}
         {
           sessions.map((session) => (<SessionCard id={session.id} title={session.title} desc={session.desc} dt_created={session.dt_created} status={session.status}  />))
         }
