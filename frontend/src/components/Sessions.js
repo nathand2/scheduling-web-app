@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
+
 import { Container } from 'react-bootstrap';
+import Card from 'react-bootstrap/Card';
 
 import SessionCard from './SessionCard'
 
@@ -55,6 +58,17 @@ const Sessions = () => {
     <div>
       Sessions
       <Container className='sessions-preview d-flex flex-wrap bd-highlight'>
+      
+        <Card style={{ width: '18rem' }} bg="secondary" text="white">
+            <Link to='/sessioncreate' className='link-plain'>
+            <Card.Body>
+            <Card.Title>Add</Card.Title>
+            <Card.Text className='link-plain'>
+              Add stuff
+            </Card.Text>
+            </Card.Body>
+          </Link>
+        </Card>
         {
           sessions.map((session) => (<SessionCard id={session.id} title={session.title} desc={session.desc} dt_created={session.dt_created} status={session.status}  />))
         }

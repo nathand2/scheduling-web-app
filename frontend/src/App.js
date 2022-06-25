@@ -6,6 +6,7 @@ import Header from './components/Header'
 import LogIn from './components/LogIn'
 import SignUp from './components/SignUp'
 import Sessions from './components/Sessions'
+import SessionCreate from './components/SessionCreate'
 import Groups from './components/Groups'
 
 import {RequestHandler} from './js/requestHandler'
@@ -154,6 +155,11 @@ function App() {
             <button onClick={testRequest}>Test auth stuff</button><br />
             
             <button onClick={refreshAccessToken}>Refresh Access token?</button>
+            </>
+          } />
+          <Route path="/sessioncreate" element={
+            <>
+            <SessionCreate />
             </>
           } />
           <Route path="/sessions" element={
