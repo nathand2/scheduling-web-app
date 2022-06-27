@@ -1,6 +1,6 @@
 import "flatpickr/dist/themes/material_green.css";
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Flatpickr from "react-flatpickr";
 import Form from "react-bootstrap/Form"
 import Button from "react-bootstrap/Button"
@@ -17,10 +17,6 @@ const SessionCreate = () => {
     minuteIncrement: 5,
   }
 
-  const datePlus24Hrs = () => {
-    return new Date(new Date().getTime() + 60 * 60 * 24 * 1000);
-  }
-
   const createSession = (e) => {
     e.preventDefault();
     const session = {
@@ -31,6 +27,9 @@ const SessionCreate = () => {
       viewOption: viewOption,
     }
     console.log("Session:", session)
+
+    // Simulate an HTTP redirect:
+    window.location.replace(`/session/${Math.floor(Math.random() * 100)}`);
   }
 
   return (
@@ -94,7 +93,7 @@ const SessionCreate = () => {
 
         <Form.Group className="mb-3">
           <Button variant="primary" type="submit">
-            Submit
+            Submit (Go to fake session)
           </Button>
         </Form.Group>
       </Form>

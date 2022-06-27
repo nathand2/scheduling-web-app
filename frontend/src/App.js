@@ -7,6 +7,7 @@ import LogIn from './components/LogIn'
 import SignUp from './components/SignUp'
 import Sessions from './components/Sessions'
 import SessionCreate from './components/SessionCreate'
+import Session from './components/Session'
 import Groups from './components/Groups'
 
 import {RequestHandler} from './js/requestHandler'
@@ -180,6 +181,11 @@ function App() {
           <Route path="/signup" element={
             <>
             <SignUp />
+            </>
+          } />
+          <Route path="/session/:id" element={
+            <>
+            <Session />
             </>
           } />
         </Routes>
