@@ -59,13 +59,13 @@ CREATE TABLE user_session (
 
 CREATE TABLE session_time_range (
   id bigint NOT NULL AUTO_INCREMENT UNIQUE,
-  user_session_id int NOT NULL,
+  user_session_id bigint NOT NULL,
   dt_start datetime NOT NULL,
   dt_end datetime NOT NULL,
   status varchar(20) NOT NULL DEFAULT "going",
   PRIMARY KEY (id, user_session_id),
   FOREIGN KEY (user_session_id) REFERENCES user_session(id) ON DELETE CASCADE
-)
+);
 
 CREATE TABLE session_invite (
   id bigint NOT NULL AUTO_INCREMENT UNIQUE,
@@ -76,8 +76,8 @@ CREATE TABLE session_invite (
   PRIMARY KEY (id),
   FOREIGN KEY (group_id) REFERENCES group_(id) ON DELETE CASCADE,
   FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
-  FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE
-)
+  FOREIGN KEY (session_id) REFERENCES session(id) ON DELETE CASCADE
+);
 
 CREATE TABLE group_invitation (
   id bigint NOT NULL AUTO_INCREMENT UNIQUE,
