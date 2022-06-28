@@ -6,8 +6,6 @@ const dbUser = {
   database: 'scheduler'
 };
 
-const tagGenRounds = 50
-
 /**
  * TODO: Error checking if MySQL server is down not fully implemented
  */

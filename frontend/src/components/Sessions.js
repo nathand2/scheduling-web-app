@@ -71,7 +71,7 @@ const Sessions = () => {
         </Card>
         {/* </a> */}
         {
-          sessions.map((session) => (<SessionCard id={session.id} title={session.title} desc={session.desc} dt_created={session.dt_created} status={session.status}  />))
+          sessions.map((session) => (<SessionCard key={session.id} title={session.title} desc={session.desc} dt_created={session.dt_created} status={session.status}  />))
         }
       </Container>
     </div>

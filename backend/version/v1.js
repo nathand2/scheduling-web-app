@@ -101,12 +101,6 @@ module.exports = (app, db, auth, passport) => {
       res.sendStatus(500);
       return
     }
-
-    console.log("User context access?:", randStringAccess, hashAccess)
-    console.log("User context refresh?:", randStringRefresh, hashRefresh)
-    console.log("Hashed access String:", hashAccess)
-    console.log("Hashed refresh String:", hashRefresh)
-
     console.log("User:", req.user)
 
     // On successful authentication, respond with JWT token.
@@ -123,8 +117,6 @@ module.exports = (app, db, auth, passport) => {
 
     const accessToken = auth.generateAccessToken(userAccess);
     const refreshToken = auth.generateRefreshToken(userRefresh);
-    console.log("accessToken:", accessToken)
-    console.log("refreshToken:", refreshToken)
 
     // Add token to db
     try {
