@@ -7,6 +7,7 @@ export class RequestHandler {
 
   // Handles API requests and silent JWT refresh if needed.
   static async req(resource, reqMethod, reqBody=undefined) {
+    console.log("1")
     try {
       const res = await fetch(`${this.endpointRoot + resource}`, {
         method: reqMethod,
@@ -38,6 +39,7 @@ export class RequestHandler {
    * @returns 
    */
   static async followUpReq(resource, reqMethod, reqBody=undefined) {
+    console.log("2")
     try {
       const res = await fetch(`${this.endpointRoot + resource}`, {
         method: reqMethod,

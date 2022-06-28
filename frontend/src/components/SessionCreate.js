@@ -6,6 +6,8 @@ import Form from "react-bootstrap/Form"
 import Button from "react-bootstrap/Button"
 import Container from 'react-bootstrap/Container';
 
+import {RequestHandler} from '../js/requestHandler'
+
 const SessionCreate = () => {
   const [title, setTitle] = useState('')
   const [desc, setDesc] = useState('')
@@ -17,19 +19,28 @@ const SessionCreate = () => {
     minuteIncrement: 5,
   }
 
-  const createSession = (e) => {
+  const createSession = async (e) => {
     e.preventDefault();
     const session = {
       title: title,
-      desc: desc,
+      desc: desc === "" ? undefined : desc,
       dtStart: dtStart,
       dtEnd: dtEnd,
-      viewOption: viewOption,
+      attendType: viewOption,
     }
     console.log("Session:", session)
 
+    let data;
+    try {
+      data = await RequestHandler.req('/session', 'POST', session)
+      console.log("New session ID:", data)
+    } catch(err) {
+      console.log("Error:", err);
+    }
+
+
     // Simulate an HTTP redirect:
-    window.location.replace(`/session/${Math.floor(Math.random() * 100)}`);
+    // window.location.replace(`/session/${Math.floor(Math.random() * 100)}`);
   }
 
   return (

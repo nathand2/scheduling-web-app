@@ -61,16 +61,16 @@ exports.googleAuth = async (googleID) => {
 
   try {
     // Check if google user exists in database.
-    const results = await dbConnection(`SELECT * FROM users WHERE google_id = ${googleID};`);
+    const results = await dbConnection(`SELECT * FROM user WHERE google_id = ${googleID};`);
     console.log("Query Results:", results);
 
     // If google user doesn't yet exist, add google user to db.
     if (!results.length > 0) {
-      await dbConnection(`INSERT INTO users (google_id) VALUES (${googleID});`);
+      await dbConnection(`INSERT INTO user (google_id) VALUES (${googleID});`);
       console.log("Added user to db with google_id:", googleID);
 
       // Returns userID of first user found in db
-      const userID = (await dbConnection(`SELECT * FROM users WHERE google_id = ${googleID} LIMIT 1;`))[0].id;
+      const userID = (await dbConnection(`SELECT * FROM user WHERE google_id = ${googleID} LIMIT 1;`))[0].id;
       return userID;
     } else {
       console.log("Existing Google User logged in.");
@@ -134,5 +134,17 @@ exports.deleteRefreshToken = async (token) => {
     return;
   } catch (err) {
     throw err;
+  }
+}
+
+exports.createSession = async (title, dt_start, dt_end, attendType, desc=undefined, groupID=undefined) => {
+  try {
+    const results = await dbConnection(`INSERT INTO session (group_id, session_desc, session_title, dt_created, dt_expires, attend_type) VALUES (${(groupID === undefined ? "NULL" : groupID) + ", "}${(desc === undefined ? "NULL" : "'" + desc + "'") + ', '}'${title}', '${dt_start}', '${dt_end}', '${attendType}')`)
+    console.log("Session query:", `INSERT INTO INSERT INTO session (group_id, session_desc, session_title, dt_created, dt_expires, attend_type) VALUES (${(groupID === undefined ? "NULL" : groupID) + ", "}${(desc === undefined ? "NULL" : "'" + desc + "'") + ', '}'${title}', '${dt_start}', '${dt_end}', '${attendType}')`)
+    // console.log("Inserted ID:", results)
+    console.log("Inserted ID:", results.insertId)
+    return results.insertId
+  } catch(err) {
+    throw err
   }
 }

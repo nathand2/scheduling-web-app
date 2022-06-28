@@ -165,4 +165,18 @@ module.exports = (app, db, auth, passport) => {
     }
   })
 
+  /**
+   * Session Endpoints
+   */
+
+  app.post("/session", auth.authenticateToken, (req, res) => {
+    const {title, desc, dtStart, dtEnd, attendType} = req.body;
+    try {
+      db.createSession(title, dtStart, dtEnd, attendType, desc)
+    } catch(err) {
+      res.sendStatus(500) // Internal db error.
+      return
+    }
+  })
+
 }

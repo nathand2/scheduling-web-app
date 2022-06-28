@@ -14,6 +14,7 @@ const authUser = async (request, accessToken, refreshToken, profile, done) => {
   } catch (err) {
     // Don't authenticate if error
     console.log("Google Strategy Caught error:", err.code);
+    console.log(err)
     return done(null, null); // Reject Authentication
   }
   return done(null, profile);
