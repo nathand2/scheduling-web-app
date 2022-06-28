@@ -169,14 +169,36 @@ module.exports = (app, db, auth, passport) => {
    * Session Endpoints
    */
 
-  app.post("/session", auth.authenticateToken, (req, res) => {
+  app.post("/session", auth.authenticateToken, async (req, res) => {
     const {title, desc, dtStart, dtEnd, attendType} = req.body;
     try {
-      db.createSession(title, dtStart, dtEnd, attendType, desc)
+      const sessionId = await db.createSession(title, dtStart, dtEnd, attendType, desc)
+      console.log("User:", res.locals.user)
+      const userId = await db.getUserIdByUsername(res.locals.user.name)
+      const userSessionId =  await db.createUserSession(userId, sessionId, 'owner')
+      console.log("New session with id:", sessionId)
     } catch(err) {
+      console.log(err)
       res.sendStatus(500) // Internal db error.
       return
     }
+  })
+
+  app.get("/session/:id", auth.authenticateToken, async (req, res) => {
+  try {
+    const sessionId = req.params.id;
+    const userId = await db.getUserIdByUsername(res.locals.user.name)
+    const results = await db.getSession(userId, sessionId)
+    if (results.status == 200) {
+      res.json({session: results.session})
+    } else {
+      res.sendStatus(results.status)
+    }
+  } catch(err) {
+    console.log(err)
+    res.sendStatus(500) // Internal db error.
+    return
+  }
   })
 
 }

@@ -148,3 +148,45 @@ exports.createSession = async (title, dt_start, dt_end, attendType, desc=undefin
     throw err
   }
 }
+
+exports.createUserSession = async (userId, sessionId, role) => {
+  try {
+    const results = await dbConnection(`INSERT INTO user_session (user_id, session_id, role) VALUES (${userId}, ${sessionId}, '${role}');`)
+    console.log("Inserted UserSession ID:", results.insertId)
+    return results.insertId
+  } catch(err) {
+    throw err
+  }
+}
+
+exports.getUserIdByUsername = async (username) => {
+  try {
+    const results = await dbConnection(`SELECT id FROM user WHERE google_id = ${username};`)
+    console.log("Got user id:", results[0].id)
+    return results[0].id
+  } catch(err) {
+    throw err
+  }
+}
+
+exports.getSession = async (userId, sessionId) => {
+  try {
+    // // See if session exists
+    const sessionResults = await dbConnection(`SELECT * FROM session WHERE id = ${sessionId}`)
+    if (sessionResults.length === 0) {
+      return {status: 404} // Session Not found
+    }
+
+    // Check if user_session exists
+    const results = await dbConnection(`SELECT session_id FROM user_session WHERE user_id = ${userId} AND session_id = ${sessionId};`)
+    console.log("Got user session:", results[0].session_id)
+    if (results.length > 0) {
+      return {status: 200, session: sessionResults[0]}
+    } else {
+      // User Session doesnt exist. 403 Forbidden
+      return {status: 403}
+    }
+  } catch(err) {
+    throw err
+  }
+}

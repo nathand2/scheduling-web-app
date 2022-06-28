@@ -54,6 +54,7 @@ exports.authenticateToken = (req, res, next) => {
       }
       console.log("bcrypt result:", result)
       if (result) {
+        res.locals.user = user
         next() // Serve content using next callback
       } else {
         res.sendStatus(401)
