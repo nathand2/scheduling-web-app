@@ -15,7 +15,7 @@ const jwtExpiresIn = '10m';
 const saltRounds = 5;
 
 /**
- * Authenticates token is authorization header
+ * Authenticates token in authorization header
  * @param {*} req a request
  * @param {*} res a response
  */
@@ -54,6 +54,7 @@ exports.authenticateToken = (req, res, next) => {
       }
       console.log("bcrypt result:", result)
       if (result) {
+        console.log("JWTAUTH USER:", user)
         res.locals.user = user
         next() // Serve content using next callback
       } else {
@@ -70,6 +71,7 @@ exports.authenticateToken = (req, res, next) => {
  * @returns jwt access token
  */
 exports.generateAccessToken = (user) => {
+  console.log("Generating access token for user:", user)
   const accessToken = jwt.sign(user, accessTokenSecret, { expiresIn: jwtExpiresIn });
   return accessToken;
 }

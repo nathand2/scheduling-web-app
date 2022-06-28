@@ -1,6 +1,7 @@
 /**
  * Module for API functionality and routes.
  */
+ const util = require('../services/util');
 
 const versionEndpoint = "/v1";
 
@@ -69,7 +70,8 @@ module.exports = (app, db, auth, passport) => {
     [randStringAccess, hashAccess] = await auth.getRandomStringAndHash();
     const newUser = {
       name: res.locals.user.name,
-      hash: hashAccess
+      hash: hashAccess,
+      type: res.locals.user.type
     }
     const newAccessToken = auth.generateAccessToken(newUser);
     
@@ -110,11 +112,13 @@ module.exports = (app, db, auth, passport) => {
     // On successful authentication, respond with JWT token.
     const userAccess = {
       name: req.user.id,
-      hash: hashAccess
+      hash: hashAccess,
+      type: 'GOOGLE',
     }
     const userRefresh = {
       name: req.user.id,
-      hash: hashRefresh
+      hash: hashRefresh,
+      type: 'GOOGLE',
     }
 
     const accessToken = auth.generateAccessToken(userAccess);
@@ -174,11 +178,13 @@ module.exports = (app, db, auth, passport) => {
   app.post("/session", auth.authenticateToken, async (req, res) => {
     const {title, desc, dtStart, dtEnd, attendType} = req.body;
     try {
-      const sessionId = await db.createSession(title, dtStart, dtEnd, attendType, desc)
+      console.log("ACC TYPE:", res.locals.user.type)
+      const sessionCode = util.generateSessionCode();
+      const sessionId = await db.createSession(sessionCode, title, dtStart, dtEnd, attendType, desc)
       console.log("User:", res.locals.user)
-      const userId = await db.getUserIdByUsername(res.locals.user.name)
+      const userId = await db.getUserIdByExternalID(res.locals.user.name, res.locals.user.type)
       const userSessionId =  await db.createUserSession(userId, sessionId, 'owner')
-      console.log("New session with id:", sessionId)
+      console.log("New session with code:", sessionCode)
     } catch(err) {
       console.log(err)
       res.sendStatus(500) // Internal db error.
@@ -186,11 +192,11 @@ module.exports = (app, db, auth, passport) => {
     }
   })
 
-  app.get("/session/:id", auth.authenticateToken, async (req, res) => {
+  app.get("/session/:code", auth.authenticateToken, async (req, res) => {
   try {
-    const sessionId = req.params.id;
-    const userId = await db.getUserIdByUsername(res.locals.user.name)
-    const results = await db.getSession(userId, sessionId)
+    const sessionCode = req.params.code;
+    const userId = await db.getUserIdByExternalID(res.locals.user.name, res.locals.user.type)
+    const results = await db.getSession(userId, sessionCode)
     if (results.status == 200) {
       res.json({session: results.session})
     } else {

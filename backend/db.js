@@ -63,7 +63,7 @@ exports.googleAuth = async (googleID, displayName) => {
 
   try {
     // Check if google user exists in database.
-    const results = await dbConnection(`SELECT * FROM user WHERE external_id = ${googleID} AND external_id = 'GOOGLE' LIMIT 1;`);
+    const results = await dbConnection(`SELECT * FROM user WHERE external_id = ${googleID} AND external_type = 'GOOGLE' LIMIT 1;`);
     console.log("Query Results:", results);
 
     // If google user doesn't yet exist, add google user to db.
@@ -174,12 +174,13 @@ exports.deleteRefreshToken = async (token) => {
   }
 }
 
-exports.createSession = async (title, dt_start, dt_end, attendType, desc=undefined, groupID=undefined) => {
+exports.createSession = async (code, title, dt_start, dt_end, attendType, desc=undefined, groupID=undefined) => {
   try {
-    const results = await dbConnection(`INSERT INTO session (group_id, session_desc, session_title, dt_created, dt_expires, attend_type) VALUES (${(groupID === undefined ? "NULL" : groupID) + ", "}${(desc === undefined ? "NULL" : "'" + desc + "'") + ', '}'${title}', '${dt_start}', '${dt_end}', '${attendType}')`)
-    console.log("Session query:", `INSERT INTO INSERT INTO session (group_id, session_desc, session_title, dt_created, dt_expires, attend_type) VALUES (${(groupID === undefined ? "NULL" : groupID) + ", "}${(desc === undefined ? "NULL" : "'" + desc + "'") + ', '}'${title}', '${dt_start}', '${dt_end}', '${attendType}')`)
+    const results = await dbConnection(`INSERT INTO session (group_id, session_desc, session_title, dt_created, dt_expires, attend_type, code) VALUES (${(groupID === undefined ? "NULL" : groupID) + ", "}${(desc === undefined ? "NULL" : "'" + desc + "'") + ', '}'${title}', '${dt_start}', '${dt_end}', '${attendType}', '${code}')`)
+    // console.log("Session query:", `INSERT INTO INSERT INTO session (group_id, session_desc, session_title, dt_created, dt_expires, attend_type) VALUES (${(groupID === undefined ? "NULL" : groupID) + ", "}${(desc === undefined ? "NULL" : "'" + desc + "'") + ', '}'${title}', '${dt_start}', '${dt_end}', '${attendType}')`)
     // console.log("Inserted ID:", results)
     console.log("Inserted ID:", results.insertId)
+    console.log("Session Code:", code)
     return results.insertId
   } catch(err) {
     throw err
@@ -196,23 +197,34 @@ exports.createUserSession = async (userId, sessionId, role) => {
   }
 }
 
-exports.getUserIdByUsername = async (username) => {
+/**
+ * Uses user ID for now. Convert to username after
+ * @param {string} id 
+ * @returns 
+ */
+exports.getUserIdByExternalID = async (id, type) => {
   try {
-    const results = await dbConnection(`SELECT id FROM user WHERE google_id = ${username};`)
-    console.log("Got user id:", results[0].id)
-    return results[0].id
+    if (type === 'GOOGLE') {
+      const results = await dbConnection(`SELECT id FROM user WHERE external_id = ${id} AND external_type = 'GOOGLE';`)
+      console.log("Got user id:", results[0].id)
+      return results[0].id
+    } else {
+      throw new Error('Non-Google ID?')
+    }
   } catch(err) {
     throw err
   }
 }
 
-exports.getSession = async (userId, sessionId) => {
+exports.getSession = async (userId, sessionCode) => {
   try {
     // // See if session exists
-    const sessionResults = await dbConnection(`SELECT * FROM session WHERE id = ${sessionId}`)
+    console.log("Looking for session with code:", sessionCode)
+    const sessionResults = await dbConnection(`SELECT * FROM session WHERE code = '${sessionCode}'`)
     if (sessionResults.length === 0) {
       return {status: 404} // Session Not found
     }
+    const sessionId = sessionResults[0].id
 
     // Check if user_session exists
     const results = await dbConnection(`SELECT session_id FROM user_session WHERE user_id = ${userId} AND session_id = ${sessionId};`)

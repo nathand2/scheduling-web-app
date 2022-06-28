@@ -35,6 +35,7 @@ CREATE TABLE group_ (
 
 CREATE TABLE session (
   id int NOT NULL AUTO_INCREMENT UNIQUE,
+  code varchar(8) NOT NULL,
   group_id int,
   session_title varchar(50) NOT NULL,
   session_desc varchar(255),
@@ -42,7 +43,7 @@ CREATE TABLE session (
   dt_created datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
   dt_expires datetime NOT NULL,
   attend_type varchar(20) NOT NULL DEFAULT "account",
-  PRIMARY KEY (id),
+  PRIMARY KEY (id, code),
   FOREIGN KEY (group_id) REFERENCES group_(id) ON DELETE CASCADE
 );
 
