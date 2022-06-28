@@ -14,11 +14,11 @@ DROP TABLE IF EXISTS refresh_token;
 USE scheduler;
 CREATE TABLE user (
     id int NOT NULL AUTO_INCREMENT UNIQUE,
-    role varchar(20) DEFAULT 'user',
+    role varchar(20) DEFAULT 'user' NOT NULL,
     username varchar(25) UNIQUE,
     password varchar(255),
-    google_id varchar(255) UNIQUE,
-    nickname varchar(25),
+    external_id varchar(127) UNIQUE,
+    external_type varchar(20) UNIQUE,
     dt_created datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
     dt_last_login datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
     PRIMARY KEY (id)
@@ -43,7 +43,7 @@ CREATE TABLE session (
   dt_expires datetime NOT NULL,
   attend_type varchar(20) NOT NULL DEFAULT "account",
   PRIMARY KEY (id),
-  FOREIGN KEY (group_id) REFERENCES group_(id)
+  FOREIGN KEY (group_id) REFERENCES group_(id) ON DELETE CASCADE
 );
 
 CREATE TABLE user_session (

@@ -6,6 +6,8 @@ const dbUser = {
   database: 'scheduler'
 };
 
+const tagGenRounds = 50
+
 /**
  * TODO: Error checking if MySQL server is down not fully implemented
  */
@@ -57,20 +59,18 @@ function dbConnection(query) {
  * @param {*} googleID string representing session id
  * @returns userID as a int*
  */
-exports.googleAuth = async (googleID) => {
+exports.googleAuth = async (googleID, displayName) => {
 
   try {
     // Check if google user exists in database.
-    const results = await dbConnection(`SELECT * FROM user WHERE google_id = ${googleID};`);
+    const results = await dbConnection(`SELECT * FROM user WHERE external_id = ${googleID} AND external_id = 'GOOGLE' LIMIT 1;`);
     console.log("Query Results:", results);
 
     // If google user doesn't yet exist, add google user to db.
     if (!results.length > 0) {
-      await dbConnection(`INSERT INTO user (google_id) VALUES (${googleID});`);
+      const res = await dbConnection(`INSERT INTO user (external_id, external_type) VALUES (${googleID}, 'GOOGLE');`);
       console.log("Added user to db with google_id:", googleID);
-
-      // Returns userID of first user found in db
-      const userID = (await dbConnection(`SELECT * FROM user WHERE google_id = ${googleID} LIMIT 1;`))[0].id;
+      const userID = res.insertId
       return userID;
     } else {
       console.log("Existing Google User logged in.");
@@ -81,6 +81,43 @@ exports.googleAuth = async (googleID) => {
     throw err;
   }
 };
+
+exports.test = () => {
+  console.log("KEKW")
+}
+
+// exports.addLeadingZeros = (num, totalLength) => {
+//   return String(num).padStart(totalLength, '0');
+// }
+
+// exports.generateTag = () => {
+//   const randNum = Math.floor(Math.random() * 10000)
+//   const tag = this.addLeadingZeros(randNum, 4)
+//   return tag
+// }
+
+// exports.checkUsernameTagExists = async (username, tag) => {
+//   try {
+//     const results = await dbConnection(`SELECT * FROM user where username = ${username} and tag = ${tag};`)
+
+//     return results.length > 0 // Returns true if exists, else false
+//   } catch(err) {
+//     throw err
+//   }
+// }
+
+// exports.findValidUsernameTag = async (username) => {
+//   let count = 0;
+//   while(count < tagGenRounds) {
+//     const newTag = this.generateTag()
+//     if(!this.checkUsernameTagExists(username, newTag)) {
+//       return {username: username, tag: newTag}
+//     }
+//   }
+
+//   // If can't find valid username/tag
+//   throw new Error('Unable to find unique Username and Tag')
+// }
 
 /**
  * Insert refresh token into db

@@ -105,6 +105,8 @@ module.exports = (app, db, auth, passport) => {
     console.log("Hashed access String:", hashAccess)
     console.log("Hashed refresh String:", hashRefresh)
 
+    console.log("User:", req.user)
+
     // On successful authentication, respond with JWT token.
     const userAccess = {
       name: req.user.id,
