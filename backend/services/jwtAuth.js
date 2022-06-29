@@ -45,6 +45,7 @@ exports.authenticateToken = (req, res, next) => {
     console.log("Context:")
     console.log(userContextHashed)
     console.log(userContext)
+    console.log("JWT authToken, user:", user)
 
     // Verify user context.
     bcrypt.compare(userContext, userContextHashed, function(err, result) {
@@ -82,6 +83,7 @@ exports.generateAccessToken = (user) => {
  * @returns jwt refresh token
  */
 exports.generateRefreshToken = (user) => {
+  console.log("Generating refresh token for user:", user)
   const accessToken = jwt.sign(user, refreshTokenSecret);
   return accessToken;
 }

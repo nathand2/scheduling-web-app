@@ -21,7 +21,8 @@ CREATE TABLE user (
     external_type varchar(20) UNIQUE,
     dt_created datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
     dt_last_login datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    PRIMARY KEY (id)
+    PRIMARY KEY (id),
+    UNIQUE (external_id, external_type)
 );
 
 CREATE TABLE group_ (

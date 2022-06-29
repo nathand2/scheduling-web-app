@@ -4,6 +4,7 @@
  const util = require('../services/util');
 
 const versionEndpoint = "/v1";
+const rootURL = "http://localhost:3000"
 
 // For Cookie security
 const secureCookieConfig = {
@@ -68,8 +69,9 @@ module.exports = (app, db, auth, passport) => {
     let randStringAccess, hashAccess;
     // Gets random string and it's hash for fingerprint
     [randStringAccess, hashAccess] = await auth.getRandomStringAndHash();
+    console.log("Refresh token... user:", res.locals.user)
     const newUser = {
-      name: res.locals.user.name,
+      userId: res.locals.user.userId,
       hash: hashAccess,
       type: res.locals.user.type
     }
@@ -98,19 +100,20 @@ module.exports = (app, db, auth, passport) => {
       [randStringAccess, hashAccess] = await auth.getRandomStringAndHash();
       [randStringRefresh, hashRefresh] = await auth.getRandomStringAndHash();
     } catch(err) {
+      console.log(err)
       res.sendStatus(500);
       return
     }
-    console.log("User:", req.user)
+    console.log("User (googleauth):", req.user)
 
     // On successful authentication, respond with JWT token.
     const userAccess = {
-      name: req.user.id,
+      userId: req.user.userId,
       hash: hashAccess,
       type: 'GOOGLE',
     }
     const userRefresh = {
-      name: req.user.id,
+      userId: req.user.userId,
       hash: hashRefresh,
       type: 'GOOGLE',
     }
@@ -130,13 +133,15 @@ module.exports = (app, db, auth, passport) => {
       res.cookie('userContextAccess', randStringAccess, secureCookieConfig);
       res.cookie('userContextRefresh', randStringRefresh, secureCookieConfig);
 
-      res.redirect('http://localhost:3000/')
+      res.redirect(rootURL)
 
     } catch(err) {
+      console.log(err)
       res.sendStatus(500); // Internal Error (database error)
     }
   }, (err, req, res, next) => {
     // Handle auth error.
+    console.log(err)
     res.sendStatus(500); // Internal Error (database error)
   });
 
@@ -158,6 +163,7 @@ module.exports = (app, db, auth, passport) => {
       res.sendStatus(200)
       return
     } catch(err) {
+      console.log(err)
       res.sendStatus(500) // Internal db error.
       return
     }
@@ -170,13 +176,16 @@ module.exports = (app, db, auth, passport) => {
   app.post("/session", auth.authenticateToken, async (req, res) => {
     const {title, desc, dtStart, dtEnd, attendType} = req.body;
     try {
-      console.log("ACC TYPE:", res.locals.user.type)
+      console.log("/session Locals.user:", res.locals.user)
       const sessionCode = util.generateSessionCode();
       const sessionId = await db.createSession(sessionCode, title, dtStart, dtEnd, attendType, desc)
-      console.log("User:", res.locals.user)
-      const userId = await db.getUserIdByExternalID(res.locals.user.name, res.locals.user.type)
+      console.log("User in /session:", res.locals.user)
+      // const userId = await db.getUserIdByExternalID(res.locals.user.userId, res.locals.user.type)
+      const userId = res.locals.user.userId
+      
       const userSessionId =  await db.createUserSession(userId, sessionId, 'owner')
       console.log("New session with code:", sessionCode)
+      res.json({code: sessionCode, url: rootURL + "/session/" + sessionCode})
     } catch(err) {
       console.log(err)
       res.sendStatus(500) // Internal db error.
@@ -187,7 +196,9 @@ module.exports = (app, db, auth, passport) => {
   app.get("/session/:code", auth.authenticateToken, async (req, res) => {
   try {
     const sessionCode = req.params.code;
-    const userId = await db.getUserIdByExternalID(res.locals.user.name, res.locals.user.type)
+    // const userId = await db.getUserIdByExternalID(res.locals.user.name, res.locals.user.type)
+    const userId = res.locals.user.userId
+    
     const results = await db.getSession(userId, sessionCode)
     if (results.status == 200) {
       res.json({session: results.session})

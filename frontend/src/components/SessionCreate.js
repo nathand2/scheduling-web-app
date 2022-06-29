@@ -30,12 +30,13 @@ const SessionCreate = () => {
     }
     console.log("Session:", session)
 
-    let data;
+    let sessionData;
     try {
-      data = await RequestHandler.req('/session', 'POST', session)
-      console.log("New session ID:", data)
+      sessionData = await RequestHandler.req('/session', 'POST', session)
+      console.log("New session ID:", sessionData)
+      window.location.replace(`/session/${sessionData.code}`);
     } catch(err) {
-      console.log("Error:", err);
+      console.log("Unable to create session. Error:", err);
     }
 
 

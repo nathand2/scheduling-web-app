@@ -35,12 +35,12 @@ function App() {
   }
 
   const attemptLogIn = () => {
-    if (window.localStorage.getItem('refreshToken')) {
-      console.log("localStorage Refresh token found")
-      refreshAccessToken()
-    } else {
-      console.log("No localStorage refresh token")
-    }
+    // if (window.localStorage.getItem('refreshToken')) {
+    //   console.log("localStorage Refresh token found")
+    //   refreshAccessToken()
+    // } else {
+    //   console.log("No localStorage refresh token")
+    // }
   }
 
   const setSessionStorageJWTTokens = async () => {

@@ -68,12 +68,14 @@ exports.googleAuth = async (googleID, displayName) => {
     if (!results.length > 0) {
       const res = await dbConnection(`INSERT INTO user (external_id, external_type) VALUES (${googleID}, 'GOOGLE');`);
       console.log("Added user to db with google_id:", googleID);
-      const userID = res.insertId
-      return userID;
+      // Assume no username created for new account
+      const userId = res.insertId
+      return {userId: userID, username: undefined};
     } else {
       console.log("Existing Google User logged in.");
-      const userID = results[0].id;
-      return userID;
+      const userId = results[0].id;
+      const username = results[0].username;
+      return {userId: userId, username: username};
     }
   } catch(err) {
     throw err;
