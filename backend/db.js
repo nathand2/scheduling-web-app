@@ -82,10 +82,6 @@ exports.googleAuth = async (googleID, displayName) => {
   }
 };
 
-exports.test = () => {
-  console.log("KEKW")
-}
-
 /**
  * Insert refresh token into db
  * @param {string} token JWT access token
@@ -141,6 +137,17 @@ exports.deleteRefreshToken = async (token) => {
   }
 }
 
+/**
+ * Creates a session
+ * @param {string} code 
+ * @param {string} title 
+ * @param {datetime} dt_start 
+ * @param {datetime} dt_end 
+ * @param {string} attendType 
+ * @param {string} desc 
+ * @param {int} groupID 
+ * @returns 
+ */
 exports.createSession = async (code, title, dt_start, dt_end, attendType, desc=undefined, groupID=undefined) => {
   try {
     const results = await dbConnection(`INSERT INTO session (group_id, session_desc, session_title, dt_created, dt_expires, attend_type, code) VALUES (${(groupID === undefined ? "NULL" : groupID) + ", "}${(desc === undefined ? "NULL" : "'" + desc + "'") + ', '}'${title}', '${dt_start}', '${dt_end}', '${attendType}', '${code}')`)
@@ -154,6 +161,13 @@ exports.createSession = async (code, title, dt_start, dt_end, attendType, desc=u
   }
 }
 
+/**
+ * Creates user session.
+ * @param {int} userId 
+ * @param {int} sessionId 
+ * @param {string} role 
+ * @returns 
+ */
 exports.createUserSession = async (userId, sessionId, role) => {
   try {
     const results = await dbConnection(`INSERT INTO user_session (user_id, session_id, role) VALUES (${userId}, ${sessionId}, '${role}');`)
@@ -183,6 +197,12 @@ exports.getUserIdByExternalID = async (id, type) => {
   }
 }
 
+/**
+ * Gets a session from db, if valid userId.
+ * @param {int} userId 
+ * @param {string} sessionCode 
+ * @returns 
+ */
 exports.getSession = async (userId, sessionCode) => {
   try {
     // // See if session exists

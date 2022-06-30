@@ -173,6 +173,9 @@ module.exports = (app, db, auth, passport) => {
    * Session Endpoints
    */
 
+  /**
+   * Creates a session
+   */
   app.post("/session", auth.authenticateToken, async (req, res) => {
     const {title, desc, dtStart, dtEnd, attendType} = req.body;
     try {
@@ -193,6 +196,9 @@ module.exports = (app, db, auth, passport) => {
     }
   })
 
+  /**
+   * Gets a session by session code
+   */
   app.get("/session/:code", auth.authenticateToken, async (req, res) => {
   try {
     const sessionCode = req.params.code;
@@ -203,7 +209,7 @@ module.exports = (app, db, auth, passport) => {
     if (results.status == 200) {
       res.json({session: results.session})
     } else {
-      res.sendStatus(results.status)
+      res.sendStatus(results.status) // Send back 400 status'
     }
   } catch(err) {
     console.log(err)
@@ -212,6 +218,9 @@ module.exports = (app, db, auth, passport) => {
   }
   })
 
+  /**
+   * Get sessions associated with user
+   */
   app.get("/sessions", auth.authenticateToken, async (req, res) => {
     const user = res.locals.user
     const userId = user.userId
