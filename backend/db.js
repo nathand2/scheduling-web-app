@@ -236,3 +236,22 @@ exports.getSessions = async (userId) => {
     throw err
   }
 }
+
+exports.getSessionInviteBySessionCode = async (sessionCode) => {
+  try {
+    const results = await dbConnection(`SELECT uuid FROM session_invite WHERE session_id = (SELECT id FROM session WHERE code = '${sessionCode}' LIMIT 1) LIMIT 1`)
+    return results[0]
+  } catch(err) {
+    throw err
+  }
+}
+
+exports.createSessionInvite = async (sessionCode, type) => {
+  try {
+    const uuid = await dbConnection(`SELECT uuid();`)
+    await dbConnection(`INSERT INTO session_invite (session_id, type, uuid) VALUES ((SELECT id FROM session where code = '${sessionCode}' LIMIT 1), '${type}', '${uuid}');`)
+    return uuid
+  } catch(err) {
+    throw err
+  }
+}

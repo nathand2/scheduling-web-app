@@ -233,4 +233,20 @@ module.exports = (app, db, auth, passport) => {
       return
     }
   })
+
+  app.post("/sessioninvite", auth.authenticateToken, async (req, res) => {
+    try {
+      // const user = res.locals.user
+      // const userId = user.userId
+      const { sessionCode } = req.body
+      const inviteUuid = await db.createSessionInvite(sessionCode, 'all')
+      console.log("Created session_invite with code:", inviteUuid)
+      res.json({inviteCode: inviteUuid})
+    } catch(err) {
+      console.log(err)
+      res.sendStatus(500) // Internal db error.
+      return
+    }
+
+  })
 }
