@@ -10,5 +10,13 @@ $oauth-icon-height: 60px;
     background-color: rgb(241, 241, 241);
     transition-timing-function: ease;
   }
+}
 
+.link-plain {
+  text-decoration: none;
+}
+
+.sessions-preview {
+  display: flex;
+  flex-wrap: wrap;
 }

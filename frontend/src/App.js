@@ -5,6 +5,10 @@ import { useState, useEffect } from 'react'
 import Header from './components/Header'
 import LogIn from './components/LogIn'
 import SignUp from './components/SignUp'
+import Sessions from './components/Sessions'
+import SessionCreate from './components/SessionCreate'
+import Session from './components/Session'
+import Groups from './components/Groups'
 
 import {RequestHandler} from './js/requestHandler'
 
@@ -31,12 +35,12 @@ function App() {
   }
 
   const attemptLogIn = () => {
-    if (window.localStorage.getItem('refreshToken')) {
-      console.log("localStorage Refresh token found")
-      refreshAccessToken()
-    } else {
-      console.log("No localStorage refresh token")
-    }
+    // if (window.localStorage.getItem('refreshToken')) {
+    //   console.log("localStorage Refresh token found")
+    //   refreshAccessToken()
+    // } else {
+    //   console.log("No localStorage refresh token")
+    // }
   }
 
   const setSessionStorageJWTTokens = async () => {
@@ -125,6 +129,17 @@ function App() {
     }
   }
   
+  const testEndpoint = async () => {
+    let data;
+    try {
+      data = await RequestHandler.req('/sessions', 'GET')
+    } catch(err) {
+      console.log("Error:", err);
+    }
+
+    console.log('Testing Auth results data:', data)
+    setAccessToken(await window.sessionStorage.getItem('accessToken'))
+  }
 
   const testRequest = async () => {
     let data;
@@ -151,7 +166,23 @@ function App() {
             Refresh Token:  { refreshToken }<br />
             <button onClick={testRequest}>Test auth stuff</button><br />
             
-            <button onClick={refreshAccessToken}>Refresh Access token?</button>
+            <button onClick={refreshAccessToken}>Refresh Access token?</button><br />
+            <button onClick={testEndpoint}>Test an endpoint</button><br />
+            </>
+          } />
+          <Route path="/sessioncreate" element={
+            <>
+            <SessionCreate />
+            </>
+          } />
+          <Route path="/sessions" element={
+            <>
+            <Sessions />
+            </>
+          } />
+          <Route path="/groups" element={
+            <>
+            <Groups />
             </>
           } />
           <Route path="/login" element={
@@ -162,6 +193,11 @@ function App() {
           <Route path="/signup" element={
             <>
             <SignUp />
+            </>
+          } />
+          <Route path="/session/:id" element={
+            <>
+            <Session />
             </>
           } />
         </Routes>

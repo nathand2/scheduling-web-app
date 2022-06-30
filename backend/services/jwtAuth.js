@@ -15,7 +15,7 @@ const jwtExpiresIn = '10m';
 const saltRounds = 5;
 
 /**
- * Authenticates token is authorization header
+ * Authenticates token in authorization header
  * @param {*} req a request
  * @param {*} res a response
  */
@@ -45,6 +45,7 @@ exports.authenticateToken = (req, res, next) => {
     console.log("Context:")
     console.log(userContextHashed)
     console.log(userContext)
+    console.log("JWT authToken, user:", user)
 
     // Verify user context.
     bcrypt.compare(userContext, userContextHashed, function(err, result) {
@@ -54,6 +55,8 @@ exports.authenticateToken = (req, res, next) => {
       }
       console.log("bcrypt result:", result)
       if (result) {
+        // Pass user object from JWT to next middleware.
+        res.locals.user = user
         next() // Serve content using next callback
       } else {
         res.sendStatus(401)
@@ -69,6 +72,7 @@ exports.authenticateToken = (req, res, next) => {
  * @returns jwt access token
  */
 exports.generateAccessToken = (user) => {
+  console.log("Generating access token for user:", user)
   const accessToken = jwt.sign(user, accessTokenSecret, { expiresIn: jwtExpiresIn });
   return accessToken;
 }
@@ -79,6 +83,7 @@ exports.generateAccessToken = (user) => {
  * @returns jwt refresh token
  */
 exports.generateRefreshToken = (user) => {
+  console.log("Generating refresh token for user:", user)
   const accessToken = jwt.sign(user, refreshTokenSecret);
   return accessToken;
 }
@@ -98,9 +103,6 @@ exports.refreshAccessToken = (req, res, next) => {
     if (err) return res.sendStatus(403);
 
     const userContextHashed = user.hash; // User context for access token
-    console.log("Context:")
-    console.log(userContextHashed)
-    console.log(userContext)
 
     // Verify user context.
     bcrypt.compare(userContext, userContextHashed, function(err, result) {

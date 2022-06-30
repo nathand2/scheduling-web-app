@@ -1,11 +1,15 @@
 import { Navbar, Container, Nav, NavDropdown } from 'react-bootstrap';
+import { Link } from 'react-router-dom'
+
 
 const Header = ({ logOut, loggedIn }) => {
   return (
     <div className="header-container">
       <Navbar bg="light" expand="lg">
   <Container fluid>
-    <Navbar.Brand href="/">Valorant Scheduler</Navbar.Brand>
+    <Link to='/' className='link-plain'>
+      <Navbar.Brand >Valorant Scheduler</Navbar.Brand>
+    </Link>
     <Navbar.Toggle aria-controls="navbarScroll" />
     <Navbar.Collapse id="navbarScroll">
       <Nav
@@ -13,9 +17,9 @@ const Header = ({ logOut, loggedIn }) => {
         style={{ maxHeight: '100px' }}
         navbarScroll
       >
-      <Nav.Link href="#home">Home</Nav.Link>
-      <Nav.Link href="#session">Sessions</Nav.Link>
-      <Nav.Link href="#groups">Groups</Nav.Link>
+      <Nav.Link href="/">Home</Nav.Link>
+      <Nav.Link href="/sessions">Sessions</Nav.Link>
+      <Nav.Link href="/groups">Groups</Nav.Link>
         
       </Nav>
       <div className="d-flex">

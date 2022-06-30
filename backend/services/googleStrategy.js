@@ -8,12 +8,15 @@ const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 
 // Google Auth. Creates new user account if necessary. Authenticates user.
 const authUser = async (request, accessToken, refreshToken, profile, done) => {
-  let user_id;
   try {
-    user_id = await db.googleAuth(profile.id);
+    const {userId, username} = await db.googleAuth(profile.id);
+    profile.username = username
+    profile.userId = userId
+    console.log("profile:", profile)
   } catch (err) {
     // Don't authenticate if error
     console.log("Google Strategy Caught error:", err.code);
+    console.log(err)
     return done(null, null); // Reject Authentication
   }
   return done(null, profile);
