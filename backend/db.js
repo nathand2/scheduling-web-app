@@ -206,3 +206,13 @@ exports.getSession = async (userId, sessionCode) => {
     throw err
   }
 }
+
+exports.getSessions = async (userId) => {
+  try {
+    // const results = await dbConnection(`SELECT session.group_id, session.session_title, session.session_desc, session.dt_created FROM session INNER JOIN user_session ON session.id = user_session.session_id WHERE user_session.user_id = ${userId};`)
+    const results = await dbConnection(`SELECT session.id, session.code, session.group_id, session.session_title, session.session_desc, session.dt_created FROM session INNER JOIN user_session ON session.id = user_session.session_id WHERE user_session.user_id = ${userId} ORDER BY session.dt_created DESC;`)
+    return results
+  } catch(err) {
+    throw err
+  }
+}

@@ -212,4 +212,16 @@ module.exports = (app, db, auth, passport) => {
   }
   })
 
+  app.get("/sessions", auth.authenticateToken, async (req, res) => {
+    const user = res.locals.user
+    const userId = user.userId
+    try {
+      const results = await db.getSessions(userId);
+      res.json({sessions: results})
+    } catch(err) {
+      console.log(err)
+      res.sendStatus(500) // Internal db error.
+      return
+    }
+  })
 }

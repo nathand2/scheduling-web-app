@@ -3,8 +3,9 @@ import { Link } from 'react-router-dom'
 
 import { Container } from 'react-bootstrap';
 import Card from 'react-bootstrap/Card';
-
 import SessionCard from './SessionCard'
+
+import {RequestHandler} from '../js/requestHandler'
 
 const fakeSessions = [
   {
@@ -51,8 +52,25 @@ const Sessions = () => {
   
   useEffect(() => {
     // Get sessions
-    const userSessions = fakeSessions;
-    setSessions(userSessions)
+    // const userSessions = fakeSessions;
+    let didCancel = false;
+    const getSessions = async () => {
+      if (!didCancel) {
+        // Get session data from api
+        console.log("Hello world")
+        // const params = useParams();
+        try {
+          const data = await RequestHandler.req(`/sessions`, 'GET')
+          // return data
+          console.log("Res data:", data.sessions)
+          setSessions(data.sessions)
+        } catch(err) {
+          console.log("Error:", err);
+        }
+      }
+    }
+    getSessions();
+    
   }, [])
   return (
     <div>
@@ -71,7 +89,7 @@ const Sessions = () => {
         </Card>
         {/* </a> */}
         {
-          sessions.map((session) => (<SessionCard key={session.id} title={session.title} desc={session.desc} dt_created={session.dt_created} status={session.status}  />))
+          sessions.map((session) => (<SessionCard key={session.id} code={session.code} title={session.session_title} desc={session.session_desc} dt_created={session.dt_created} status={"Status"}  />))
         }
       </Container>
     </div>

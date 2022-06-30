@@ -129,6 +129,17 @@ function App() {
     }
   }
   
+  const testEndpoint = async () => {
+    let data;
+    try {
+      data = await RequestHandler.req('/sessions', 'GET')
+    } catch(err) {
+      console.log("Error:", err);
+    }
+
+    console.log('Testing Auth results data:', data)
+    setAccessToken(await window.sessionStorage.getItem('accessToken'))
+  }
 
   const testRequest = async () => {
     let data;
@@ -155,7 +166,8 @@ function App() {
             Refresh Token:  { refreshToken }<br />
             <button onClick={testRequest}>Test auth stuff</button><br />
             
-            <button onClick={refreshAccessToken}>Refresh Access token?</button>
+            <button onClick={refreshAccessToken}>Refresh Access token?</button><br />
+            <button onClick={testEndpoint}>Test an endpoint</button><br />
             </>
           } />
           <Route path="/sessioncreate" element={
