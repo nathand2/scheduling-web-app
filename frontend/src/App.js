@@ -195,7 +195,7 @@ function App() {
             <SignUp />
             </>
           } />
-          <Route path="/session/:id" element={
+          <Route path="/session/:code" element={
             <>
             <Session />
             </>

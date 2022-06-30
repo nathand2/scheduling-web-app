@@ -237,10 +237,28 @@ exports.getSessions = async (userId) => {
   }
 }
 
+exports.getOwnerUserSessionByUserIdAndSessionCode = async (userId, sessionCode) => {
+  try {
+    const results = await dbConnection(`SELECT * FROM user_session WHERE user_id = ${userId} AND session_id = (SELECT id FROM session WHERE code = '${sessionCode}' LIMIT 1) AND role = 'owner' LIMIT 1;`)
+    return results
+  } catch(err) {
+    throw err
+  }
+}
+
+exports.getUserSessionByUserIdAndSessionCode = async (userId, sessionCode) => {
+  try {
+    const results = await dbConnection(`SELECT * FROM user_session WHERE user_id = ${userId} AND session_id = (SELECT id FROM session WHERE code = '${sessionCode}' LIMIT 1) LIMIT 1;`)
+    return results
+  } catch(err) {
+    throw err
+  }
+}
+
 exports.getSessionInviteBySessionCode = async (sessionCode) => {
   try {
     const results = await dbConnection(`SELECT uuid FROM session_invite WHERE session_id = (SELECT id FROM session WHERE code = '${sessionCode}' LIMIT 1) LIMIT 1`)
-    return results[0]
+    return results
   } catch(err) {
     throw err
   }
@@ -248,7 +266,11 @@ exports.getSessionInviteBySessionCode = async (sessionCode) => {
 
 exports.createSessionInvite = async (sessionCode, type) => {
   try {
-    const uuid = await dbConnection(`SELECT uuid();`)
+    const uuidResults = await dbConnection(`SELECT uuid();`)
+    const uuid = uuidResults[0]['uuid()']
+    console.log("New UUID:", uuid)
+    
+    await dbConnection(`DELETE FROM session_invite WHERE session_id = (SELECT id FROM session where code = '${sessionCode}');`)
     await dbConnection(`INSERT INTO session_invite (session_id, type, uuid) VALUES ((SELECT id FROM session where code = '${sessionCode}' LIMIT 1), '${type}', '${uuid}');`)
     return uuid
   } catch(err) {

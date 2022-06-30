@@ -20,8 +20,10 @@ export class RequestHandler {
       });
       if (res.status === 200) {
         return await res.json();  // JWT token valid, return results.
-      } else if (res.status === 401 || res.status === 403) {
+      } else if (res.status === 401 ) {
         return await this.refreshJWT(resource, reqMethod, reqBody);  // Expired Access token, attempt to refresh JWT
+      } else if (res.status === 403 ) {
+        throw new Error("Forbidden");
       } else {
         // Bad request config for internal error.
         throw new Error("Incorrect RequestHandler.res params or internal error");
@@ -55,6 +57,8 @@ export class RequestHandler {
         return await res.json();  // JWT token valid, return results.
       } else if (res.status === 401 || res.status === 403) {
         return {status: "Invalid new Access Token", token: window.sessionStorage.getItem('accessToken')}  // Newly created JWT problem.
+      } else if (res.status === 403 ) {
+        throw new Error("Forbidden");
       } else {
         throw new Error("Internal error");
       }

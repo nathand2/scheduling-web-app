@@ -39,7 +39,7 @@ exports.authenticateToken = (req, res, next) => {
   const userContext = req.cookies.userContextAccess;
 
   jwt.verify(token, accessTokenSecret, (err, user) => {
-    if (err) return res.sendStatus(403);
+    if (err) return res.sendStatus(401);
 
     const userContextHashed = user.hash; // User context for access token
     console.log("Context:")
@@ -100,7 +100,7 @@ exports.refreshAccessToken = (req, res, next) => {
 
   // Verify user context
   jwt.verify(refreshToken, refreshTokenSecret, (err, user) => {
-    if (err) return res.sendStatus(403);
+    if (err) return res.sendStatus(401);
 
     const userContextHashed = user.hash; // User context for access token
 
