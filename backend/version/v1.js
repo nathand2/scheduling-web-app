@@ -279,6 +279,7 @@ module.exports = (app, db, auth, passport) => {
       if (!(results.length > 0)) {
         // If no session invite exists, respond 404
         res.sendStatus(404) // Not found
+        return
       }
       
       const inviteUuid = results[0].uuid
@@ -290,5 +291,23 @@ module.exports = (app, db, auth, passport) => {
       return
     }
 
+  })
+
+  app.post("/joinsession", auth.authenticateToken, async (req, res) => {
+    try {
+      const inviteCode = req.body.inviteCode.inviteCode
+      const userId = res.locals.user.userId
+
+      console.log("Userid:", userId)
+      console.log("inviteCode:", inviteCode)
+
+      const sessionCodes = await db.createUserSessionBySessionInviteUuid(userId, inviteCode)
+      res.json({sessionCode: sessionCodes})
+      // res.redirect(`${rootURL}/session/${sessionCodes[0]}`)
+    } catch(err) {
+      console.log(err)
+      res.sendStatus(500) // Internal db error.
+      return
+    }
   })
 }

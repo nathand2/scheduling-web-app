@@ -34,6 +34,7 @@ const Session = () => {
     try {
       const results = await RequestHandler.req('/sessioninvite', 'POST', {sessionCode: params.code})
       console.log("Created session invite:", results)
+      console.log("http://localhost:3000/sessionjoin?code=" + results.inviteCode)
     } catch(err) {
       console.log("Error:", err)
     }

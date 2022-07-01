@@ -70,7 +70,7 @@ exports.googleAuth = async (googleID, displayName) => {
       console.log("Added user to db with google_id:", googleID);
       // Assume no username created for new account
       const userId = res.insertId
-      return {userId: userID, username: undefined};
+      return {userId: userId, username: undefined};
     } else {
       console.log("Existing Google User logged in.");
       const userId = results[0].id;
@@ -270,9 +270,31 @@ exports.createSessionInvite = async (sessionCode, type) => {
     const uuid = uuidResults[0]['uuid()']
     console.log("New UUID:", uuid)
     
-    await dbConnection(`DELETE FROM session_invite WHERE session_id = (SELECT id FROM session where code = '${sessionCode}');`)
-    await dbConnection(`INSERT INTO session_invite (session_id, type, uuid) VALUES ((SELECT id FROM session where code = '${sessionCode}' LIMIT 1), '${type}', '${uuid}');`)
+    const results = await dbConnection(`SELECT * FROM session_invite WHERE session_id = (SELECT id FROM session where code = '${sessionCode}');`)
+    if (results.length > 0) {
+      await dbConnection(`UPDATE session_invite SET uuid = '${uuid}', type = '${type}' WHERE session_id = (SELECT id FROM session where code = '${sessionCode}' LIMIT 1);`)
+    } else {
+      await dbConnection(`INSERT INTO session_invite (session_id, type, uuid) VALUES ((SELECT id FROM session where code = '${sessionCode}' LIMIT 1), '${type}', '${uuid}');`)
+    }
     return uuid
+  } catch(err) {
+    throw err
+  }
+}
+
+exports.createUserSessionBySessionInviteUuid = async (userId, uuid) => {
+  try {
+    // Check if user_session exists
+    const existingUserSessionCodes = await dbConnection(`SELECT code FROM session WHERE id = (SELECT session_id FROM user_session WHERE user_id = ${userId} AND session_id = (SELECT session_id FROM session_invite WHERE uuid = '${uuid}' LIMIT 1) LIMIT 1);`)
+    
+    // If user_session exists for user and session, return sessionId
+    if (existingUserSessionCodes.length > 0) {
+      return existingUserSessionCodes[0].code
+    }
+    const sessionIds = await dbConnection(`SELECT code, id FROM session WHERE id = (SELECT session_id FROM session_invite WHERE uuid = '${uuid}' LIMIT 1);`)
+    console.log("STUFF:", sessionIds)
+    const results = await dbConnection(`INSERT INTO user_session (user_id, session_id, role) VALUES (${userId}, ${sessionIds[0].id}, 'attendee');`)
+    return sessionIds[0].code
   } catch(err) {
     throw err
   }
