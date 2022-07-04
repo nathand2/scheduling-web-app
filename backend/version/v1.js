@@ -310,4 +310,35 @@ module.exports = (app, db, auth, passport) => {
       return
     }
   })
+
+  app.post('/sessiontimerange', auth.authenticateToken, (req, res) => {
+    try {
+      const userId = res.locals.user.userId  // User Id from JWT token
+      const { sessionId, dtStart, dtEnd } = req.body  // Post body
+
+      // Check for valid dt range
+      if (new Date(dtStart) > new Date(dtEnd)) {
+        console.log("Invalid dt range.")
+        res.sendStatus(400) // Client Error
+        return
+      }
+  
+      // Check if user is apart of session
+      const userSessions = await db.getUserSessionByUserIdAndSessionId(userId, sessionId)
+      if (!userSessions > 0) {
+        // User not apart of session
+        res.sendStatus(404) // Forbidden
+      }
+
+      const insertId = await db.createSessionTimeRange(userId, sessionId, dtStart, dtEnd)
+      res.json({insertId: insertId})
+
+    } catch(err) {
+      console.log(err)
+      res.sendStatus(500) // Internal db error.
+      return
+    }
+
+
+  })
 }
