@@ -268,7 +268,7 @@ module.exports = (app, db, auth, passport) => {
       const userId = user.userId
 
       // See if user_session of owner exists for user
-      const userSessions = await db.getOwnerUserSessionByUserIdAndSessionCode(userId, sessionCode)
+      const userSessions = await db.getUserSessionByUserIdAndSessionCode(userId, sessionCode)
       if (!(userSessions.length > 0)) {
         res.sendStatus(403) // Cannot create invite. Not owner or no user_session
         return
