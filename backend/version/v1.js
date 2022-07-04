@@ -311,10 +311,10 @@ module.exports = (app, db, auth, passport) => {
     }
   })
 
-  app.post('/sessiontimerange', auth.authenticateToken, (req, res) => {
+  app.post('/sessiontimerange', auth.authenticateToken, async (req, res) => {
     try {
       const userId = res.locals.user.userId  // User Id from JWT token
-      const { sessionId, dtStart, dtEnd } = req.body  // Post body
+      const { sessionId, dtStart, dtEnd, status } = req.body  // Post body
 
       // Check for valid dt range
       if (new Date(dtStart) > new Date(dtEnd)) {
@@ -330,7 +330,7 @@ module.exports = (app, db, auth, passport) => {
         res.sendStatus(404) // Forbidden
       }
 
-      const insertId = await db.createSessionTimeRange(userId, sessionId, dtStart, dtEnd)
+      const insertId = await db.createSessionTimeRange(userId, sessionId, dtStart, dtEnd, status)
       res.json({insertId: insertId})
 
     } catch(err) {

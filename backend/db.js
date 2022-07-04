@@ -343,9 +343,9 @@ exports.getUserSessionByUserIdAndSessionId = async (userId, sessionId) => {
   }
 }
 
-exports.createSessionTimeRange = async (userId, sessionId, dtStart, dtEnd) => {
+exports.createSessionTimeRange = async (userId, sessionId, dtStart, dtEnd, status) => {
   try {
-    const results = await dbConnection(`INSERT INTO session_time_range (user_session_id, dt_start, dt_end) VALUES ((SELECT id FROM user_session_id WHERE user_id = ${userId} AND session_id = ${sessionId}), '${dtStart}', '${dtEnd}');`)
+    const results = await dbConnection(`INSERT INTO session_time_range (user_session_id, dt_start, dt_end, status) VALUES ((SELECT id FROM user_session_id WHERE user_id = ${userId} AND session_id = ${sessionId}), '${dtStart}', '${dtEnd}', '${status}');`)
     return results.insertId
   } catch(err) {
     throw err
