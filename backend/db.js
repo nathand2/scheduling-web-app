@@ -6,6 +6,8 @@ const dbUser = {
   database: 'scheduler'
 };
 
+const pool = mysql.createPool(dbUser);
+
 /**
  * TODO: Error checking if MySQL server is down not fully implemented
  */
@@ -15,41 +17,72 @@ const dbUser = {
  * @param {*} db_query sql query as a string
  * @returns query results in an array
  */
-function dbConnection(query) {
-  // TODO: Error handling on db connection and query.
-  // TODO: Consider using pool queries?
+// function dbConnection(query) {
+//   // TODO: Error handling on db connection and query.
+//   // TODO: Consider using pool queries?
+//   return new Promise((resolve, reject) => {
+//       const db = mysql.createConnection(dbUser);
+//       db.on('error', (err) => {
+//         reject(err)
+//       })
+//       db.connect((err) => {
+//           if (err) {
+//             reject(err)
+//           }
+//           console.log("Database connected");
+//           db.query(query, (err, result) => {
+//               if (err) {
+//                 reject(err)
+//               }
+//               if (result) {
+//                   resolve(result);
+//               }
+//           });
+//       });
+//   }, (result) => {
+//     // Resolve
+//     db.end(function(err) {
+//       if (err) {
+//         return console.log('error:' + err.message);
+//       }
+//       console.log('Close the database connection.');
+//     });
+//     return result;
+//   }, (err) => {
+//     // Reject
+//     throw err
+//   })
+// }
+
+/**
+ * Executes a db connection to make a sql query using connection pooling
+ * @param {*} db_query sql query as a string
+ * @returns query results in an array
+ */
+const dbConnection = async (query) => {
   return new Promise((resolve, reject) => {
-      const db = mysql.createConnection(dbUser);
-      db.on('error', (err) => {
-        reject(err)
-      })
-      db.connect((err) => {
-          if (err) {
-            reject(err)
-          }
-          console.log("Database connected");
-          db.query(query, (err, result) => {
-              if (err) {
-                reject(err)
-              }
-              if (result) {
-                  resolve(result);
-              }
-          });
+    pool.getConnection(function(err, connection) {
+      if (err) throw err; // not connected!
+     
+      // Use the connection
+      connection.query(query, function (error, results, fields) {
+        // When done with the connection, release it.
+        connection.release();
+     
+        // Handle error after the release.
+        if (error) reject(error);
+        resolve(results)
+     
+        // Don't use the connection here, it has been returned to the pool.
       });
-  }, (result) => {
-    // Resolve
-    db.end(function(err) {
-      if (err) {
-        return console.log('error:' + err.message);
-      }
-      console.log('Close the database connection.');
-    });
-    return result;
-  }, (err) => {
-    // Reject
-    throw err
+
   })
+
+  }, (result) => {
+    return result
+  }, (err) => {
+    throw err
+  });
 }
 
 /**
@@ -63,6 +96,7 @@ exports.googleAuth = async (googleID, displayName) => {
     // Check if google user exists in database.
     const results = await dbConnection(`SELECT * FROM user WHERE external_id = ${googleID} AND external_type = 'GOOGLE' LIMIT 1;`);
     console.log("Query Results:", results);
+    // console.log("Results length:", typeof(results));
 
     // If google user doesn't yet exist, add google user to db.
     if (!results.length > 0) {
