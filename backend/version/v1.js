@@ -52,7 +52,7 @@ module.exports = (app, db, auth, passport) => {
     try {
       // Check if refresh token exists in db of valid refresh tokens.
       if (!await db.refreshTokenExists(refreshToken)) {
-        res.sendStatus(403) //
+        res.sendStatus(401) //
         return
       } 
     } catch(err) {
@@ -227,6 +227,83 @@ module.exports = (app, db, auth, passport) => {
     try {
       const results = await db.getSessions(userId);
       res.json({sessions: results})
+    } catch(err) {
+      console.log(err)
+      res.sendStatus(500) // Internal db error.
+      return
+    }
+  })
+
+  app.post("/sessioninvite", auth.authenticateToken, async (req, res) => {
+    try {
+      const { sessionCode } = req.body
+      const userId = res.locals.user.userId
+
+      // See if user_session of owner exists for user
+      const userSessions = await db.getOwnerUserSessionByUserIdAndSessionCode(userId, sessionCode)
+      console.log("UserSessions:", userSessions)
+      if (!(userSessions.length > 0)) {
+        res.sendStatus(403) // Cannot create invite. Not owner or no user_session
+        return
+      }
+
+      const inviteUuid = await db.createSessionInvite(sessionCode, 'all')
+      console.log("Created session_invite with code:", inviteUuid)
+      res.json({inviteCode: inviteUuid})
+    } catch(err) {
+      console.log(err)
+      res.sendStatus(500) // Internal db error.
+      return
+    }
+
+  })
+
+  app.get("/sessioninvite", auth.authenticateToken, async (req, res) => {
+    try {
+      const sessionCode = req.query.code
+      if (!sessionCode) {
+        res.sendStatus(400) // No session code
+      }
+      const user = res.locals.user
+      const userId = user.userId
+
+      // See if user_session of owner exists for user
+      const userSessions = await db.getOwnerUserSessionByUserIdAndSessionCode(userId, sessionCode)
+      if (!(userSessions.length > 0)) {
+        res.sendStatus(403) // Cannot create invite. Not owner or no user_session
+        return
+      }
+
+      // Check if session invite exists
+      const results = await db.getSessionInviteBySessionCode(sessionCode)
+      if (!(results.length > 0)) {
+        // If no session invite exists, respond 404
+        res.sendStatus(404) // Not found
+        return
+      }
+      
+      const inviteUuid = results[0].uuid
+      console.log("Created session_invite with code:", inviteUuid)
+      res.json({inviteCode: inviteUuid})
+    } catch(err) {
+      console.log(err)
+      res.sendStatus(500) // Internal db error.
+      return
+    }
+
+  })
+
+  app.post("/joinsession", auth.authenticateToken, async (req, res) => {
+    try {
+      const inviteCode = req.body.inviteCode.inviteCode
+      const userId = res.locals.user.userId
+
+      console.log("Userid:", userId)
+      console.log("inviteCode:", inviteCode)
+
+      const sessionCodes = await db.createUserSessionBySessionInviteUuid(userId, inviteCode)
+      res.json({sessionCode: sessionCodes})
+      // res.redirect(`${rootURL}/session/${sessionCodes[0]}`)
     } catch(err) {
       console.log(err)
       res.sendStatus(500) // Internal db error.

@@ -17,8 +17,8 @@ CREATE TABLE user (
     role varchar(20) DEFAULT 'user' NOT NULL,
     username varchar(25) UNIQUE,
     password varchar(255),
-    external_id varchar(127) UNIQUE,
-    external_type varchar(20) UNIQUE,
+    external_id varchar(127),
+    external_type varchar(20),
     dt_created datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
     dt_last_login datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
     PRIMARY KEY (id),
@@ -47,6 +47,7 @@ CREATE TABLE session (
   PRIMARY KEY (id, code),
   FOREIGN KEY (group_id) REFERENCES group_(id) ON DELETE CASCADE
 );
+CREATE INDEX idx_session_code ON session(code);
 
 CREATE TABLE user_session (
   id bigint NOT NULL AUTO_INCREMENT UNIQUE,
@@ -71,15 +72,18 @@ CREATE TABLE session_time_range (
 
 CREATE TABLE session_invite (
   id bigint NOT NULL AUTO_INCREMENT UNIQUE,
+  uuid varchar(36) NOT NULL,
   session_id int NOT NULL,
   group_id int,
   user_id int,
   dt_created datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+  type varchar(10) NOT NULL,
   PRIMARY KEY (id),
   FOREIGN KEY (group_id) REFERENCES group_(id) ON DELETE CASCADE,
   FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
   FOREIGN KEY (session_id) REFERENCES session(id) ON DELETE CASCADE
 );
+CREATE INDEX idx_session_invite_uuid ON session_invite(uuid);
 
 CREATE TABLE group_invitation (
   id bigint NOT NULL AUTO_INCREMENT UNIQUE,
