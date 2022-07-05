@@ -77,10 +77,10 @@ const dbConnection = async (query) => {
       });
 
   })
-
   }, (result) => {
     return result
   }, (err) => {
+    console.log("Error has been thrown")
     throw err
   });
 }

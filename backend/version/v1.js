@@ -131,7 +131,7 @@ module.exports = (app, db, auth, passport) => {
 
       // Secure, hardened cookies
       res.cookie('userContextAccess', randStringAccess, secureCookieConfig);
-      res.cookie('userContextRefresh', randStringRefresh, secureCookieConfig);
+      res.cookie('userContextRefresh', randStringRefresh, {...secureCookieConfig, expires: util.dtRefreshFingerprintCookieExpires()});
 
       res.redirect(rootURL)
 
