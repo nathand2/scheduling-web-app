@@ -20,12 +20,7 @@ const Session = () => {
   const handleShow = () => setShowDtModal(true);
   const submitDtRange = () => {
     handleClose()
-    const dtRange = {
-      dtStart: dtStart,
-      dtEnd: dtEnd,
-      dtStatus: dtStatus
-    }
-    console.log("DT Range to submit:", dtRange)
+    addDtRange()
   }
 
   const dtOptionsConfig = {
@@ -38,15 +33,13 @@ const Session = () => {
       if (!didCancel) {
         // Get session data from api
         console.log("Hello world");
-        // const params = useParams();
         try {
           const data = await RequestHandler.req(
             `/session/${params.code}`,
             "GET"
           );
-          // return data
           console.log("Res data:", data);
-          setSession(JSON.stringify(data));
+          setSession(data.session);
         } catch (err) {
           console.log("Error:", err);
         }
@@ -81,7 +74,7 @@ const Session = () => {
     }
   };
 
-  const addDtRange = async (dtStart, dtEnd) => {
+  const addDtRange = async () => {
     try {
       // Check for valid dt range
       if (new Date(dtStart) > new Date(dtEnd)) {
@@ -89,10 +82,20 @@ const Session = () => {
         throw new Error("Invalid dt Range");
       }
 
+
+      console.log("Date type:", String(typeof(dtStart)))
+      console.log("Session:", session)
+      console.log("Body:", {
+        sessionId: session.id,
+        dtStart: dtStart,
+        dtEnd: dtEnd,
+        status: dtStatus
+      })
       const resData = await RequestHandler.req("/sessiontimerange", "POST", {
         sessionId: session.id,
         dtStart: dtStart,
         dtEnd: dtEnd,
+        status: dtStatus
       });
       const insertId = resData.insertId;
       console.log("Inserted dtRange with insertId:", insertId);
@@ -168,7 +171,7 @@ const Session = () => {
         </Modal>
       </>
       <br />
-      {session}
+      {JSON.stringify(session)}
     </div>
   );
 };
