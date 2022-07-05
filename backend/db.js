@@ -349,3 +349,21 @@ exports.createSessionTimeRange = async (userId, sessionId, dtStart, dtEnd, statu
     throw err
   }
 }
+
+exports.getSessionIdBySessionCode = async (sessionCode) => {
+  try {
+    const results = await dbConnection(`SELECT id FROM session WHERE session_code = '${sessionCode}' LIMIT 1;`)
+    return results
+  } catch(err) {
+    throw err
+  }
+}
+
+exports.getSesssionTimeRanges = async (sessionId) => {
+  try {
+    const results = await dbConnection(`SELECT * FROM (SELECT * FROM user_session WHERE session_id = ${sessionId}) AS user_session_subset INNER JOIN session_time_range ON user_session_subset.id = session_time_range.user_session_id`)
+    return results
+  } catch(err) {
+    throw err
+  }
+}

@@ -327,7 +327,8 @@ module.exports = (app, db, auth, passport) => {
       const userSessions = await db.getUserSessionByUserIdAndSessionId(userId, sessionId)
       if (!userSessions > 0) {
         // User not apart of session
-        res.sendStatus(404) // Forbidden
+        res.sendStatus(403) // Forbidden
+        return
       }
 
       const insertId = await db.createSessionTimeRange(userId, sessionId, dtStart, dtEnd, status)
@@ -340,5 +341,37 @@ module.exports = (app, db, auth, passport) => {
     }
 
 
+  })
+
+  app.get('/timeranges', auth.authenticateToken, async (req, res) => {
+      
+    try {
+      const sessionId = req.query.sessionid
+      if (!sessionId) {
+        console.log("No Session id")
+        res.sendStatus(400)  // Client error
+        return
+      }
+
+      // const sessionId = await db.getSessionIdBySessionCode(sessionCode)[0]
+      console.log("SessionId:", sessionId)
+
+      const userId = res.locals.user.userId  // User Id from JWT token
+      // Check if user is apart of session
+      const userSessions = await db.getUserSessionByUserIdAndSessionId(userId, sessionId)
+      if (!userSessions > 0) {
+        // User not apart of session
+        res.sendStatus(403) // Forbidden
+        return
+      }
+
+      const results = await db.getSesssionTimeRanges(sessionId)
+      res.json({results: results})
+
+    } catch(err) {
+      console.log(err)
+      res.sendStatus(500) // Internal db error.
+      return
+    }
   })
 }

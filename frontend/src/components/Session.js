@@ -10,9 +10,10 @@ import Flatpickr from "react-flatpickr";
 const Session = () => {
   const [params, setParams] = useState(useParams());
   const [session, setSession] = useState("");
+  const [timeRanges, setTimeRanges] = useState([]);
   const [showDtModal, setShowDtModal] = useState(false);
+
   const [dtStatus, setDtStatus] = useState('going');
-  
   const [dtStart, setdtStart] = useState(new Date())
   const [dtEnd, setdtEnd] = useState(new Date(new Date().getTime() + 60 * 60 * 2 * 1000))
 
@@ -32,14 +33,24 @@ const Session = () => {
     const getSession = async () => {
       if (!didCancel) {
         // Get session data from api
-        console.log("Hello world");
         try {
           const data = await RequestHandler.req(
             `/session/${params.code}`,
             "GET"
           );
+
+          const sessionData = data.session
           console.log("Res data:", data);
-          setSession(data.session);
+          await setSession(data.session);
+          console.log("Session?:", sessionData)
+
+          // Get session time range data.
+          const timeRangeData = await RequestHandler.req(
+            `/timeranges?sessionid=${sessionData.id}`,
+            "GET"
+          );
+          console.log("Time Range results:", timeRangeData.results)
+          setTimeRanges(timeRangeData.results)
         } catch (err) {
           console.log("Error:", err);
         }
@@ -172,6 +183,17 @@ const Session = () => {
       </>
       <br />
       {JSON.stringify(session)}
+      <br />
+      Time Ranges:
+      <br />
+      {
+        timeRanges.map(
+          (range) => (
+            <>Hello
+            <br /></>
+          )
+        )
+      }
     </div>
   );
 };
