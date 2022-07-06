@@ -8,12 +8,13 @@ import Container from 'react-bootstrap/Container';
 import { Navigate } from 'react-router-dom';
 
 import {RequestHandler} from '../js/requestHandler'
+const util = require("../js/util");
 
 const SessionCreate = () => {
   const [title, setTitle] = useState('')
   const [desc, setDesc] = useState('')
   const [dtStart, setdtStart] = useState(new Date())
-  const [dtEnd, setdtEnd] = useState(new Date(new Date().getTime() + 60 * 60 * 24 * 1000))
+  const [dtEnd, setdtEnd] = useState(new Date())
   const [viewOption, setViewOption] = useState('account-only')
 
 
@@ -21,11 +22,16 @@ const SessionCreate = () => {
   const [sessionId, setSessionId] = useState('')
 
   const dtOptionsConfig = {
-    minuteIncrement: 5,
+    minuteIncrement: 1,
   }
 
+ 
+  
   const createSession = async (e) => {
     e.preventDefault();
+
+    console.log("Now:", new Date())
+
     const session = {
       title: title,
       desc: desc === "" ? undefined : desc,
@@ -45,10 +51,6 @@ const SessionCreate = () => {
     } catch(err) {
       console.log("Unable to create session. Error:", err);
     }
-
-
-    // Simulate an HTTP redirect:
-    // window.location.replace(`/session/${Math.floor(Math.random() * 100)}`);
   }
 
   
@@ -84,7 +86,11 @@ const SessionCreate = () => {
             data-enable-time
             value={dtStart}
             onChange={(dt) => {
-              setdtStart(dt);
+              setdtStart(dt[0]);
+            }}
+            options={{
+              ...dtOptionsConfig,
+              minDate: dtStart,
             }}
           />
         </Form.Group>
@@ -94,11 +100,10 @@ const SessionCreate = () => {
             data-enable-time
             value={dtEnd}
             onChange={(dt) => {
-              setdtEnd(dt);
+              setdtEnd(dt[0]);
             }}
             options={{
-              ...dtOptionsConfig,
-              minDate: dtStart,
+              ...dtOptionsConfig
             }}
           />
         </Form.Group>

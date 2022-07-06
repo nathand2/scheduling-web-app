@@ -180,7 +180,28 @@ module.exports = (app, db, auth, passport) => {
     const {title, desc, dtStart, dtEnd, attendType} = req.body;
     try {
       console.log("/session Locals.user:", res.locals.user)
-      const sessionCode = util.generateSessionCode();
+      // const sessionCode = util.generateSessionCode();
+
+      // Generate valid session code
+      let sessionCode;
+      let count = 0;
+      while (count < 10) {
+        const tempSessionCode = util.generateSessionCode();
+        const sessionsWithCode = await db.getSessionIdBySessionCode(tempSessionCode)
+        // If sessions dont exist with this code, continue
+        if (!sessionsWithCode.length > 0) {
+          sessionCode = tempSessionCode
+        }
+        count++
+      }
+
+      console.log("SESSION post body:", title, desc, dtStart, dtEnd, attendType)
+
+      if (!sessionCode) {
+        console.log("Unable to generate valid session code")
+        return res.sendStatus(500)  // Internal Error
+      }
+
       const sessionId = await db.createSession(sessionCode, title, dtStart, dtEnd, attendType, desc)
       console.log("User in /session:", res.locals.user)
       // const userId = await db.getUserIdByExternalID(res.locals.user.userId, res.locals.user.type)
@@ -322,6 +343,22 @@ module.exports = (app, db, auth, passport) => {
         res.sendStatus(400) // Client Error
         return
       }
+
+      const session = (await db.getSessionById(sessionId))[0]
+      console.log("Session:", session)
+      const sessionDtStart = session.dt_start
+      const sessionDtEnd = session.dt_end
+      // console.log("Types:", typeof dt_start, typeof dt_end)
+      console.log("Dates:", sessionDtStart, sessionDtEnd)
+
+      if (!(sessionDtStart <= dtStart && sessionDtEnd <= dtEnd)) {
+        console.log("Invalid dt range")
+        return res.sendStatus(400)  // Client Error
+      } else {
+        console.log("Valid dt range")
+      }
+      
+      
   
       // Check if user is apart of session
       const userSessions = await db.getUserSessionByUserIdAndSessionId(userId, sessionId)

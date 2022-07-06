@@ -55,8 +55,8 @@ export class RequestHandler {
      
       if (res.status === 200) {
         return await res.json();  // JWT token valid, return results.
-      } else if (res.status === 401 || res.status === 403) {
-        return {status: "Invalid new Access Token", token: window.sessionStorage.getItem('accessToken')}  // Newly created JWT problem.
+      } else if (res.status === 401) {
+        throw new Error (401)  // Newly created JWT problem. Forbidden
       } else if (res.status === 403 ) {
         throw new Error("Forbidden");
       } else {

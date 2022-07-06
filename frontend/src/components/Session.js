@@ -6,12 +6,14 @@ import Button from "react-bootstrap/Button";
 import Modal from "react-bootstrap/Modal";
 import Form from "react-bootstrap/Form"
 import Flatpickr from "react-flatpickr";
+const util = require("../js/util");
 
 const Session = () => {
   const [params, setParams] = useState(useParams());
   const [session, setSession] = useState("");
   const [timeRanges, setTimeRanges] = useState([]);
   const [showDtModal, setShowDtModal] = useState(false);
+  const [expiredSession, setExpiredSession] = useState()
 
   const [dtStatus, setDtStatus] = useState('going');
   const [dtStart, setdtStart] = useState(new Date())
@@ -40,8 +42,23 @@ const Session = () => {
           );
 
           const sessionData = data.session
+
           console.log("Res data:", data);
-          await setSession(data.session);
+
+          // sessionData.dt_start = util.mySqlDtToJsDate(sessionData.dt_start)
+          // sessionData.dt_end = util.mySqlDtToJsDate(sessionData.dt_end)
+          
+          await setSession(sessionData);
+
+          console.log("dt_start raw:", sessionData.dt_start)
+          console.log("dt_start date object:", util.mySqlDtToJsDate(sessionData.dt_start))
+          console.log("dt_end raw:", sessionData.dt_end)
+          console.log("dt_end date object:", new Date(sessionData.dt_end)) // This is working
+          const d = new Date();
+          console.log("Now", d)
+
+          // Determine if session is expired
+          setExpiredSession(new Date() > util.mySqlDtToJsDate(sessionData.dt_end))
           console.log("Session?:", sessionData)
 
           // Get session time range data.
@@ -182,6 +199,8 @@ const Session = () => {
         </Modal>
       </>
       <br />
+      Session Status: {expiredSession ? <>Expired</> : <>Ongoing</>}
+      <br />
       {JSON.stringify(session)}
       <br />
       Time Ranges:
@@ -189,7 +208,7 @@ const Session = () => {
       {
         timeRanges.map(
           (range) => (
-            <>Hello
+            <>{JSON.stringify(range)}
             <br /></>
           )
         )

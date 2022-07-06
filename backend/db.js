@@ -1,12 +1,24 @@
 const mysql = require('mysql')
-const dbUser = {
+const config = {
   host: 'localhost',
   user: 'root',
   password: '',
-  database: 'scheduler'
+  database: 'scheduler',
+  timezone: 'UTC', // Interpret all received timestamps as UTC. Otherwise local timezone is assumed.
+	dateStrings: [
+		'DATE', // DATE's are returned as strings (otherwise they would be interpreted as YYYY-MM-DD 00:00:00+00:00)
+		'DATETIME' // DATETIME's return as strings (otherwise they would interpreted as YYYY-MM-DD HH:mm:ss+00:00)
+	]
 };
 
-const pool = mysql.createPool(dbUser);
+const pool = mysql.createPool(config);
+pool.on('connection', conn => {
+	conn.query("SET time_zone='+00:00';", error => {
+		if(error){
+			throw error;
+		}
+	});
+});
 
 /**
  * TODO: Error checking if MySQL server is down not fully implemented
@@ -184,6 +196,7 @@ exports.deleteRefreshToken = async (token) => {
  */
 exports.createSession = async (code, title, dt_start, dt_end, attendType, desc=undefined, groupID=undefined) => {
   try {
+    console.log("Create session query:", `INSERT INTO session (group_id, session_desc, session_title, dt_start, dt_end, attend_type, code) VALUES (${(groupID === undefined ? "NULL" : groupID) + ", "}${(desc === undefined ? "NULL" : "'" + desc + "'") + ', '}'${title}', '${dt_start}', '${dt_end}', '${attendType}', '${code}')`)
     const results = await dbConnection(`INSERT INTO session (group_id, session_desc, session_title, dt_start, dt_end, attend_type, code) VALUES (${(groupID === undefined ? "NULL" : groupID) + ", "}${(desc === undefined ? "NULL" : "'" + desc + "'") + ', '}'${title}', '${dt_start}', '${dt_end}', '${attendType}', '${code}')`)
     console.log("Inserted ID:", results.insertId)
     console.log("Session Code:", code)
@@ -341,6 +354,15 @@ exports.getUserSessionByUserIdAndSessionId = async (userId, sessionId) => {
   }
 }
 
+exports.getSessionById = async (sessionId) => {
+  try {
+    const results = await dbConnection(`SELECT * FROM session WHERE id = ${sessionId} LIMIT 1;`)
+    return results
+  } catch(err) {
+    throw err
+  }
+}
+
 exports.createSessionTimeRange = async (userId, sessionId, dtStart, dtEnd, status) => {
   try {
     const results = await dbConnection(`INSERT INTO session_time_range (user_session_id, dt_start, dt_end, status) VALUES ((SELECT id FROM user_session WHERE user_id = ${userId} AND session_id = ${sessionId} LIMIT 1), '${dtStart}', '${dtEnd}', '${status}');`)
@@ -352,7 +374,7 @@ exports.createSessionTimeRange = async (userId, sessionId, dtStart, dtEnd, statu
 
 exports.getSessionIdBySessionCode = async (sessionCode) => {
   try {
-    const results = await dbConnection(`SELECT id FROM session WHERE session_code = '${sessionCode}' LIMIT 1;`)
+    const results = await dbConnection(`SELECT id FROM session WHERE code = '${sessionCode}' LIMIT 1;`)
     return results
   } catch(err) {
     throw err

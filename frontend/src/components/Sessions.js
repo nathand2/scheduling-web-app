@@ -18,6 +18,8 @@ const Sessions = () => {
         // Get session data from api
         try {
           const data = await RequestHandler.req(`/sessions`, 'GET')
+          
+          console.log("data:", data)
           console.log("Res data:", data.sessions)
           setSessions(data.sessions)
         } catch(err) {
