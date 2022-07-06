@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
-import { RequestHandler } from "../js/requestHandler";
 import Button from "react-bootstrap/Button";
 import Modal from "react-bootstrap/Modal";
 import Form from "react-bootstrap/Form"
 import Flatpickr from "react-flatpickr";
+
+import SessionHeader from './SessionHeader'
+
+import { RequestHandler } from "../js/requestHandler";
 const util = require("../js/util");
 
 const Session = () => {
@@ -129,6 +132,7 @@ const Session = () => {
   // let params = useParams()
   return (
     <div>
+      <SessionHeader />
       Session
       <br />
       <Button onClick={shareWithLink}>Share with link</Button>

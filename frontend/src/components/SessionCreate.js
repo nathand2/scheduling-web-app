@@ -8,13 +8,12 @@ import Container from 'react-bootstrap/Container';
 import { Navigate } from 'react-router-dom';
 
 import {RequestHandler} from '../js/requestHandler'
-const util = require("../js/util");
 
 const SessionCreate = () => {
   const [title, setTitle] = useState('')
   const [desc, setDesc] = useState('')
   const [dtStart, setdtStart] = useState(new Date())
-  const [dtEnd, setdtEnd] = useState(new Date())
+  const [dtEnd, setdtEnd] = useState(new Date(new Date().getTime() + 60 * 60 * 4 * 1000))
   const [viewOption, setViewOption] = useState('account-only')
 
 
@@ -32,6 +31,19 @@ const SessionCreate = () => {
 
     console.log("Now:", new Date())
 
+    if (dtStart > dtEnd) {
+      alert('Invalid time range. Start must before end')
+      return
+    }
+
+    const diff = dtEnd.getTime() - dtStart.getTime();   
+    const dayDiff = diff / (1000 * 60);  // Get difference in minutes
+    // console.log("Day Diff:", daydiff)
+    // return;
+    if (dayDiff < 31) {
+      alert('Session must be longer than 30 minutes.')
+    }
+
     const session = {
       title: title,
       desc: desc === "" ? undefined : desc,
@@ -47,7 +59,6 @@ const SessionCreate = () => {
       console.log("New session ID:", sessionData.code)
       setSessionId(sessionData.code)
       setSessionCreated(true)
-      // window.location.replace(`/session/${sessionData.code}`);
     } catch(err) {
       console.log("Unable to create session. Error:", err);
     }
@@ -90,7 +101,7 @@ const SessionCreate = () => {
             }}
             options={{
               ...dtOptionsConfig,
-              minDate: dtStart,
+              minDate: new Date(),
             }}
           />
         </Form.Group>
@@ -103,7 +114,8 @@ const SessionCreate = () => {
               setdtEnd(dt[0]);
             }}
             options={{
-              ...dtOptionsConfig
+              ...dtOptionsConfig,
+              minDate: new Date(),
             }}
           />
         </Form.Group>
@@ -116,7 +128,7 @@ const SessionCreate = () => {
             onChange={(e) => setViewOption(e.target.value)}
           >
             <option value="account-only">People with accounts</option>
-            <option value="anyone">Anyone</option>
+            {/* <option value="anyone">Anyone</option> */}
             <option value="group-only" disabled>
               Specific Group (Coming Soon...🙃)
             </option>
