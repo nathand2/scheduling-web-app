@@ -13,7 +13,7 @@ const Session = () => {
   const [session, setSession] = useState("");
   const [timeRanges, setTimeRanges] = useState([]);
   const [showDtModal, setShowDtModal] = useState(false);
-  const [expiredSession, setExpiredSession] = useState()
+  const [expiredSession, setExpiredSession] = useState(undefined)
 
   const [dtStatus, setDtStatus] = useState('going');
   const [dtStart, setdtStart] = useState(new Date())
@@ -49,13 +49,6 @@ const Session = () => {
           // sessionData.dt_end = util.mySqlDtToJsDate(sessionData.dt_end)
           
           await setSession(sessionData);
-
-          console.log("dt_start raw:", sessionData.dt_start)
-          console.log("dt_start date object:", util.mySqlDtToJsDate(sessionData.dt_start))
-          console.log("dt_end raw:", sessionData.dt_end)
-          console.log("dt_end date object:", new Date(sessionData.dt_end)) // This is working
-          const d = new Date();
-          console.log("Now", d)
 
           // Determine if session is expired
           setExpiredSession(new Date() > util.mySqlDtToJsDate(sessionData.dt_end))
