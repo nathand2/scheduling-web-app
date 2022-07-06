@@ -3,7 +3,7 @@ import Button from "react-bootstrap/Button";
 
 import {AiOutlineUserAdd} from "react-icons/ai"
 
-const SessionHeader = () => {
+const SessionHeader = ({ showShareModal }) => {
   return (
     <div>
       <Navbar
@@ -34,7 +34,7 @@ const SessionHeader = () => {
               </NavDropdown>
             </Nav>
           </Navbar.Collapse>
-          <Button className="py-1">
+          <Button className="py-1" onClick={showShareModal}>
             <AiOutlineUserAdd />
             &nbsp;Share&nbsp;
           </Button>

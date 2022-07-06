@@ -7,6 +7,7 @@ import Form from "react-bootstrap/Form"
 import Flatpickr from "react-flatpickr";
 
 import SessionHeader from './SessionHeader'
+import SessionShareModal from './SessionShareModal'
 
 import { RequestHandler } from "../js/requestHandler";
 const util = require("../js/util");
@@ -16,16 +17,32 @@ const Session = () => {
   const [session, setSession] = useState("");
   const [timeRanges, setTimeRanges] = useState([]);
   const [showDtModal, setShowDtModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   const [expiredSession, setExpiredSession] = useState(undefined)
 
   const [dtStatus, setDtStatus] = useState('going');
   const [dtStart, setdtStart] = useState(new Date())
   const [dtEnd, setdtEnd] = useState(new Date(new Date().getTime() + 60 * 60 * 2 * 1000))
 
-  const handleClose = () => setShowDtModal(false);
-  const handleShow = () => setShowDtModal(true);
+  const handleCloseDt = () => setShowDtModal(false);
+  const handleShowDt = () => setShowDtModal(true);
+
+  
+  const handleCloseShare = () => {
+    setShowShareModal(false);
+  }
+  const handleShowShare = () => {
+    console.log("Trying to show share")
+    setShowShareModal(true);
+  }
+
+  const closeShare = () => {
+    handleCloseShare()
+    addDtRange()
+  }
+
   const submitDtRange = () => {
-    handleClose()
+    handleCloseDt()
     addDtRange()
   }
 
@@ -132,7 +149,9 @@ const Session = () => {
   // let params = useParams()
   return (
     <div>
-      <SessionHeader />
+      <SessionHeader showShareModal={handleShowShare} />
+      <SessionShareModal show={showShareModal} onHide={handleCloseShare} handleClose={handleCloseShare} />
+      showShareModal:{showShareModal ? "true" : "false"}<br />
       Session
       <br />
       <Button onClick={shareWithLink}>Share with link</Button>
@@ -142,11 +161,11 @@ const Session = () => {
       {/* <Button onClick={showDtModal}>Add DtRange</Button>
       <br /> */}
       <>
-        <Button variant="primary" onClick={handleShow}>
+        <Button variant="primary" onClick={handleShowDt}>
         Add DtRange
         </Button>
 
-        <Modal show={showDtModal} onHide={handleClose}>
+        <Modal show={showDtModal} onHide={handleCloseDt}>
         
           <Modal.Header closeButton>
             <Modal.Title>Add Date Time Range</Modal.Title>
@@ -186,7 +205,7 @@ const Session = () => {
         </Form.Group>
             </Modal.Body>
           <Modal.Footer>
-            <Button variant="secondary" onClick={handleClose}>
+            <Button variant="secondary" onClick={handleCloseDt}>
               Close
             </Button>
             <Button variant="primary" onClick={submitDtRange}>
