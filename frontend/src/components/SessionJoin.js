@@ -15,10 +15,12 @@ const SessionJoin = () => {
       if (!didCancel) {
         const inviteCode = searchParams.get("code");
         if (inviteCode) {
+          let data, status, res;
           try {
-            const data = await RequestHandler.req("/joinsession", "POST", {
+             res = await RequestHandler.req("/joinsession", "POST", {
               inviteCode: { inviteCode },
             });
+            data = res.data
             console.log("res data:", data);
             console.log("http://localhost:3000/session/" + data.sessionCode)
             setSessionCode(data.sessionCode)

@@ -121,26 +121,30 @@ function App() {
   }
   
   const testEndpoint = async () => {
-    let data;
+    let data, status, res;
     try {
-      data = await RequestHandler.req('/sessions', 'GET')
+      res = await RequestHandler.req('/sessions', 'GET')
+      data = res.data
+      status = res.status
     } catch(err) {
       console.log("Error:", err);
     }
 
-    console.log('Testing Auth results data:', data)
+    console.log('Testing endpoint res:', res)
     setAccessToken(await window.sessionStorage.getItem('accessToken'))
   }
 
   const testRequest = async () => {
-    let data;
+    let data, status, res;
     try {
-      data = await RequestHandler.req('/testauth', 'POST')
+      res = await RequestHandler.req('/testauth', 'POST')
+      data = res.data
+      status = res.status
     } catch(err) {
       console.log("Error:", err);
     }
 
-    console.log('Testing Auth results data:', data)
+    console.log('Testing Auth res:', res)
     setAccessToken(await window.sessionStorage.getItem('accessToken'))
   }
 

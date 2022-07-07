@@ -55,15 +55,16 @@ const Session = () => {
     const getSession = async () => {
       if (!didCancel) {
         // Get session data from api
+        let data, status, res;
         try {
-          const data = await RequestHandler.req(
+          res = await RequestHandler.req(
             `/session/${params.code}`,
             "GET"
           );
 
-          const sessionData = data.session
+          const sessionData = res.data.session
 
-          console.log("Res data:", data);
+          console.log("Res data:", res);
 
           // sessionData.dt_start = util.mySqlDtToJsDate(sessionData.dt_start)
           // sessionData.dt_end = util.mySqlDtToJsDate(sessionData.dt_end)
@@ -75,12 +76,13 @@ const Session = () => {
           console.log("Session?:", sessionData)
 
           // Get session time range data.
-          const timeRangeData = await RequestHandler.req(
+          res = await RequestHandler.req(
             `/timeranges?sessionid=${sessionData.id}`,
             "GET"
           );
-          console.log("Time Range results:", timeRangeData.results)
-          setTimeRanges(timeRangeData.results)
+          const timeRangeData = res.data.results
+          console.log("Time Range results:", timeRangeData)
+          setTimeRanges(timeRangeData)
         } catch (err) {
           console.log("Error:", err);
         }
@@ -90,10 +92,12 @@ const Session = () => {
   }, []);
 
   const shareWithLink = async () => {
+    let data, status, res;
     try {
-      const results = await RequestHandler.req("/sessioninvite", "POST", {
+       res = await RequestHandler.req("/sessioninvite", "POST", {
         sessionCode: params.code,
       });
+      const results = res.data
       console.log("Created session invite:", results);
       console.log(
         "http://localhost:3000/sessionjoin?code=" + results.inviteCode
@@ -104,11 +108,13 @@ const Session = () => {
   };
 
   const getShareLink = async () => {
+    let data, status, res;
     try {
-      const results = await RequestHandler.req(
+       res = await RequestHandler.req(
         `/sessioninvite?code=${params.code}`,
         "GET"
       );
+      const results = res.data
       console.log("Got invite code:", results);
     } catch (err) {
       console.log("Error:", err);
@@ -132,12 +138,14 @@ const Session = () => {
         dtEnd: dtEnd,
         status: dtStatus
       })
-      const resData = await RequestHandler.req("/sessiontimerange", "POST", {
+      let data, status, res;
+       res = await RequestHandler.req("/sessiontimerange", "POST", {
         sessionId: session.id,
         dtStart: dtStart,
         dtEnd: dtEnd,
         status: dtStatus
       });
+      const resData = res.data
       const insertId = resData.insertId;
       console.log("Inserted dtRange with insertId:", insertId);
     } catch (err) {

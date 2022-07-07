@@ -11,10 +11,12 @@ const SessionShareModal = ({ handleClose, show }) => {
   const [params, setParams] = useState(useParams());
 
   const shareWithLink = async () => {
+    let data, status, res;
     try {
-      const results = await RequestHandler.req("/sessioninvite", "POST", {
+       res = await RequestHandler.req("/sessioninvite", "POST", {
         sessionCode: params.code,
       });
+      const results = res.data
       console.log("Created session invite:", results);
       console.log(
         "http://localhost:3000/sessionjoin?code=" + results.inviteCode
@@ -32,11 +34,13 @@ const SessionShareModal = ({ handleClose, show }) => {
   };
 
   const getShareLink = async () => {
+    let res;
     try {
-      const results = await RequestHandler.req(
+       res = await RequestHandler.req(
         `/sessioninvite?code=${params.code}`,
         "GET"
       );
+      const results = res.data
       console.log("Got invite code:", results);
       console.log(
         "http://localhost:3000/sessionjoin?code=" + results.inviteCode

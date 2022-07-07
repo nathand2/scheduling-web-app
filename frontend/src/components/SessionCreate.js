@@ -54,8 +54,10 @@ const SessionCreate = () => {
     console.log("Session:", session)
 
     let sessionData;
+    let data, status, res;
     try {
-      sessionData = await RequestHandler.req('/session', 'POST', session)
+      res = await RequestHandler.req('/session', 'POST', session)
+      sessionData = res.data
       console.log("New session ID:", sessionData.code)
       setSessionId(sessionData.code)
       setSessionCreated(true)
