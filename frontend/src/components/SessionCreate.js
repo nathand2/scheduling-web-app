@@ -54,7 +54,7 @@ const SessionCreate = () => {
     console.log("Session:", session)
 
     let sessionData;
-    let data, status, res;
+    let res;
     try {
       res = await RequestHandler.req('/session', 'POST', session)
       sessionData = res.data

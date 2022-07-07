@@ -11,7 +11,7 @@ const SessionShareModal = ({ handleClose, show }) => {
   const [params, setParams] = useState(useParams());
 
   const shareWithLink = async () => {
-    let data, status, res;
+    let res;
     try {
        res = await RequestHandler.req("/sessioninvite", "POST", {
         sessionCode: params.code,

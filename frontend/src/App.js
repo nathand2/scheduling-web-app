@@ -121,11 +121,9 @@ function App() {
   }
   
   const testEndpoint = async () => {
-    let data, status, res;
+    let res;
     try {
       res = await RequestHandler.req('/sessions', 'GET')
-      data = res.data
-      status = res.status
     } catch(err) {
       console.log("Error:", err);
     }
@@ -135,11 +133,9 @@ function App() {
   }
 
   const testRequest = async () => {
-    let data, status, res;
+    let res;
     try {
       res = await RequestHandler.req('/testauth', 'POST')
-      data = res.data
-      status = res.status
     } catch(err) {
       console.log("Error:", err);
     }

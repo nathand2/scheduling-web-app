@@ -55,7 +55,7 @@ const Session = () => {
     const getSession = async () => {
       if (!didCancel) {
         // Get session data from api
-        let data, status, res;
+        let res;
         try {
           res = await RequestHandler.req(
             `/session/${params.code}`,
@@ -92,7 +92,7 @@ const Session = () => {
   }, []);
 
   const shareWithLink = async () => {
-    let data, status, res;
+    let res;
     try {
        res = await RequestHandler.req("/sessioninvite", "POST", {
         sessionCode: params.code,
@@ -108,7 +108,7 @@ const Session = () => {
   };
 
   const getShareLink = async () => {
-    let data, status, res;
+    let res;
     try {
        res = await RequestHandler.req(
         `/sessioninvite?code=${params.code}`,
@@ -138,7 +138,7 @@ const Session = () => {
         dtEnd: dtEnd,
         status: dtStatus
       })
-      let data, status, res;
+      let res;
        res = await RequestHandler.req("/sessiontimerange", "POST", {
         sessionId: session.id,
         dtStart: dtStart,

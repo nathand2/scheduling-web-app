@@ -15,7 +15,7 @@ const SessionJoin = () => {
       if (!didCancel) {
         const inviteCode = searchParams.get("code");
         if (inviteCode) {
-          let data, status, res;
+          let data, res;
           try {
              res = await RequestHandler.req("/joinsession", "POST", {
               inviteCode: { inviteCode },
