@@ -358,8 +358,6 @@ module.exports = (app, db, auth, passport) => {
         console.log("Valid dt range")
       }
       
-      
-  
       // Check if user is apart of session
       const userSessions = await db.getUserSessionByUserIdAndSessionId(userId, sessionId)
       if (!userSessions > 0) {
@@ -405,6 +403,36 @@ module.exports = (app, db, auth, passport) => {
       const results = await db.getSesssionTimeRanges(sessionId)
       res.json({results: results})
 
+    } catch(err) {
+      console.log(err)
+      res.sendStatus(500) // Internal db error.
+      return
+    }
+  })
+
+  app.get("/usersessions", auth.authenticateToken, async (req, res) => {
+    // Get user sessions for specific session
+    const sessionId = req.query.sessionid
+    const userId = res.locals.user.userId  // User Id from JWT token
+
+    if (!sessionId) {
+      console.log("No Session id")
+      res.sendStatus(400)  // Client error
+      return
+    }
+
+    try {
+      // Check if user is apart of session
+      const userSessions = await db.getUserSessionByUserIdAndSessionId(userId, sessionId)
+      if (!userSessions > 0) {
+        // User not apart of session
+        res.sendStatus(403) // Forbidden
+        return
+      }
+  
+      // Fetch user sessions
+      const userSessionsForSession = await db.getUserSessionsBySessionId(sessionId);
+      res.send({userSessions: userSessionsForSession})
     } catch(err) {
       console.log(err)
       res.sendStatus(500) // Internal db error.

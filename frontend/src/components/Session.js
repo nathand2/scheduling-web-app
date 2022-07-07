@@ -52,8 +52,6 @@ const Session = () => {
     minuteIncrement: 5,
   }
 
-  let otherSessionRes;
-
   useEffect(() => {
     let didCancel = false;
     const getSession = async () => {
@@ -61,44 +59,53 @@ const Session = () => {
         // Get session data from api
         let res;
         try {
-          res = await RequestHandler.req(
-            `/session/${params.code}`,
-            "GET"
-          );
+          res = await RequestHandler.req(`/session/${params.code}`, "GET");
 
-          console.log("Res with status:", res.status)
-          setSessionResStatus(res.status)
+          console.log("Res with status:", res.status);
+          setSessionResStatus(res.status);
           if (res.status !== 200) {
             if (res.status == 401) {
-              setOtherSessionResViews(<>Please log in</>)
+              setOtherSessionResViews(<>Please log in</>);
             } else if (res.status == 403) {
-              setOtherSessionResViews(<>Not invited</>)
+              setOtherSessionResViews(<>Not invited</>);
             } else if (res.status == 404) {
-              setOtherSessionResViews(<>Session Not Found</>)
+              setOtherSessionResViews(<>Session Not Found</>);
             } else {
-              setOtherSessionResViews(<>Oops, something went wrong</>)
+              setOtherSessionResViews(<>Oops, something went wrong</>);
             }
-            return
+            return;
           }
 
-          const sessionData = res.data.session
+          const sessionData = res.data.session;
 
           console.log("Res data:", res);
-          
+
           await setSession(sessionData);
 
           // Determine if session is expired
-          setExpiredSession(new Date() > util.mySqlDtToJsDate(sessionData.dt_end))
-          console.log("Session?:", sessionData)
+          setExpiredSession(
+            new Date() > util.mySqlDtToJsDate(sessionData.dt_end)
+          );
+          console.log("Session?:", sessionData);
 
           // Get session time range data.
           res = await RequestHandler.req(
             `/timeranges?sessionid=${sessionData.id}`,
             "GET"
           );
-          const timeRangeData = res.data.results
-          console.log("Time Range results:", timeRangeData)
-          setTimeRanges(timeRangeData)
+          const timeRangeData = res.data.results;
+          console.log("Time Range results:", timeRangeData);
+          setTimeRanges(timeRangeData);
+
+          // Get user sessions
+          res = await RequestHandler.req(
+            `/usersessions?sessionid=${sessionData.id}`,
+            "GET"
+          );
+          const userSessions = res.data.userSessions
+          console.log("Res:", res)
+          console.log("User session results:", userSessions);
+
         } catch (err) {
           console.log("Error:", err);
         }

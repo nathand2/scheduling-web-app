@@ -389,3 +389,12 @@ exports.getSesssionTimeRanges = async (sessionId) => {
     throw err
   }
 }
+
+exports.getUserSessionsBySessionId = async (sessionId) => {
+  try {
+    const results = await dbConnection(`SELECT * FROM user_session WHERE session_id = ${sessionId};`)
+    return results
+  } catch(err) {
+    throw err
+  }
+}
