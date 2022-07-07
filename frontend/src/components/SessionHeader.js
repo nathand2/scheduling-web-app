@@ -19,7 +19,7 @@ const SessionHeader = ({ showShareModal }) => {
             <Nav className="me-auto">
               <Nav.Link href="#features">Do Stuff</Nav.Link>
               <Nav.Link href="#pricing">More Stuff</Nav.Link>
-              <NavDropdown title="Dropdown" id="collasible-nav-dropdown">
+              {/* <NavDropdown title="Dropdown" id="collasible-nav-dropdown">
                 <NavDropdown.Item href="#action/3.1">Action</NavDropdown.Item>
                 <NavDropdown.Item href="#action/3.2">
                   Another action
@@ -31,7 +31,7 @@ const SessionHeader = ({ showShareModal }) => {
                 <NavDropdown.Item href="#action/3.4">
                   Separated link
                 </NavDropdown.Item>
-              </NavDropdown>
+              </NavDropdown> */}
             </Nav>
           </Navbar.Collapse>
           <Button className="py-1" onClick={showShareModal}>

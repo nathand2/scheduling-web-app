@@ -21,4 +21,12 @@
   -ms-flex-wrap: wrap;
       flex-wrap: wrap;
 }
+
+.text-underline {
+  text-decoration: underline;
+}
+
+.text-underline:hover {
+  cursor: pointer;
+}
 /*# sourceMappingURL=index.css.map */

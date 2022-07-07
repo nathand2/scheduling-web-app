@@ -20,3 +20,10 @@ $oauth-icon-height: 60px;
   display: flex;
   flex-wrap: wrap;
 }
+
+.text-underline {
+  text-decoration: underline;
+  &:hover {
+    cursor: pointer;
+  }
+}
