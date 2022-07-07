@@ -19,6 +19,7 @@ const Session = () => {
   const [showDtModal, setShowDtModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [expiredSession, setExpiredSession] = useState(undefined)
+  const [sessionResStatus, setSessionResStatus] = useState();
 
   const [dtStatus, setDtStatus] = useState('going');
   const [dtStart, setdtStart] = useState(new Date())
@@ -62,12 +63,14 @@ const Session = () => {
             "GET"
           );
 
+          setSessionResStatus(res.status)
+          if (res.status !== 200) {
+            return
+          }
+
           const sessionData = res.data.session
 
           console.log("Res data:", res);
-
-          // sessionData.dt_start = util.mySqlDtToJsDate(sessionData.dt_start)
-          // sessionData.dt_end = util.mySqlDtToJsDate(sessionData.dt_end)
           
           await setSession(sessionData);
 
@@ -90,36 +93,6 @@ const Session = () => {
     };
     getSession();
   }, []);
-
-  const shareWithLink = async () => {
-    let res;
-    try {
-       res = await RequestHandler.req("/sessioninvite", "POST", {
-        sessionCode: params.code,
-      });
-      const results = res.data
-      console.log("Created session invite:", results);
-      console.log(
-        "http://localhost:3000/sessionjoin?code=" + results.inviteCode
-      );
-    } catch (err) {
-      console.log("Error:", err);
-    }
-  };
-
-  const getShareLink = async () => {
-    let res;
-    try {
-       res = await RequestHandler.req(
-        `/sessioninvite?code=${params.code}`,
-        "GET"
-      );
-      const results = res.data
-      console.log("Got invite code:", results);
-    } catch (err) {
-      console.log("Error:", err);
-    }
-  };
 
   const addDtRange = async () => {
     try {
@@ -154,89 +127,114 @@ const Session = () => {
     }
   };
 
-  // let params = useParams()
   return (
     <div>
       <SessionHeader showShareModal={handleShowShare} />
-      <SessionShareModal show={showShareModal} onHide={handleCloseShare} handleClose={handleCloseShare} />
-      showShareModal:{showShareModal ? "true" : "false"}<br />
-      Session
-      <br />
-      <Button onClick={shareWithLink}>Share with link</Button>
-      <br />
-      <Button onClick={getShareLink}>Get Share Link</Button>
-      <br />
-      {/* <Button onClick={showDtModal}>Add DtRange</Button>
-      <br /> */}
-      <>
-        <Button variant="primary" onClick={handleShowDt}>
-        Add DtRange
-        </Button>
-
-        <Modal show={showDtModal} onHide={handleCloseDt}>
-        
-          <Modal.Header closeButton>
-            <Modal.Title>Add Date Time Range</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            Start &nbsp;
-            <Flatpickr
-            data-enable-time
-            value={dtStart}
-            onChange={(dt) => {
-              setdtStart(dt);
-            }}
-          />
-          <br />
-          End &nbsp;
-          <Flatpickr
-            data-enable-time
-            value={dtEnd}
-            onChange={(dt) => {
-              setdtEnd(dt);
-            }}
-            options={{
-              ...dtOptionsConfig,
-              minDate: dtStart,
-            }}
-          />
-          <Form.Group className="mb-3">
-          <Form.Label>Who can attend my Session? &nbsp;</Form.Label>
-          <Form.Select
-            aria-label="Default select example"
-            value={dtStatus}
-            onChange={(e) => setDtStatus(e.target.value)}
-          >
-            <option value="going">Going 👍</option>
-            <option value="maybe">Maybe 🤷‍♂️</option>
-          </Form.Select>
-        </Form.Group>
-            </Modal.Body>
-          <Modal.Footer>
-            <Button variant="secondary" onClick={handleCloseDt}>
-              Close
-            </Button>
-            <Button variant="primary" onClick={submitDtRange}>
-              Submit
-            </Button>
-          </Modal.Footer>
-        </Modal>
-      </>
-      <br />
-      Session Status: {expiredSession ? <>Expired</> : <>Ongoing</>}
-      <br />
-      {JSON.stringify(session)}
-      <br />
-      Time Ranges:
-      <br />
       {
-        timeRanges.map(
-          (range) => (
-            <>{JSON.stringify(range)}
-            <br /></>
+      sessionResStatus === undefined &&
+        <>
+        loading session
+        </>
+    }
+    {
+      sessionResStatus === 200 &&
+        <>
+        can view
+        <SessionShareModal show={showShareModal} onHide={handleCloseShare} handleClose={handleCloseShare} />
+        showShareModal:{showShareModal ? "true" : "false"}<br />
+        Session
+        <br />
+        <>
+          <Button variant="primary" onClick={handleShowDt}>
+          Add DtRange
+          </Button>
+  
+          <Modal show={showDtModal} onHide={handleCloseDt}>
+          
+            <Modal.Header closeButton>
+              <Modal.Title>Add Date Time Range</Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+              Start &nbsp;
+              <Flatpickr
+              data-enable-time
+              value={dtStart}
+              onChange={(dt) => {
+                setdtStart(dt);
+              }}
+            />
+            <br />
+            End &nbsp;
+            <Flatpickr
+              data-enable-time
+              value={dtEnd}
+              onChange={(dt) => {
+                setdtEnd(dt);
+              }}
+              options={{
+                ...dtOptionsConfig,
+                minDate: dtStart,
+              }}
+            />
+            <Form.Group className="mb-3">
+            <Form.Label>Who can attend my Session? &nbsp;</Form.Label>
+            <Form.Select
+              aria-label="Default select example"
+              value={dtStatus}
+              onChange={(e) => setDtStatus(e.target.value)}
+            >
+              <option value="going">Going 👍</option>
+              <option value="maybe">Maybe 🤷‍♂️</option>
+            </Form.Select>
+          </Form.Group>
+              </Modal.Body>
+            <Modal.Footer>
+              <Button variant="secondary" onClick={handleCloseDt}>
+                Close
+              </Button>
+              <Button variant="primary" onClick={submitDtRange}>
+                Submit
+              </Button>
+            </Modal.Footer>
+          </Modal>
+        </>
+        <br />
+        Session Status: {expiredSession ? <>Expired</> : <>Ongoing</>}
+        <br />
+        {JSON.stringify(session)}
+        <br />
+        Time Ranges:
+        <br />
+        {
+          timeRanges.map(
+            (range) => (
+              <>{JSON.stringify(range)}
+              <br /></>
+            )
           )
-        )
-      }
+        }
+        </>
+    }
+    {
+      sessionResStatus === 404 && 
+        <>
+        session not found
+        </>
+    }
+    {
+      sessionResStatus === 403 && 
+        <>
+        Unauthorized. Your not invited to this session
+        </>
+    }
+    {
+      // sessionResStatus !== (undefined || 200 || 404 || 403) && 
+      sessionResStatus !== undefined || sessionResStatus !== 200 || sessionResStatus !== 404 || sessionResStatus !== 403 && (
+        <>
+        Opps, something went wrong...
+        </>
+      )
+    }
     </div>
   );
 };

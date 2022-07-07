@@ -260,8 +260,8 @@ exports.getSession = async (userId, sessionCode) => {
 
     // Check if user_session exists
     const results = await dbConnection(`SELECT session_id FROM user_session WHERE user_id = ${userId} AND session_id = ${sessionId};`)
-    console.log("Got user session:", results[0].session_id)
     if (results.length > 0) {
+      console.log("Got user session:", results[0].session_id)
       return {status: 200, session: sessionResults[0]}
     } else {
       // User Session doesnt exist. 403 Forbidden
