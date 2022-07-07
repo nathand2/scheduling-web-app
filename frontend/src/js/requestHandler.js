@@ -77,6 +77,10 @@ export class RequestHandler {
 
   static async refreshJWT(resource, reqMethod, body=undefined) {
     console.log("JWT Silent Refresh")
+    if (!window.localStorage.getItem('refreshToken')) {
+      console.log("No refresh token")
+      return {status: 401}
+    }
     try {
       const res = await fetch('http://localhost:6500/token', {
         method: 'POST',

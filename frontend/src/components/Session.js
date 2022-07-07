@@ -20,6 +20,7 @@ const Session = () => {
   const [showShareModal, setShowShareModal] = useState(false);
   const [expiredSession, setExpiredSession] = useState(undefined)
   const [sessionResStatus, setSessionResStatus] = useState();
+  const [otherSessionResViews, setOtherSessionResViews] = useState();
 
   const [dtStatus, setDtStatus] = useState('going');
   const [dtStart, setdtStart] = useState(new Date())
@@ -51,6 +52,8 @@ const Session = () => {
     minuteIncrement: 5,
   }
 
+  let otherSessionRes;
+
   useEffect(() => {
     let didCancel = false;
     const getSession = async () => {
@@ -63,8 +66,18 @@ const Session = () => {
             "GET"
           );
 
+          console.log("Res with status:", res.status)
           setSessionResStatus(res.status)
           if (res.status !== 200) {
+            if (res.status == 401) {
+              setOtherSessionResViews(<>Please log in</>)
+            } else if (res.status == 403) {
+              setOtherSessionResViews(<>Not invited</>)
+            } else if (res.status == 404) {
+              setOtherSessionResViews(<>Session Not Found</>)
+            } else {
+              setOtherSessionResViews(<>Oops, something went wrong</>)
+            }
             return
           }
 
@@ -129,17 +142,16 @@ const Session = () => {
 
   return (
     <div>
-      <SessionHeader showShareModal={handleShowShare} />
       {
-      sessionResStatus === undefined &&
+        sessionResStatus === undefined &&
         <>
         loading session
         </>
     }
     {
       sessionResStatus === 200 &&
-        <>
-        can view
+      <>
+      <SessionHeader showShareModal={handleShowShare} />
         <SessionShareModal show={showShareModal} onHide={handleCloseShare} handleClose={handleCloseShare} />
         showShareModal:{showShareModal ? "true" : "false"}<br />
         Session
@@ -215,26 +227,7 @@ const Session = () => {
         }
         </>
     }
-    {
-      sessionResStatus === 404 && 
-        <>
-        session not found
-        </>
-    }
-    {
-      sessionResStatus === 403 && 
-        <>
-        Unauthorized. Your not invited to this session
-        </>
-    }
-    {
-      // sessionResStatus !== (undefined || 200 || 404 || 403) && 
-      sessionResStatus !== undefined || sessionResStatus !== 200 || sessionResStatus !== 404 || sessionResStatus !== 403 && (
-        <>
-        Opps, something went wrong...
-        </>
-      )
-    }
+    {otherSessionResViews}
     </div>
   );
 };
