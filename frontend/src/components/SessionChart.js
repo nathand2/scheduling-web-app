@@ -1,10 +1,14 @@
 import { useEffect, useState, useRef } from 'react'
+import Button from "react-bootstrap/Button";
 import * as d3 from 'd3'
+const util = require("../js/util");
 
-const SessionChart = () => {
+const SessionChart = ({ timeRanges, session }) => {
 
-  const [data, setData] = useState([ 2, 4, 2, 6, 8 ])
+  // const [data, setData] = useState([])
   const canvas = useRef(null)
+
+  const chartSizeFactor = 5;
 
   // const [onEffectOnce, setOnEffectOnce] = useState(true)
   let stop = false
@@ -12,12 +16,20 @@ const SessionChart = () => {
   useEffect(() => {
     if (!stop) {
       stop = true
-      drawBarChart(data)
+      // processTimeRanges(timeRanges)
+      // drawBarChart(data)
     }
   }, [])
 
+  const generateChart = () => {
+    const ranges = processTimeRanges()
+    drawBarChart(ranges)
+  }
+
   const drawBarChart = (data) => {
-    const canvasHeight = 400
+    const sessionLengthInMinutes = (session.dt_end - session.dt_start) / (1000 * 60) * chartSizeFactor // Session length in minutes
+    console.log("sessionLengthInMinutes", sessionLengthInMinutes)
+    const canvasHeight = sessionLengthInMinutes
     const canvasWidth = 500
     const scale = 20
     const svgCanvas = d3.select(canvas.current)
@@ -30,21 +42,44 @@ const SessionChart = () => {
       .data(data).enter()
       .append('rect')
       .attr('width', 40)
-      .attr('height', (datapoint) => datapoint * scale)
+      .attr('height', (datapoint) => datapoint.height)
       .attr('fill', 'orange')
       .attr('x', (datapoint, iteration) => iteration * 45)
-      .attr('y', (datapoint) => 0)
+      .attr('y', (datapoint) => datapoint.top)
 
-    svgCanvas.selectAll('text')
-    .data(data).enter()
-        .append('text')
-        .attr('x', (dataPoint, i) => i * 45 + 10)
-        .attr('y', (dataPoint, i) => canvasHeight - dataPoint * scale - 10)
-        .text(dataPoint => dataPoint)
+    // svgCanvas.selectAll('text')
+    // .data(data).enter()
+    //     .append('text')
+    //     .attr('x', (dataPoint, i) => i * 45 + 10)
+    //     .attr('y', (dataPoint, i) => canvasHeight - dataPoint * scale - 10)
+    //     .text(dataPoint => dataPoint)
+  }
+
+  const processTimeRanges = () => {
+    console.log("Session:", session)
+    let ranges = []
+    timeRanges.map((range) => {
+      const dtRangeStart = util.mySqlDtToJsDate(range.dt_start)
+      const dtRangeEnd = util.mySqlDtToJsDate(range.dt_end)
+
+      // Height of the bar
+      const minuteRangeDifference = (dtRangeEnd - dtRangeStart) / (1000 * 60)  // Get minute diff
+      
+      // Space from top of chart to top of bar
+      const minuteStartDifference = (dtRangeStart - session.dt_start) / (1000 * 60)  // Get minute diff
+      console.log("minuteRangeDifference:", minuteRangeDifference)
+      console.log("minuteStartDifference:", minuteStartDifference)
+
+      ranges.push({height: Math.trunc(minuteRangeDifference) * chartSizeFactor, top: Math.trunc(minuteStartDifference) * chartSizeFactor})
+    })
+    console.log("Range stuff:", ranges)
+    // setData(ranges)
+    return ranges
   }
 
   return (
     <div>
+      <Button onClick={generateChart} >Draw chart</Button>
       <div className="canvas-container" ref={canvas}></div>
     </div>
   )

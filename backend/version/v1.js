@@ -337,9 +337,15 @@ module.exports = (app, db, auth, passport) => {
       const userId = res.locals.user.userId  // User Id from JWT token
       const { sessionId, dtStart, dtEnd, status } = req.body  // Post body
 
+      console.log("Date type:", typeof dtStart)
+      console.log("Dates:", new Date(dtStart), new Date(dtEnd))
+      console.log("Greater than?:", new Date(dtStart) < new Date(dtEnd))
+
+      const dateStart = new Date(dtStart)
+      const dateEnd = new Date(dtEnd)
       // Check for valid dt range
-      if (new Date(dtStart) > new Date(dtEnd)) {
-        console.log("Invalid dt range.")
+      if (dateStart > dateEnd) {
+        console.log("Invalid dt range. Start < End")
         res.sendStatus(400) // Client Error
         return
       }
@@ -349,10 +355,13 @@ module.exports = (app, db, auth, passport) => {
       const sessionDtStart = session.dt_start
       const sessionDtEnd = session.dt_end
       // console.log("Types:", typeof dt_start, typeof dt_end)
-      console.log("Dates:", sessionDtStart, sessionDtEnd)
-
-      if (!(sessionDtStart <= dtStart && sessionDtEnd <= dtEnd)) {
-        console.log("Invalid dt range")
+      
+      const sessionDateStart = new Date(sessionDtStart)
+      const sessionDateEnd = new Date(sessionDtEnd)
+      console.log("Dates:", sessionDateStart, sessionDateEnd)
+      
+      if ((sessionDateStart <= dateStart && sessionDateEnd >= dateEnd)) {
+        console.log("Invalid dt range.")
         return res.sendStatus(400)  // Client Error
       } else {
         console.log("Valid dt range")

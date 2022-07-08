@@ -25,9 +25,6 @@ const Session = () => {
   const [sessionResStatus, setSessionResStatus] = useState();
   const [otherSessionResViews, setOtherSessionResViews] = useState();
 
-  // Session Canvas
-
-
   const [dtStatus, setDtStatus] = useState("going");
   const [dtStart, setdtStart] = useState(new Date());
   const [dtEnd, setdtEnd] = useState(
@@ -89,11 +86,13 @@ const Session = () => {
       const sessionData = res.data.session;
 
       console.log("Res data:", res);
-
+      sessionData.dt_end = util.mySqlDtToJsDate(sessionData.dt_end)
+      sessionData.dt_start = util.mySqlDtToJsDate(sessionData.dt_start)
+      sessionData.dt_created = util.mySqlDtToJsDate(sessionData.dt_created)
       await setSession(sessionData);
 
       // Determine if session is expired
-      setExpiredSession(new Date() > util.mySqlDtToJsDate(sessionData.dt_end));
+      setExpiredSession(new Date() > sessionData.dt_end);
       console.log("Session?:", sessionData);
       return res;
     } catch (err) {
@@ -170,6 +169,7 @@ const Session = () => {
         status: dtStatus,
       });
       const resData = res.data;
+      console.log("Res:", res)
       const insertId = resData.insertId;
       console.log("Inserted dtRange with insertId:", insertId);
     } catch (err) {
@@ -192,7 +192,7 @@ const Session = () => {
           <Row>
             <Col sm={8}>
               {/* <canvas className="session-canvas" ></canvas> */}
-              <SessionChart />
+              <SessionChart timeRanges={ timeRanges } session={ session } />
               <br />
               Session Status: {expiredSession ? <>Expired</> : <>Ongoing</>}
               <br />
