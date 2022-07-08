@@ -8,7 +8,7 @@ const SessionChart = ({ timeRanges, session }) => {
   // const [data, setData] = useState([])
   const canvas = useRef(null)
 
-  const chartSizeFactor = 5;
+  const chartScale = 5;
 
   // const [onEffectOnce, setOnEffectOnce] = useState(true)
   let stop = false
@@ -27,11 +27,13 @@ const SessionChart = ({ timeRanges, session }) => {
   }
 
   const drawBarChart = (data) => {
-    const sessionLengthInMinutes = (session.dt_end - session.dt_start) / (1000 * 60) * chartSizeFactor // Session length in minutes
+    const sessionLengthInMinutes = (session.dt_end - session.dt_start) / (1000 * 60) * chartScale // Session length in minutes
     console.log("sessionLengthInMinutes", sessionLengthInMinutes)
     const canvasHeight = sessionLengthInMinutes
     const canvasWidth = 500
-    const scale = 20
+    const barWidth = 80
+    const barGap = 5
+    const barColor = 'lightblue'
     const svgCanvas = d3.select(canvas.current)
       .append('svg')
       .attr("class", "bar")
@@ -41,10 +43,10 @@ const SessionChart = ({ timeRanges, session }) => {
     svgCanvas.selectAll('rect')
       .data(data).enter()
       .append('rect')
-      .attr('width', 40)
+      .attr('width', barWidth)
       .attr('height', (datapoint) => datapoint.height)
-      .attr('fill', 'orange')
-      .attr('x', (datapoint, iteration) => iteration * 45)
+      .attr('fill', barColor)
+      .attr('x', (datapoint, iteration) => iteration * (barWidth + barGap))
       .attr('y', (datapoint) => datapoint.top)
 
     // svgCanvas.selectAll('text')
@@ -70,7 +72,7 @@ const SessionChart = ({ timeRanges, session }) => {
       console.log("minuteRangeDifference:", minuteRangeDifference)
       console.log("minuteStartDifference:", minuteStartDifference)
 
-      ranges.push({height: Math.trunc(minuteRangeDifference) * chartSizeFactor, top: Math.trunc(minuteStartDifference) * chartSizeFactor})
+      ranges.push({height: Math.trunc(minuteRangeDifference) * chartScale, top: Math.trunc(minuteStartDifference) * chartScale})
     })
     console.log("Range stuff:", ranges)
     // setData(ranges)

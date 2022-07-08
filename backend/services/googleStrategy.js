@@ -9,7 +9,8 @@ const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 // Google Auth. Creates new user account if necessary. Authenticates user.
 const authUser = async (request, accessToken, refreshToken, profile, done) => {
   try {
-    const {userId, username} = await db.googleAuth(profile.id);
+    console.log("Profile:", profile)
+    const {userId, username} = await db.googleAuth(profile.id, profile.displayName);
     profile.username = username
     profile.userId = userId
     console.log("profile:", profile)

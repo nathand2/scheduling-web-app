@@ -25,48 +25,6 @@ pool.on('connection', conn => {
  */
 
 /**
- * Executes a db connection to make a sql query
- * @param {*} db_query sql query as a string
- * @returns query results in an array
- */
-// function dbConnection(query) {
-//   // TODO: Error handling on db connection and query.
-//   // TODO: Consider using pool queries?
-//   return new Promise((resolve, reject) => {
-//       const db = mysql.createConnection(dbUser);
-//       db.on('error', (err) => {
-//         reject(err)
-//       })
-//       db.connect((err) => {
-//           if (err) {
-//             reject(err)
-//           }
-//           console.log("Database connected");
-//           db.query(query, (err, result) => {
-//               if (err) {
-//                 reject(err)
-//               }
-//               if (result) {
-//                   resolve(result);
-//               }
-//           });
-//       });
-//   }, (result) => {
-//     // Resolve
-//     db.end(function(err) {
-//       if (err) {
-//         return console.log('error:' + err.message);
-//       }
-//       console.log('Close the database connection.');
-//     });
-//     return result;
-//   }, (err) => {
-//     // Reject
-//     throw err
-//   })
-// }
-
-/**
  * Executes a db connection to make a sql query using connection pooling
  * @param {*} db_query sql query as a string
  * @returns query results in an array
@@ -112,7 +70,7 @@ exports.googleAuth = async (googleID, displayName) => {
 
     // If google user doesn't yet exist, add google user to db.
     if (!results.length > 0) {
-      const res = await dbConnection(`INSERT INTO user (external_id, external_type) VALUES (${googleID}, 'GOOGLE');`);
+      const res = await dbConnection(`INSERT INTO user (external_id, external_type, display_name) VALUES (${googleID}, 'GOOGLE', '${displayName}');`);
       console.log("Added user to db with google_id:", googleID);
       // Assume no username created for new account
       const userId = res.insertId
@@ -392,7 +350,7 @@ exports.getSesssionTimeRanges = async (sessionId) => {
 
 exports.getUserSessionsBySessionId = async (sessionId) => {
   try {
-    const results = await dbConnection(`SELECT * FROM user_session WHERE session_id = ${sessionId};`)
+    const results = await dbConnection(`SELECT user_session_subset.*, user.display_name FROM ((SELECT * FROM user_session WHERE session_id = ${sessionId}) as user_session_subset INNER JOIN user ON user_session_subset.user_id = user.id);`)
     return results
   } catch(err) {
     throw err

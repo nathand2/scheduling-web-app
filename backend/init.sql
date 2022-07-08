@@ -19,6 +19,7 @@ CREATE TABLE user (
     password varchar(255),
     external_id varchar(127),
     external_type varchar(20),
+    display_name varchar(25),
     dt_created datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
     dt_last_login datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
     PRIMARY KEY (id),
