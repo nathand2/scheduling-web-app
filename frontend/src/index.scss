@@ -27,3 +27,10 @@ $oauth-icon-height: 60px;
     cursor: pointer;
   }
 }
+
+.canvas-container {
+  background-color: grey;
+  // width: 80%;
+  height: 400px;
+  overflow-y: scroll;
+}
