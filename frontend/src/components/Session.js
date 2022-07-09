@@ -11,6 +11,7 @@ import Flatpickr from "react-flatpickr";
 import SessionHeader from "./SessionHeader";
 import SessionShareModal from "./SessionShareModal";
 import SessionChart from "./SessionChart";
+import SessionAttendence from "./SessionAttendence";
 
 import { RequestHandler } from "../js/requestHandler";
 const util = require("../js/util");
@@ -19,6 +20,7 @@ const Session = () => {
   const [params, setParams] = useState(useParams());
   const [session, setSession] = useState("");
   const [timeRanges, setTimeRanges] = useState([]);
+  const [userSessions, setUserSessions] = useState([]);
   const [showDtModal, setShowDtModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [expiredSession, setExpiredSession] = useState(undefined);
@@ -137,9 +139,9 @@ const Session = () => {
         `/usersessions?sessionid=${sessionId}`,
         "GET"
       );
-      const userSessions = res.data.userSessions;
-      console.log("Res:", res);
-      console.log("User session results:", userSessions);
+      const userSessionsData = res.data.userSessions;
+      console.log("User session results:", userSessionsData);
+      setUserSessions(userSessionsData)
     } catch (err) {
       throw err;
     }
@@ -215,7 +217,9 @@ const Session = () => {
               </Button>
               
             </Col>
-            <Col sm={4}>sm=4</Col>
+            <Col sm={4}>
+              <SessionAttendence userSessions={ userSessions } />
+            </Col>
           </Row>
 
           <>

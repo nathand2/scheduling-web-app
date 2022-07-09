@@ -5,7 +5,6 @@ const util = require("../js/util");
 
 const SessionChart = ({ timeRanges, session }) => {
 
-  // const [data, setData] = useState([])
   const canvas = useRef(null)
 
   const chartScale = 5;
@@ -13,13 +12,13 @@ const SessionChart = ({ timeRanges, session }) => {
   // const [onEffectOnce, setOnEffectOnce] = useState(true)
   let stop = false
 
-  useEffect(() => {
-    if (!stop) {
-      stop = true
-      // processTimeRanges(timeRanges)
-      // drawBarChart(data)
-    }
-  }, [])
+  // useEffect(() => {
+  //   if (!stop) {
+  //     stop = true
+  //     const ranges = processTimeRanges()
+  //     drawBarChart(ranges)
+  //   }
+  // }, [timeRanges])
 
   const generateChart = () => {
     const ranges = processTimeRanges()
