@@ -29,9 +29,4 @@
 .text-underline:hover {
   cursor: pointer;
 }
-
-.canvas-container {
-  background-color: grey;
-  overflow-y: scroll;
-}
 /*# sourceMappingURL=index.css.map */
