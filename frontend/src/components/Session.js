@@ -35,7 +35,7 @@ const Session = () => {
 
   
   const dtOptionsConfig = {
-    minuteIncrement: 5,
+    minuteIncrement: 1,
   };
 
   useEffect(() => {
