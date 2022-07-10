@@ -15,6 +15,7 @@ import SessionChart from "./SessionChart";
 import SessionAttendence from "./SessionAttendence";
 
 import { RequestHandler } from "../js/requestHandler";
+import { Container } from "react-bootstrap";
 const util = require("../js/util");
 
 const Session = () => {
@@ -193,38 +194,39 @@ const Session = () => {
             handleClose={handleCloseShare}
           />
 
-          {/* Row causing bottom scroll bar to appear */}
-          <Row className="justify-content-md-center">
-            <Col sm={8}>
-              <SessionInfo session={ session }/>
-              <SessionChart timeRanges={ timeRanges } session={ session } />
-              <br />
-              Session Status: {expiredSession ? <>Expired</> : <>Ongoing</>}
-              <br />
-              {JSON.stringify(session)}
-              <br />
-              Time Ranges:
-              <br />
-              {timeRanges.map((range) => (
-                <>
-                  {JSON.stringify(range)}
-                  <br />
-                </>
-              ))}
-              showShareModal:{showShareModal ? "true" : "false"}
-              <br />
-              Session
-              <br />
-              <Button variant="primary" onClick={handleShowDt}>
-                Add DtRange
-              </Button>
-              
-            </Col>
-            <Col sm={4}>
-              <SessionAttendence userSessions={ userSessions } />
-            </Col>
-          </Row>
-{/* 
+          <Container fluid >
+            <Row className="justify-content-md-center">
+              <Col sm={8}>
+                <SessionInfo session={ session }/>
+                <SessionChart timeRanges={ timeRanges } session={ session } />
+                <br />
+                Session Status: {expiredSession ? <>Expired</> : <>Ongoing</>}
+                <br />
+                {JSON.stringify(session)}
+                <br />
+                Time Ranges:
+                <br />
+                {timeRanges.map((range) => (
+                  <>
+                    {JSON.stringify(range)}
+                    <br />
+                  </>
+                ))}
+                showShareModal:{showShareModal ? "true" : "false"}
+                <br />
+                Session
+                <br />
+                <Button variant="primary" onClick={handleShowDt}>
+                  Add DtRange
+                </Button>
+                
+              </Col>
+              <Col sm={4}>
+                <SessionAttendence userSessions={ userSessions } />
+              </Col>
+            </Row>
+          </Container>
+
           <>
             <Modal show={showDtModal} onHide={handleCloseDt}>
               <Modal.Header closeButton>
@@ -275,7 +277,7 @@ const Session = () => {
             </Modal>
           </>
 
-          <br /> */}
+          <br />
         </>
       )}
       {otherSessionResViews}

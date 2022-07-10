@@ -4,7 +4,7 @@ import { Container } from 'react-bootstrap'
 const SessionInfo = ({ session }) => {
   return (
     <div>
-      <Container >
+      <Container fluid>
         <h1 >{session.session_title}</h1>
         {
           session.session_desc && (
