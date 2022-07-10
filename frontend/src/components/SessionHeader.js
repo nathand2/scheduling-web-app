@@ -17,9 +17,9 @@ const SessionHeader = ({ showShareModal }) => {
           <Navbar.Toggle aria-controls="responsive-navbar-nav" />
           <Navbar.Collapse id="responsive-navbar-nav">
             <Nav className="me-auto">
-              <Nav.Link href="#features">Session</Nav.Link>
-              <Nav.Link href="#features">Insights</Nav.Link>
-              <Nav.Link href="#pricing">Settings</Nav.Link>
+              <Nav.Link href="#Session">Session</Nav.Link>
+              <Nav.Link href="#Insights">Insights</Nav.Link>
+              <Nav.Link href="#Settings">Settings</Nav.Link>
             </Nav>
           </Navbar.Collapse>
           <Navbar.Text>

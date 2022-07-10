@@ -35,7 +35,6 @@ const Session = () => {
     new Date(new Date().getTime() + 60 * 60 * 2 * 1000)
   );
 
-  
   const dtOptionsConfig = {
     minuteIncrement: 1,
   };
@@ -64,8 +63,8 @@ const Session = () => {
 
   // After fetching time ranges, generate chart?
   const generateSessionChart = (callback) => {
-    callback()
-  }
+    callback();
+  };
 
   const handleCloseDt = () => setShowDtModal(false);
   const handleShowDt = () => setShowDtModal(true);
@@ -83,7 +82,6 @@ const Session = () => {
     addDtRange();
   };
 
-
   const getSession = async () => {
     try {
       let res;
@@ -95,9 +93,9 @@ const Session = () => {
       const sessionData = res.data.session;
 
       console.log("Res data:", res);
-      sessionData.dt_end = util.mySqlDtToJsDate(sessionData.dt_end)
-      sessionData.dt_start = util.mySqlDtToJsDate(sessionData.dt_start)
-      sessionData.dt_created = util.mySqlDtToJsDate(sessionData.dt_created)
+      sessionData.dt_end = util.mySqlDtToJsDate(sessionData.dt_end);
+      sessionData.dt_start = util.mySqlDtToJsDate(sessionData.dt_start);
+      sessionData.dt_created = util.mySqlDtToJsDate(sessionData.dt_created);
       await setSession(sessionData);
 
       // Determine if session is expired
@@ -148,7 +146,7 @@ const Session = () => {
       );
       const userSessionsData = res.data.userSessions;
       console.log("User session results:", userSessionsData);
-      setUserSessions(userSessionsData)
+      setUserSessions(userSessionsData);
     } catch (err) {
       throw err;
     }
@@ -178,7 +176,7 @@ const Session = () => {
         status: dtStatus,
       });
       const resData = res.data;
-      console.log("Res:", res)
+      console.log("Res:", res);
       const insertId = resData.insertId;
       console.log("Inserted dtRange with insertId:", insertId);
     } catch (err) {
@@ -199,35 +197,33 @@ const Session = () => {
             handleClose={handleCloseShare}
           />
 
-          <Container fluid >
+          <Container fluid>
             <Row className="justify-content-md-center">
               <Col sm={8}>
-                <SessionInfo session={ session }/>
-                <SessionChart timeRanges={ timeRanges } session={ session } />
-                <br />
-                Session Status: {expiredSession ? <>Expired</> : <>Ongoing</>}
-                <br />
-                {JSON.stringify(session)}
-                <br />
-                {/* Time Ranges:
-                <br />
-                {timeRanges.map((range) => (
-                  <>
-                    {JSON.stringify(range)}
-                    <br />
-                  </>
-                ))} */}
-                showShareModal:{showShareModal ? "true" : "false"}
-                <br />
-                Session
-                <br />
+                <SessionInfo
+                  session={session}
+                  expiredSession={expiredSession}
+                />
                 <Button variant="primary" onClick={handleShowDt}>
                   Add DtRange
                 </Button>
-                
+                <SessionChart timeRanges={timeRanges} session={session} />
+                <Button variant="primary" onClick={handleShowDt}>
+                  Add DtRange
+                </Button>
+                <Container className="d-flex flex-column dev-info uncenter-content">
+                  Session Status: {expiredSession ? <>Expired</> : <>Ongoing</>}
+                  <br />
+                  {JSON.stringify(session)}
+                  <br />
+                  showShareModal:{showShareModal ? "true" : "false"}
+                  <br />
+                  Session
+                  <br />
+                </Container>
               </Col>
               <Col sm={4}>
-                <SessionAttendence userSessions={ userSessions } />
+                <SessionAttendence userSessions={userSessions} />
               </Col>
             </Row>
           </Container>
