@@ -9,6 +9,7 @@ import Col from "react-bootstrap/Col";
 import Flatpickr from "react-flatpickr";
 
 import SessionHeader from "./SessionHeader";
+import SessionInfo from "./SessionInfo";
 import SessionShareModal from "./SessionShareModal";
 import SessionChart from "./SessionChart";
 import SessionAttendence from "./SessionAttendence";
@@ -191,9 +192,11 @@ const Session = () => {
             onHide={handleCloseShare}
             handleClose={handleCloseShare}
           />
-          <Row>
+
+          {/* Row causing bottom scroll bar to appear */}
+          <Row className="justify-content-md-center">
             <Col sm={8}>
-              {/* <canvas className="session-canvas" ></canvas> */}
+              <SessionInfo session={ session }/>
               <SessionChart timeRanges={ timeRanges } session={ session } />
               <br />
               Session Status: {expiredSession ? <>Expired</> : <>Ongoing</>}
@@ -221,7 +224,7 @@ const Session = () => {
               <SessionAttendence userSessions={ userSessions } />
             </Col>
           </Row>
-
+{/* 
           <>
             <Modal show={showDtModal} onHide={handleCloseDt}>
               <Modal.Header closeButton>
@@ -272,7 +275,7 @@ const Session = () => {
             </Modal>
           </>
 
-          <br />
+          <br /> */}
         </>
       )}
       {otherSessionResViews}
