@@ -12,7 +12,7 @@ const SessionAttendence = ({ userSessions }) => {
         <ListGroup>
           {userSessions.map((userSession) => (
             <>
-              <ListGroup.Item key={userSession.id} >
+              <ListGroup.Item key={userSession.id} className='uncenter-content' >
                 {userSession.display_name}
                 {
                   userSession.role === 'owner' &&

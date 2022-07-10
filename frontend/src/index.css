@@ -29,4 +29,8 @@
 .text-underline:hover {
   cursor: pointer;
 }
+
+.uncenter-content {
+  text-align: start;
+}
 /*# sourceMappingURL=index.css.map */

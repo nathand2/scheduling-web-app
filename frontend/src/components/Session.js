@@ -62,6 +62,11 @@ const Session = () => {
     getSessionData();
   }, []);
 
+  // After fetching time ranges, generate chart?
+  const generateSessionChart = (callback) => {
+    callback()
+  }
+
   const handleCloseDt = () => setShowDtModal(false);
   const handleShowDt = () => setShowDtModal(true);
 
@@ -204,14 +209,14 @@ const Session = () => {
                 <br />
                 {JSON.stringify(session)}
                 <br />
-                Time Ranges:
+                {/* Time Ranges:
                 <br />
                 {timeRanges.map((range) => (
                   <>
                     {JSON.stringify(range)}
                     <br />
                   </>
-                ))}
+                ))} */}
                 showShareModal:{showShareModal ? "true" : "false"}
                 <br />
                 Session

@@ -9,19 +9,15 @@ const SessionChart = ({ timeRanges, session }) => {
   // Abritrary scale for chart and bars
   const chartScale = 5;
 
-  // useEffect(() => {
-  //   }
-  // }, [timeRanges])
+  useEffect(() => {
+    console.log("useEffect")
+    generateChart()
+  }, [timeRanges])  // Will update chart if timeRanges changes
 
   const generateChart = () => {
     const ranges = processTimeRanges();
     drawBarChart(ranges);
   };
-
-  // const generateGanttChart = () => {
-  //   const ranges = processTimeRanges();
-  //   drawGanttChart(ranges);
-  // };
 
   // const drawGanttChart = (data) => {
   //   const sessionLengthInMinutes =
@@ -78,6 +74,9 @@ const SessionChart = ({ timeRanges, session }) => {
   //     .call(y_axis);
   // };
   const drawBarChart = (data) => {
+
+    d3.select("svg").remove();  // Removes existing svg
+
     const sessionLengthInMinutes =
       ((session.dt_end - session.dt_start) / (1000 * 60)) * chartScale; // Session length in minutes
     console.log("sessionLengthInMinutes", sessionLengthInMinutes);
@@ -162,7 +161,7 @@ const SessionChart = ({ timeRanges, session }) => {
 
   return (
     <div>
-      <Button onClick={generateChart}>Draw chart</Button>
+      {/* <Button onClick={generateChart}>Draw chart</Button> */}
       {/* <Button onClick={generateGanttChart}>Draw Gantt chart</Button> */}
       <div className="canvas-container" ref={canvas}></div>
     </div>
