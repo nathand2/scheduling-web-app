@@ -16,8 +16,15 @@ const Sessions = () => {
     const getSessions = async () => {
       if (!didCancel) {
         // Get session data from api
+        let data, res;
         try {
-          const data = await RequestHandler.req(`/sessions`, 'GET')
+          res = await RequestHandler.req(`/sessions`, 'GET')
+          if (res.status !== 200) {
+            console.log("Something went wrong. Res Status:", res.status)
+            return
+          }
+          data = res.data
+          console.log("data:", data)
           console.log("Res data:", data.sessions)
           setSessions(data.sessions)
         } catch(err) {

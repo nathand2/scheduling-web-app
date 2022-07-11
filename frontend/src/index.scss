@@ -20,3 +20,21 @@ $oauth-icon-height: 60px;
   display: flex;
   flex-wrap: wrap;
 }
+
+.text-underline {
+  text-decoration: underline;
+  &:hover {
+    cursor: pointer;
+  }
+}
+.uncenter-content {
+  text-align: start;
+}
+
+.dev-info {
+  display: flex;
+  flex-wrap: wrap;
+  background-color:aquamarine;
+  overflow-x: scroll;
+  word-wrap: break-word;
+}

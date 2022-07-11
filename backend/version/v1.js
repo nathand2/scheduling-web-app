@@ -131,7 +131,7 @@ module.exports = (app, db, auth, passport) => {
 
       // Secure, hardened cookies
       res.cookie('userContextAccess', randStringAccess, secureCookieConfig);
-      res.cookie('userContextRefresh', randStringRefresh, secureCookieConfig);
+      res.cookie('userContextRefresh', randStringRefresh, {...secureCookieConfig, expires: util.dtRefreshFingerprintCookieExpires()});
 
       res.redirect(rootURL)
 
@@ -180,7 +180,28 @@ module.exports = (app, db, auth, passport) => {
     const {title, desc, dtStart, dtEnd, attendType} = req.body;
     try {
       console.log("/session Locals.user:", res.locals.user)
-      const sessionCode = util.generateSessionCode();
+      // const sessionCode = util.generateSessionCode();
+
+      // Generate valid session code
+      let sessionCode;
+      let count = 0;
+      while (count < 10) {
+        const tempSessionCode = util.generateSessionCode();
+        const sessionsWithCode = await db.getSessionIdBySessionCode(tempSessionCode)
+        // If sessions dont exist with this code, continue
+        if (!sessionsWithCode.length > 0) {
+          sessionCode = tempSessionCode
+        }
+        count++
+      }
+
+      console.log("SESSION post body:", title, desc, dtStart, dtEnd, attendType)
+
+      if (!sessionCode) {
+        console.log("Unable to generate valid session code")
+        return res.sendStatus(500)  // Internal Error
+      }
+
       const sessionId = await db.createSession(sessionCode, title, dtStart, dtEnd, attendType, desc)
       console.log("User in /session:", res.locals.user)
       // const userId = await db.getUserIdByExternalID(res.locals.user.userId, res.locals.user.type)
@@ -268,9 +289,9 @@ module.exports = (app, db, auth, passport) => {
       const userId = user.userId
 
       // See if user_session of owner exists for user
-      const userSessions = await db.getOwnerUserSessionByUserIdAndSessionCode(userId, sessionCode)
+      const userSessions = await db.getUserSessionByUserIdAndSessionCode(userId, sessionCode)
       if (!(userSessions.length > 0)) {
-        res.sendStatus(403) // Cannot create invite. Not owner or no user_session
+        res.sendStatus(401) // Cannot create invite. Not apart of session
         return
       }
 
@@ -304,6 +325,123 @@ module.exports = (app, db, auth, passport) => {
       const sessionCodes = await db.createUserSessionBySessionInviteUuid(userId, inviteCode)
       res.json({sessionCode: sessionCodes})
       // res.redirect(`${rootURL}/session/${sessionCodes[0]}`)
+    } catch(err) {
+      console.log(err)
+      res.sendStatus(500) // Internal db error.
+      return
+    }
+  })
+
+  app.post('/sessiontimerange', auth.authenticateToken, async (req, res) => {
+    try {
+      const userId = res.locals.user.userId  // User Id from JWT token
+      const { sessionId, dtStart, dtEnd, status } = req.body  // Post body
+
+      console.log("Date type:", typeof dtStart)
+      console.log("Dates:", new Date(dtStart), new Date(dtEnd))
+      console.log("Greater than?:", new Date(dtStart) < new Date(dtEnd))
+
+      const dateStart = new Date(dtStart)
+      const dateEnd = new Date(dtEnd)
+      // Check for valid dt range
+      if (dateStart > dateEnd) {
+        console.log("Invalid dt range. Start < End")
+        res.sendStatus(400) // Client Error
+        return
+      }
+
+      const session = (await db.getSessionById(sessionId))[0]
+      console.log("Session:", session)
+      const sessionDtStart = session.dt_start
+      const sessionDtEnd = session.dt_end
+      // console.log("Types:", typeof dt_start, typeof dt_end)
+      
+      const sessionDateStart = new Date(sessionDtStart)
+      const sessionDateEnd = new Date(sessionDtEnd)
+      console.log("Dates:", sessionDateStart, sessionDateEnd)
+      
+      if ((sessionDateStart <= dateStart && sessionDateEnd >= dateEnd)) {
+        console.log("Invalid dt range.")
+        return res.sendStatus(400)  // Client Error
+      } else {
+        console.log("Valid dt range")
+      }
+      
+      // Check if user is apart of session
+      const userSessions = await db.getUserSessionByUserIdAndSessionId(userId, sessionId)
+      if (!userSessions > 0) {
+        // User not apart of session
+        res.sendStatus(403) // Forbidden
+        return
+      }
+
+      const insertId = await db.createSessionTimeRange(userId, sessionId, dtStart, dtEnd, status)
+      res.json({insertId: insertId})
+
+    } catch(err) {
+      console.log(err)
+      res.sendStatus(500) // Internal db error.
+      return
+    }
+
+
+  })
+
+  app.get('/timeranges', auth.authenticateToken, async (req, res) => {
+      
+    try {
+      const sessionId = req.query.sessionid
+      if (!sessionId) {
+        console.log("No Session id")
+        res.sendStatus(400)  // Client error
+        return
+      }
+
+      // const sessionId = await db.getSessionIdBySessionCode(sessionCode)[0]
+      console.log("SessionId:", sessionId)
+
+      const userId = res.locals.user.userId  // User Id from JWT token
+      // Check if user is apart of session
+      const userSessions = await db.getUserSessionByUserIdAndSessionId(userId, sessionId)
+      if (!userSessions > 0) {
+        // User not apart of session
+        res.sendStatus(403) // Forbidden
+        return
+      }
+
+      const results = await db.getSesssionTimeRanges(sessionId)
+      res.json({results: results})
+
+    } catch(err) {
+      console.log(err)
+      res.sendStatus(500) // Internal db error.
+      return
+    }
+  })
+
+  app.get("/usersessions", auth.authenticateToken, async (req, res) => {
+    // Get user sessions for specific session
+    const sessionId = req.query.sessionid
+    const userId = res.locals.user.userId  // User Id from JWT token
+
+    if (!sessionId) {
+      console.log("No Session id")
+      res.sendStatus(400)  // Client error
+      return
+    }
+
+    try {
+      // Check if user is apart of session
+      const userSessions = await db.getUserSessionByUserIdAndSessionId(userId, sessionId)
+      if (!userSessions > 0) {
+        // User not apart of session
+        res.sendStatus(403) // Forbidden
+        return
+      }
+  
+      // Fetch user sessions
+      const userSessionsForSession = await db.getUserSessionsBySessionId(sessionId);
+      res.send({userSessions: userSessionsForSession})
     } catch(err) {
       console.log(err)
       res.sendStatus(500) // Internal db error.

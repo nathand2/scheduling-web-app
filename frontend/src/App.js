@@ -21,7 +21,6 @@ function App() {
   
   // When app loaded, manage login state
   useEffect(() => {
-    attemptLogIn();
     processJWTTokens();
   }, [])
   
@@ -33,15 +32,6 @@ function App() {
 
   const deleteCookie = (name) => {
     document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
-  }
-
-  const attemptLogIn = () => {
-    // if (window.localStorage.getItem('refreshToken')) {
-    //   console.log("localStorage Refresh token found")
-    //   refreshAccessToken()
-    // } else {
-    //   console.log("No localStorage refresh token")
-    // }
   }
 
   const setSessionStorageJWTTokens = async () => {
@@ -131,26 +121,26 @@ function App() {
   }
   
   const testEndpoint = async () => {
-    let data;
+    let res;
     try {
-      data = await RequestHandler.req('/sessions', 'GET')
+      res = await RequestHandler.req('/sessions', 'GET')
     } catch(err) {
       console.log("Error:", err);
     }
 
-    console.log('Testing Auth results data:', data)
+    console.log('Testing endpoint res:', res)
     setAccessToken(await window.sessionStorage.getItem('accessToken'))
   }
 
   const testRequest = async () => {
-    let data;
+    let res;
     try {
-      data = await RequestHandler.req('/testauth', 'POST')
+      res = await RequestHandler.req('/testauth', 'POST')
     } catch(err) {
       console.log("Error:", err);
     }
 
-    console.log('Testing Auth results data:', data)
+    console.log('Testing Auth res:', res)
     setAccessToken(await window.sessionStorage.getItem('accessToken'))
   }
 

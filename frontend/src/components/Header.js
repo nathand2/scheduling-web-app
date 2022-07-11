@@ -38,7 +38,7 @@ const Header = ({ logOut, loggedIn }) => {
                 <NavDropdown.Item href="#action3">Profile</NavDropdown.Item>
                 <NavDropdown.Item href="#action4">Settings</NavDropdown.Item>
                 <NavDropdown.Divider />
-                <NavDropdown.Item onClick={ logOut }>
+                <NavDropdown.Item onClick={ logOut } href="/">
                   Logout
                 </NavDropdown.Item>
               </NavDropdown>

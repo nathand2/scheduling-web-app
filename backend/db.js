@@ -1,58 +1,28 @@
 const mysql = require('mysql')
-const dbUser = {
+const config = {
   host: 'localhost',
   user: 'root',
   password: '',
-  database: 'scheduler'
+  database: 'scheduler',
+  timezone: 'UTC', // Interpret all received timestamps as UTC. Otherwise local timezone is assumed.
+	dateStrings: [
+		'DATE', // DATE's are returned as strings (otherwise they would be interpreted as YYYY-MM-DD 00:00:00+00:00)
+		'DATETIME' // DATETIME's return as strings (otherwise they would interpreted as YYYY-MM-DD HH:mm:ss+00:00)
+	]
 };
 
-const pool = mysql.createPool(dbUser);
+const pool = mysql.createPool(config);
+pool.on('connection', conn => {
+	conn.query("SET time_zone='+00:00';", error => {
+		if(error){
+			throw error;
+		}
+	});
+});
 
 /**
  * TODO: Error checking if MySQL server is down not fully implemented
  */
-
-/**
- * Executes a db connection to make a sql query
- * @param {*} db_query sql query as a string
- * @returns query results in an array
- */
-// function dbConnection(query) {
-//   // TODO: Error handling on db connection and query.
-//   // TODO: Consider using pool queries?
-//   return new Promise((resolve, reject) => {
-//       const db = mysql.createConnection(dbUser);
-//       db.on('error', (err) => {
-//         reject(err)
-//       })
-//       db.connect((err) => {
-//           if (err) {
-//             reject(err)
-//           }
-//           console.log("Database connected");
-//           db.query(query, (err, result) => {
-//               if (err) {
-//                 reject(err)
-//               }
-//               if (result) {
-//                   resolve(result);
-//               }
-//           });
-//       });
-//   }, (result) => {
-//     // Resolve
-//     db.end(function(err) {
-//       if (err) {
-//         return console.log('error:' + err.message);
-//       }
-//       console.log('Close the database connection.');
-//     });
-//     return result;
-//   }, (err) => {
-//     // Reject
-//     throw err
-//   })
-// }
 
 /**
  * Executes a db connection to make a sql query using connection pooling
@@ -77,10 +47,10 @@ const dbConnection = async (query) => {
       });
 
   })
-
   }, (result) => {
     return result
   }, (err) => {
+    console.log("Error has been thrown")
     throw err
   });
 }
@@ -100,7 +70,7 @@ exports.googleAuth = async (googleID, displayName) => {
 
     // If google user doesn't yet exist, add google user to db.
     if (!results.length > 0) {
-      const res = await dbConnection(`INSERT INTO user (external_id, external_type) VALUES (${googleID}, 'GOOGLE');`);
+      const res = await dbConnection(`INSERT INTO user (external_id, external_type, display_name) VALUES (${googleID}, 'GOOGLE', '${displayName}');`);
       console.log("Added user to db with google_id:", googleID);
       // Assume no username created for new account
       const userId = res.insertId
@@ -184,9 +154,8 @@ exports.deleteRefreshToken = async (token) => {
  */
 exports.createSession = async (code, title, dt_start, dt_end, attendType, desc=undefined, groupID=undefined) => {
   try {
-    const results = await dbConnection(`INSERT INTO session (group_id, session_desc, session_title, dt_created, dt_expires, attend_type, code) VALUES (${(groupID === undefined ? "NULL" : groupID) + ", "}${(desc === undefined ? "NULL" : "'" + desc + "'") + ', '}'${title}', '${dt_start}', '${dt_end}', '${attendType}', '${code}')`)
-    // console.log("Session query:", `INSERT INTO INSERT INTO session (group_id, session_desc, session_title, dt_created, dt_expires, attend_type) VALUES (${(groupID === undefined ? "NULL" : groupID) + ", "}${(desc === undefined ? "NULL" : "'" + desc + "'") + ', '}'${title}', '${dt_start}', '${dt_end}', '${attendType}')`)
-    // console.log("Inserted ID:", results)
+    console.log("Create session query:", `INSERT INTO session (group_id, session_desc, session_title, dt_start, dt_end, attend_type, code) VALUES (${(groupID === undefined ? "NULL" : groupID) + ", "}${(desc === undefined ? "NULL" : "'" + desc + "'") + ', '}'${title}', '${dt_start}', '${dt_end}', '${attendType}', '${code}')`)
+    const results = await dbConnection(`INSERT INTO session (group_id, session_desc, session_title, dt_start, dt_end, attend_type, code) VALUES (${(groupID === undefined ? "NULL" : groupID) + ", "}${(desc === undefined ? "NULL" : "'" + desc + "'") + ', '}'${title}', '${dt_start}', '${dt_end}', '${attendType}', '${code}')`)
     console.log("Inserted ID:", results.insertId)
     console.log("Session Code:", code)
     return results.insertId
@@ -249,8 +218,8 @@ exports.getSession = async (userId, sessionCode) => {
 
     // Check if user_session exists
     const results = await dbConnection(`SELECT session_id FROM user_session WHERE user_id = ${userId} AND session_id = ${sessionId};`)
-    console.log("Got user session:", results[0].session_id)
     if (results.length > 0) {
+      console.log("Got user session:", results[0].session_id)
       return {status: 200, session: sessionResults[0]}
     } else {
       // User Session doesnt exist. 403 Forbidden
@@ -329,6 +298,63 @@ exports.createUserSessionBySessionInviteUuid = async (userId, uuid) => {
     console.log("STUFF:", sessionIds)
     const results = await dbConnection(`INSERT INTO user_session (user_id, session_id, role) VALUES (${userId}, ${sessionIds[0].id}, 'attendee');`)
     return sessionIds[0].code
+  } catch(err) {
+    throw err
+  }
+}
+
+exports.getUserSessionByUserIdAndSessionId = async (userId, sessionId) => {
+  try {
+    const results = await dbConnection(`SELECT * FROM user_session WHERE user_id = ${userId} AND session_id = ${sessionId} LIMIT 1;`)
+    return results
+  } catch(err) {
+    throw err
+  }
+}
+
+exports.getSessionById = async (sessionId) => {
+  try {
+    const results = await dbConnection(`SELECT * FROM session WHERE id = ${sessionId} LIMIT 1;`)
+    return results
+  } catch(err) {
+    throw err
+  }
+}
+
+exports.createSessionTimeRange = async (userId, sessionId, dtStart, dtEnd, status) => {
+  try {
+    const results = await dbConnection(`INSERT INTO session_time_range (user_session_id, dt_start, dt_end, status) VALUES ((SELECT id FROM user_session WHERE user_id = ${userId} AND session_id = ${sessionId} LIMIT 1), '${dtStart}', '${dtEnd}', '${status}');`)
+    return results.insertId
+  } catch(err) {
+    throw err
+  }
+}
+
+exports.getSessionIdBySessionCode = async (sessionCode) => {
+  try {
+    const results = await dbConnection(`SELECT id FROM session WHERE code = '${sessionCode}' LIMIT 1;`)
+    return results
+  } catch(err) {
+    throw err
+  }
+}
+
+exports.getSesssionTimeRanges = async (sessionId) => {
+  try {
+    const results = await dbConnection(
+      // `SELECT * FROM (SELECT session_time_range.*, user_session_subset.user_id FROM (SELECT * FROM user_session WHERE session_id = ${sessionId}) AS user_session_subset INNER JOIN session_time_range ON user_session_subset.id = session_time_range.user_session_id) AS subset1;`
+      `SELECT session_time_range_subset.*, user.display_name FROM (SELECT session_time_range.*, user_session_subset.user_id FROM (SELECT * FROM user_session WHERE session_id = ${sessionId}) AS user_session_subset INNER JOIN session_time_range ON user_session_subset.id = session_time_range.user_session_id) AS session_time_range_subset LEFT JOIN user ON session_time_range_subset.user_id = user.id;`
+    );
+    return results
+  } catch(err) {
+    throw err
+  }
+}
+
+exports.getUserSessionsBySessionId = async (sessionId) => {
+  try {
+    const results = await dbConnection(`SELECT user_session_subset.*, user.display_name FROM ((SELECT * FROM user_session WHERE session_id = ${sessionId}) as user_session_subset INNER JOIN user ON user_session_subset.user_id = user.id);`)
+    return results
   } catch(err) {
     throw err
   }

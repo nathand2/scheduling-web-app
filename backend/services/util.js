@@ -12,6 +12,10 @@ exports.generateSessionCode = () => {
     return result;
 }
 
+exports.dtRefreshFingerprintCookieExpires = () => {
+  return new Date(Date.now() + 3600000 * 24 * 30) // 30 days
+}
+
 
 
 // exports.addLeadingZeros = (num, totalLength) => {

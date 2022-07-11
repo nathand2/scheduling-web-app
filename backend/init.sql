@@ -19,6 +19,7 @@ CREATE TABLE user (
     password varchar(255),
     external_id varchar(127),
     external_type varchar(20),
+    display_name varchar(25),
     dt_created datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
     dt_last_login datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
     PRIMARY KEY (id),
@@ -42,7 +43,8 @@ CREATE TABLE session (
   session_desc varchar(255),
   max_session_members int NOT NULL DEFAULT 10,
   dt_created datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
-  dt_expires datetime NOT NULL,
+  dt_start datetime NOT NULL,
+  dt_end datetime NOT NULL,
   attend_type varchar(20) NOT NULL DEFAULT "account",
   PRIMARY KEY (id, code),
   FOREIGN KEY (group_id) REFERENCES group_(id) ON DELETE CASCADE
