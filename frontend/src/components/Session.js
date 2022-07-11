@@ -175,6 +175,7 @@ const Session = () => {
         dtEnd: dtEnd,
         status: dtStatus,
       });
+      if (res.status !== 200) return;
       const resData = res.data;
       console.log("Res:", res);
       const insertId = resData.insertId;

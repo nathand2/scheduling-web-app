@@ -11,7 +11,6 @@ const SessionAttendence = ({ userSessions }) => {
         <h3>Attendees</h3>
         <ListGroup>
           {userSessions.map((userSession) => (
-            <>
               <ListGroup.Item key={userSession.id} className='uncenter-content' >
                 {userSession.display_name}
                 {
@@ -24,7 +23,6 @@ const SessionAttendence = ({ userSessions }) => {
                   )
                 }
               </ListGroup.Item>
-            </>
           ))}
         </ListGroup>
       </Container>

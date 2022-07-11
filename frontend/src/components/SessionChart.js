@@ -1,5 +1,4 @@
-import { useEffect, useState, useRef } from "react";
-import Button from "react-bootstrap/Button";
+import { useEffect, useRef } from "react";
 import * as d3 from "d3";
 const util = require("../js/util");
 
@@ -18,61 +17,6 @@ const SessionChart = ({ timeRanges, session }) => {
     const ranges = processTimeRanges();
     drawBarChart(ranges);
   };
-
-  // const drawGanttChart = (data) => {
-  //   const sessionLengthInMinutes =
-  //     ((session.dt_end - session.dt_start) / (1000 * 60)) * chartScale; // Session length in minutes
-  //   console.log("sessionLengthInMinutes", sessionLengthInMinutes);
-  //   // const height =
-  //   //   sessionLengthInMinutes + margin.top + margin.bottom;
-  //   // const width = 500;
-    
-  //   const margin = { top: 20, right: 30, bottom: 30, left: 40 };
-  //   const width = 600 - (margin.left + margin.right)
-  //   const height = 500 - (margin.top + margin.bottom)
-
-  //   const barWidth = 80;
-  //   const barGap = 5;
-  //   const barColor = "lightblue";
-  //   const svg = d3
-  //     .select(canvas.current)
-  //     .append("svg")
-  //     .attr("class", "bar")
-  //     .attr("width", width)
-  //     .attr("height", height)
-  //     .style("border", "1px solid black");
-
-  //   // Axis Start
-  //   // Create scale
-  //   // const x = d3.scaleTime().domain([session.dt_start, session.dt_start]).range([0, width])
-  //   // const x = d3.scaleTime().domain([Date.now(), Date.now() + 24 * 60 * 60 * 1000]).range([0, width - margin.right - margin.left])
-  //   const x = d3.scaleTime().domain([session.dt_start, session.dt_end]).range([0, width - margin.right - margin.left])
-
-  //   const y = d3.scaleTime()
-  //   .domain([session.dt_start, session.dt_end])
-  //   .range([margin.top, height - margin.bottom]); // This works kinda
-
-
-  //   // const y = d3.scale.ordinal().domain(modelers).rangeRoundBands([0, height - (margin.top + margin.bottom)], 0.2)
-  //   // Add scales to axis
-  //   const x_axis = d3.axisBottom(x).ticks(20)
-  //   const y_axis = d3.axisLeft(y). ticks(20)  
-    
-  //   // svg.attr('viewBox', `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
-  //   const chart = svg.append("g").attr('class', 'chart-holder').attr('transform', `translate(${margin.left}, ${margin.top})`)
-
-  //   chart
-  //   .append("g")
-  //     .attr('class', 'x axis')
-  //     .attr("transform", "translate(0,"+(height - margin.top - margin.bottom)+")")
-  //     // .attr("transform", `translate(${margin.left}, 0)`)
-  //     .call(x_axis);
-  //   chart
-  //   .append("g")
-  //     .attr('class', 'y axis')
-  //   // .attr("transform", `translate(${margin.left}, 0)`)
-  //     .call(y_axis);
-  // };
   const drawBarChart = (data) => {
 
     d3.select("svg").remove();  // Removes existing svg
@@ -104,6 +48,7 @@ const SessionChart = ({ timeRanges, session }) => {
     // Add scales to axis
     var yAxis = d3.axisLeft(yScale).ticks(20).tickSize(-width); // Lines across ticks
     
+    // Add yAxis
     svgCanvas
       .append("g")
       .attr("transform", `translate(${margin.left}, 0)`)
@@ -115,22 +60,82 @@ const SessionChart = ({ timeRanges, session }) => {
     // Y-Axis End
 
     // Draw rects
-    svgCanvas
+    svgCanvas.append("g")
+      .attr("fill", barColor)
       .selectAll("rect")
       .data(data)
-      .enter()
-      .append("rect")
-      .attr("width", barWidth)
-      .attr("height", (datapoint) => datapoint.height)
-      .attr("rx", 5)
-      .attr("ry", 5)
-      .attr("fill", barColor)
+      .join("rect")
       .attr(
         "x",
         (datapoint, iteration) =>
           iteration * (barWidth + barGap) + margin.left + barGap
       )
-      .attr("y", (datapoint) => datapoint.top + margin.top);
+      .attr("y", (datapoint) => datapoint.top + margin.top)
+      .attr("width", barWidth)
+      .attr("height", (datapoint) => datapoint.height)
+      .attr('opacity', '1')
+      .on('mouseover', function (datapoint, i) {
+        d3.select(this).transition()
+             .duration('50')
+             .attr('opacity', '.85');
+      })
+      .on('mouseout', function (d, i) {
+        d3.select(this).transition()
+             .duration('50')
+             .attr('opacity', '1');
+      })
+
+    // svgCanvas
+    //   .selectAll("rect")
+    //   .data(data)
+    //   .enter()
+    //   .append("rect")
+    //   .attr("width", barWidth)
+    //   .attr("height", (datapoint) => datapoint.height)
+    //   .attr("rx", 5)
+    //   .attr("ry", 5)
+    //   .attr("fill", barColor)
+    //   .attr(
+    //     "x",
+    //     (datapoint, iteration) =>
+    //       iteration * (barWidth + barGap) + margin.left + barGap
+    //   )
+    //   .attr("y", (datapoint) => datapoint.top + margin.top)
+    //   .on('mouseover', function (datapoint, i) {
+    //     d3.select(this).transition()
+    //          .duration('50')
+    //          .attr('opacity', '.85');
+    //   })
+    //   .on('mouseout', function (d, i) {
+    //     d3.select(this).transition()
+    //          .duration('50')
+    //          .attr('opacity', '1');
+    //   })
+
+    console.log("THE DATA:", data)
+
+    svgCanvas.append("g")
+      .attr("fill", "black")
+      .attr("text-anchor", "end")
+      .attr("font-family", "sans-serif")
+      .attr("font-size", 10)
+    .selectAll("text")
+    .data(data)
+    .join("text")
+      .attr(
+        "x",
+        (datapoint, iteration) =>
+          iteration * (barWidth + barGap) + margin.left + barGap
+      )
+      .attr("y", (datapoint) => margin.top + 10 + datapoint.top)
+      .attr("dy", "0.35em")
+      .attr("dx", -4)
+      .text(function(d, i) { return d.display_name; })
+      .attr('font-size', 12)
+      .attr('text-anchor', 'start')
+      .attr("transform",function(d,i){ 
+        return "translate(" + 5 + ", " + 0 + ") " + "rotate(0)"})
+      ;
   };
 
   const processTimeRanges = () => {
@@ -150,8 +155,9 @@ const SessionChart = ({ timeRanges, session }) => {
       console.log("minuteStartDifference:", minuteStartDifference);
 
       ranges.push({
+        ...range,
         height: (minuteRangeDifference) * chartScale,
-        top: (minuteStartDifference) * chartScale,
+        top: (minuteStartDifference) * chartScale
       });
     });
     console.log("Range stuff:", ranges);
