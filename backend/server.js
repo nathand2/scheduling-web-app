@@ -24,8 +24,7 @@ require('./services/googleStrategy');
 
 const temp = require('./services/webSockets');
 const io = temp.setUpWebSockets(app)
-console.log("IO", io)
-require('./version/v1')(app, db, auth, passport);
+require('./version/v1')(app, db, auth, passport, io);
 
 app.listen(port, () => {
   console.log(`Listening on http://localhost:${port}/`)

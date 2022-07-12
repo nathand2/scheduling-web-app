@@ -193,6 +193,7 @@ const Session = () => {
       let res;
       res = await RequestHandler.req("/sessiontimerange", "POST", {
         sessionId: session.id,
+        sessionCode: session.code,
         dtStart: dtStart,
         dtEnd: dtEnd,
         status: dtStatus,

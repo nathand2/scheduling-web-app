@@ -21,7 +21,7 @@ const semiSecureCookieConfig = {
 }
 
 
-module.exports = (app, db, auth, passport) => {
+module.exports = (app, db, auth, passport, io) => {
 
   app.get('/test', async (req, res) => {
     res.json({stuff: "potato"})
@@ -338,7 +338,7 @@ module.exports = (app, db, auth, passport) => {
   app.post('/sessiontimerange', auth.authenticateToken, async (req, res) => {
     try {
       const userId = res.locals.user.userId  // User Id from JWT token
-      const { sessionId, dtStart, dtEnd, status } = req.body  // Post body
+      const { sessionId, sessionCode, dtStart, dtEnd, status } = req.body  // Post body
 
       console.log("Date type:", typeof dtStart)
       console.log("Dates:", new Date(dtStart), new Date(dtEnd))
@@ -379,6 +379,9 @@ module.exports = (app, db, auth, passport) => {
       }
 
       const insertId = await db.createSessionTimeRange(userId, sessionId, dtStart, dtEnd, status)
+
+      io.in(sessionCode).emit('message', {thing: 'Someone added a dt range.'});
+
       res.json({insertId: insertId})
 
     } catch(err) {
