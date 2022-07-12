@@ -7,9 +7,9 @@ const Header = ({ logOut, loggedIn }) => {
     <div className="header-container">
       <Navbar bg="light" expand="lg">
   <Container fluid>
-    <Link to='/' className='link-plain'>
-      <Navbar.Brand >Valorant Scheduler</Navbar.Brand>
-    </Link>
+    {/* <Link to='/' className='link-plain'> */}
+      <Navbar.Brand href="/">Valorant Scheduler</Navbar.Brand>
+    {/* </Link> */}
     <Navbar.Toggle aria-controls="navbarScroll" />
     <Navbar.Collapse id="navbarScroll">
       <Nav

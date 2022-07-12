@@ -1,11 +1,14 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 
+import { io } from "socket.io-client";
+
 import Button from "react-bootstrap/Button";
 import Modal from "react-bootstrap/Modal";
 import Form from "react-bootstrap/Form";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
+import Container from "react-bootstrap/Container";
 import Flatpickr from "react-flatpickr";
 
 import SessionHeader from "./SessionHeader";
@@ -15,8 +18,9 @@ import SessionChart from "./SessionChart";
 import SessionAttendence from "./SessionAttendence";
 
 import { RequestHandler } from "../js/requestHandler";
-import { Container } from "react-bootstrap";
 const util = require("../js/util");
+
+const ENDPOINT = "ws://localhost:6500/";
 
 const Session = () => {
   const [params, setParams] = useState(useParams());
@@ -39,7 +43,11 @@ const Session = () => {
     minuteIncrement: 1,
   };
 
+  // const socket = io();
+
   useEffect(() => {
+
+
     let didCancel = false;
     const getSessionData = async () => {
       if (!didCancel) {
@@ -59,6 +67,26 @@ const Session = () => {
       }
     };
     getSessionData();
+    
+    var room = "abc123";
+
+    const socket = io('http://localhost:8000')
+    socket.on('connect', function() {
+      socket.emit('room', session.code);
+    });
+
+    socket.on('connect_error', ()=>{
+      setTimeout(()=>socket.connect(), 5000)
+    });
+
+    socket.on('connect', function() {
+      // Connected, let's sign-up for to receive messages for this room
+      socket.emit('room', room);
+    });
+    
+    socket.on('message', function(data) {
+        console.log('Incoming message:', data);
+    });
   }, []);
 
   // After fetching time ranges, generate chart?

@@ -18,8 +18,6 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(cookieParser());
-
-//Middleware
 app.use(express.json());
 app.use(passport.initialize());
 require('./services/googleStrategy');
