@@ -1,7 +1,9 @@
 const http = require('http');
 const socketIo = require("socket.io");
 
-module.exports = (app) => {
+exports.setUpWebSockets = (app) => {
+
+  console.log("Socket module connected")
   // TODO: Move Web Socket to different server.
   // Socket.io
   const server = http.createServer(app);
@@ -17,6 +19,7 @@ module.exports = (app) => {
     console.log("Connection to socket?")
       // once a client has connected, we expect to get a ping from them saying what room they want to join
       socket.on('room', function(room) {
+        io.in(room).emit('message', 'Someone joined the room');
         console.log("Joined session:", room)
         socket.join(room);
       });
@@ -27,11 +30,6 @@ module.exports = (app) => {
 
   io.listen(8000);  // Web Socket listen on port 8000
 
-  // now, it's easy to send a message to just the clients in a given room
-  room = "abc123";
-  io.in(room).emit('message', 'what is going on, party people?');
-
-  // this message will NOT go to the client defined above
-  io.in('foobar').emit('message', 'anyone in this room yet?');
+  return io;
 
 }

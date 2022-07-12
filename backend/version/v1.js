@@ -4,10 +4,6 @@
 
 
 const util = require('../services/util');
-const http = require('http');
-const socketIo = require("socket.io");
- 
-
 
 const versionEndpoint = "/v1";
 const rootURL = "http://localhost:3000"

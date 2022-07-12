@@ -23,6 +23,7 @@ const util = require("../js/util");
 const ENDPOINT = "ws://localhost:6500/";
 
 const Session = () => {
+  
   const [params, setParams] = useState(useParams());
   const [session, setSession] = useState("");
   const [timeRanges, setTimeRanges] = useState([]);
@@ -43,14 +44,11 @@ const Session = () => {
     minuteIncrement: 1,
   };
 
-  let doOnce = true;
-
+  let didCancel = false;
   useEffect(() => {
-
-
-    let didCancel = false;
     const getSessionData = async () => {
       if (!didCancel) {
+        didCancel = true
         // Get session data from api
         try {
           const res = await getSession();
@@ -61,28 +59,24 @@ const Session = () => {
           }
           await getTimeRanges(sessionData.id);
           await getUserSessions(sessionData.id);
+          setUpWebSocketConnection(sessionData.code);
         } catch (err) {
           console.log("Error:", err);
         }
       }
     };
 
-    if (!doOnce) {
-      return
-    }
-    doOnce = false
-
     console.log("useEffect once?")
-
     getSessionData();
-    
-    var room = "abc123";
+  }, []);
 
+  const setUpWebSocketConnection = (code) => {
     // Connect to web socket if session.code not undefined
-    if (session.code) {
+    if (code !== undefined) {
+      console.log("Setting up websocket conn")
       const socket = io('http://localhost:8000')
       socket.on('connect', function() {
-        socket.emit('room', session.code);
+        socket.emit('room', code);
       });
   
       socket.on('connect_error', ()=>{
@@ -91,20 +85,14 @@ const Session = () => {
   
       socket.on('connect', function() {
         // Connected, let's sign-up for to receive messages for this room
-        socket.emit('room', room);
+        socket.emit('room', code);
       });
       
       socket.on('message', function(data) {
           console.log('Incoming message:', data);
       });
     }
-
-  }, []);
-
-  // After fetching time ranges, generate chart?
-  const generateSessionChart = (callback) => {
-    callback();
-  };
+  }
 
   const handleCloseDt = () => setShowDtModal(false);
   const handleShowDt = () => setShowDtModal(true);
