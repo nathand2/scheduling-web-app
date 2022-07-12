@@ -23,6 +23,7 @@ app.use(passport.initialize());
 require('./services/googleStrategy');
 
 require('./version/v1')(app, db, auth, passport);
+require('./services/webSockets')(app);
 
 app.listen(port, () => {
   console.log(`Listening on http://localhost:${port}/`)
