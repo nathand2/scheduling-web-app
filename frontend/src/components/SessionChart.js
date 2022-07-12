@@ -8,9 +8,13 @@ const SessionChart = ({ timeRanges, session }) => {
   // Abritrary scale for chart and bars
   const chartScale = 5;
 
+  let doOnce = true;
+
   useEffect(() => {
-    console.log("useEffect")
-    generateChart()
+    if (doOnce) {
+      doOnce = false
+      generateChart()
+    }
   }, [timeRanges])  // Will update chart if timeRanges changes
 
   const generateChart = () => {
@@ -85,35 +89,6 @@ const SessionChart = ({ timeRanges, session }) => {
              .attr('opacity', '1');
       })
 
-    // svgCanvas
-    //   .selectAll("rect")
-    //   .data(data)
-    //   .enter()
-    //   .append("rect")
-    //   .attr("width", barWidth)
-    //   .attr("height", (datapoint) => datapoint.height)
-    //   .attr("rx", 5)
-    //   .attr("ry", 5)
-    //   .attr("fill", barColor)
-    //   .attr(
-    //     "x",
-    //     (datapoint, iteration) =>
-    //       iteration * (barWidth + barGap) + margin.left + barGap
-    //   )
-    //   .attr("y", (datapoint) => datapoint.top + margin.top)
-    //   .on('mouseover', function (datapoint, i) {
-    //     d3.select(this).transition()
-    //          .duration('50')
-    //          .attr('opacity', '.85');
-    //   })
-    //   .on('mouseout', function (d, i) {
-    //     d3.select(this).transition()
-    //          .duration('50')
-    //          .attr('opacity', '1');
-    //   })
-
-    console.log("THE DATA:", data)
-
     svgCanvas.append("g")
       .attr("fill", "black")
       .attr("text-anchor", "end")
@@ -139,7 +114,6 @@ const SessionChart = ({ timeRanges, session }) => {
   };
 
   const processTimeRanges = () => {
-    console.log("Session:", session);
     let ranges = [];
     timeRanges.map((range) => {
       const dtRangeStart = util.mySqlDtToJsDate(range.dt_start);
@@ -150,9 +124,7 @@ const SessionChart = ({ timeRanges, session }) => {
 
       // Space from top of chart to top of bar
       const minuteStartDifference =
-        (dtRangeStart - session.dt_start) / (1000 * 60); // Get minute diff
-      console.log("minuteRangeDifference:", minuteRangeDifference);
-      console.log("minuteStartDifference:", minuteStartDifference);
+        (dtRangeStart - session.dt_start) / (1000 * 60); // Get minute diff from session start to dtrange start
 
       ranges.push({
         ...range,

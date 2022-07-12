@@ -42,10 +42,6 @@ exports.authenticateToken = (req, res, next) => {
     if (err) return res.sendStatus(401);
 
     const userContextHashed = user.hash; // User context for access token
-    console.log("Context:")
-    console.log(userContextHashed)
-    console.log(userContext)
-    console.log("JWT authToken, user:", user)
 
     // Verify user context.
     bcrypt.compare(userContext, userContextHashed, function(err, result) {
@@ -53,7 +49,6 @@ exports.authenticateToken = (req, res, next) => {
         res.sendStatus(500)
         return
       }
-      console.log("bcrypt result:", result)
       if (result) {
         // Pass user object from JWT to next middleware.
         res.locals.user = user

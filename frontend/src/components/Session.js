@@ -43,7 +43,7 @@ const Session = () => {
     minuteIncrement: 1,
   };
 
-  // const socket = io();
+  let doOnce = true;
 
   useEffect(() => {
 
@@ -66,27 +66,39 @@ const Session = () => {
         }
       }
     };
+
+    if (!doOnce) {
+      return
+    }
+    doOnce = false
+
+    console.log("useEffect once?")
+
     getSessionData();
     
     var room = "abc123";
 
-    const socket = io('http://localhost:8000')
-    socket.on('connect', function() {
-      socket.emit('room', session.code);
-    });
+    // Connect to web socket if session.code not undefined
+    if (session.code) {
+      const socket = io('http://localhost:8000')
+      socket.on('connect', function() {
+        socket.emit('room', session.code);
+      });
+  
+      socket.on('connect_error', ()=>{
+        setTimeout(()=>socket.connect(), 5000)
+      });
+  
+      socket.on('connect', function() {
+        // Connected, let's sign-up for to receive messages for this room
+        socket.emit('room', room);
+      });
+      
+      socket.on('message', function(data) {
+          console.log('Incoming message:', data);
+      });
+    }
 
-    socket.on('connect_error', ()=>{
-      setTimeout(()=>socket.connect(), 5000)
-    });
-
-    socket.on('connect', function() {
-      // Connected, let's sign-up for to receive messages for this room
-      socket.emit('room', room);
-    });
-    
-    socket.on('message', function(data) {
-        console.log('Incoming message:', data);
-    });
   }, []);
 
   // After fetching time ranges, generate chart?
@@ -101,7 +113,6 @@ const Session = () => {
     setShowShareModal(false);
   };
   const handleShowShare = () => {
-    console.log("Trying to show share");
     setShowShareModal(true);
   };
 
@@ -114,13 +125,10 @@ const Session = () => {
     try {
       let res;
       res = await RequestHandler.req(`/session/${params.code}`, "GET");
-
-      console.log("Res with status:", res.status);
       setSessionResStatus(res.status);
 
       const sessionData = res.data.session;
 
-      console.log("Res data:", res);
       sessionData.dt_end = util.mySqlDtToJsDate(sessionData.dt_end);
       sessionData.dt_start = util.mySqlDtToJsDate(sessionData.dt_start);
       sessionData.dt_created = util.mySqlDtToJsDate(sessionData.dt_created);
@@ -128,7 +136,6 @@ const Session = () => {
 
       // Determine if session is expired
       setExpiredSession(new Date() > sessionData.dt_end);
-      console.log("Session?:", sessionData);
       return res;
     } catch (err) {
       throw err;
@@ -155,7 +162,6 @@ const Session = () => {
         `/timeranges?sessionid=${sessionId}`,
         "GET"
       );
-      console.log("Res:", res);
       const timeRangeData = res.data.results;
       console.log("Time Range results:", timeRangeData);
       setTimeRanges(timeRangeData);
@@ -189,7 +195,7 @@ const Session = () => {
       }
 
       console.log("Date type:", String(typeof dtStart));
-      console.log("Session:", session);
+      console.log("Session: ", session);
       console.log("Body:", {
         sessionId: session.id,
         dtStart: dtStart,
