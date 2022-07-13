@@ -14,6 +14,7 @@ import Flatpickr from "react-flatpickr";
 import SessionHeader from "./SessionHeader";
 import SessionInfo from "./SessionInfo";
 import SessionShareModal from "./SessionShareModal";
+import SessionToast from "./SessionToast";
 import SessionChart from "./SessionChart";
 import SessionAttendence from "./SessionAttendence";
 
@@ -30,6 +31,9 @@ const Session = () => {
   const [userSessions, setUserSessions] = useState([]);
   const [showDtModal, setShowDtModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+  const [toastTitle, setToastTitle] = useState("");
+  const [toastMessage, setToastMessage] = useState("");
   const [expiredSession, setExpiredSession] = useState(undefined);
   const [sessionResStatus, setSessionResStatus] = useState();
   const [otherSessionResViews, setOtherSessionResViews] = useState();
@@ -97,6 +101,9 @@ const Session = () => {
           setUserSessions((prev) => {
             return [...prev, data]
           });
+          setToastTitle(`Someone joined!`)
+          setToastMessage(`${data.display_name} joined the session!`)
+          setShowToast(true)
       });
       
       socket.on('postDtRange', async function(data) {
@@ -104,6 +111,9 @@ const Session = () => {
           setTimeRanges((prev) => {
             return [...prev, data.data]
           });
+          setToastTitle(`Good News!`)
+          setToastMessage(`${data.data.display_name} is ${(data.data.status === 'maybe') ? 'maybe ' : ""}coming!`)
+          setShowToast(true)
       });
     }
   }
@@ -265,6 +275,10 @@ const Session = () => {
               </Col>
             </Row>
           </Container>
+          {
+            showToast && 
+            <SessionToast title={toastTitle} message={toastMessage} show={showToast} setShow={setShowToast}/>
+          }
 
           <>
             <Modal show={showDtModal} onHide={handleCloseDt}>
