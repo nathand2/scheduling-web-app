@@ -331,7 +331,6 @@ module.exports = (app, db, auth, passport, io) => {
 
       const sessionCodes = await db.createUserSessionBySessionInviteUuid(userId, inviteCode)
       res.json({sessionCode: sessionCodes})
-      // res.redirect(`${rootURL}/session/${sessionCodes[0]}`)
     } catch(err) {
       console.log(err)
       res.sendStatus(500) // Internal db error.

@@ -32,7 +32,6 @@ const SessionChart = ({ timeRanges, session }) => {
     const height =
       sessionLengthInMinutes + margin.top + margin.bottom;
     const width = 500;
-    // const barWidth = 80;
     const barGap = 5;
     const barWidth = width / (data.length + 3) - barGap;
     const barColor = "lightgreen";
