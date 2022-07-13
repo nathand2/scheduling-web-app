@@ -329,8 +329,10 @@ module.exports = (app, db, auth, passport, io) => {
       console.log("Userid:", userId)
       console.log("inviteCode:", inviteCode)
 
-      const sessionCodes = await db.createUserSessionBySessionInviteUuid(userId, inviteCode)
-      res.json({sessionCode: sessionCodes})
+      const {sessionCode, userSession} = await db.createUserSessionBySessionInviteUuid(userId, inviteCode)
+      io.in(sessionCode).emit("joinSession", userSession[0]);  // Emit message to people in session.
+
+      res.json({sessionCode: sessionCode})
     } catch(err) {
       console.log(err)
       res.sendStatus(500) // Internal db error.

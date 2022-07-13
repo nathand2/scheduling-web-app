@@ -122,8 +122,7 @@ const SessionChart = ({ timeRanges, session }) => {
         // Bar from top
         const minuteDifferenceFromNowToEnd =
           ((currDate - session.dt_start) / (1000 * 60)) * chartScale; // Get minute diff
-        console.log("Diff from start to now:", minuteDifferenceFromNowToEnd);
-  
+            
         // Current time line
         svgCanvas
           .append("line")

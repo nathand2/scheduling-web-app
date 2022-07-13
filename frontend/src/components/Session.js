@@ -93,7 +93,10 @@ const Session = () => {
       });
       
       socket.on('joinSession', function(data) {
-          console.log('New user:', data);
+          console.log('New user joined!:', data);
+          setUserSessions((prev) => {
+            return [...prev, data]
+          });
       });
       
       socket.on('postDtRange', async function(data) {
