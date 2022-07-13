@@ -59,7 +59,7 @@ const Session = () => {
           }
           await getTimeRanges(sessionData.id);
           await getUserSessions(sessionData.id);
-          setUpWebSocketConnection(sessionData.code);
+          await setUpWebSocketConnection(sessionData.code);
         } catch (err) {
           console.log("Error:", err);
         }
@@ -70,7 +70,7 @@ const Session = () => {
     getSessionData();
   }, []);
 
-  const setUpWebSocketConnection = (code) => {
+  const setUpWebSocketConnection = async (code) => {
     // Connect to web socket if session.code not undefined
     if (code !== undefined) {
       console.log("Setting up websocket conn")
@@ -90,6 +90,17 @@ const Session = () => {
       
       socket.on('message', function(data) {
           console.log('Incoming message:', data);
+      });
+      
+      socket.on('joinSession', function(data) {
+          console.log('New user:', data);
+      });
+      
+      socket.on('postDtRange', async function(data) {
+        // Adds new range to timeRanges state.
+          setTimeRanges((prev) => {
+            return [...prev, data.data]
+          });
       });
     }
   }

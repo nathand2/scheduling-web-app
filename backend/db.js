@@ -330,6 +330,15 @@ exports.createSessionTimeRange = async (userId, sessionId, dtStart, dtEnd, statu
   }
 }
 
+exports.getSessionTimeRangeById = async (id) => {
+  try {
+    const results = await dbConnection(`SELECT * from session_time_range WHERE id = ${id};`)
+    return results[0]
+  } catch(err) {
+    throw err
+  }
+}
+
 exports.getSessionIdBySessionCode = async (sessionCode) => {
   try {
     const results = await dbConnection(`SELECT id FROM session WHERE code = '${sessionCode}' LIMIT 1;`)

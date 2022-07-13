@@ -75,6 +75,7 @@ module.exports = (app, db, auth, passport, io) => {
     console.log("Refresh token... user:", res.locals.user)
     const newUser = {
       userId: res.locals.user.userId,
+      displayName: res.locals.user.displayName,
       hash: hashAccess,
       type: res.locals.user.type
     }
@@ -107,16 +108,19 @@ module.exports = (app, db, auth, passport, io) => {
       res.sendStatus(500);
       return
     }
-    console.log("User (googleauth):", req.user)
+    console.log("User (googleauth!):", req.user)
+    console.log("User (googleauth!) displayname:", req.user.displayName)
 
     // On successful authentication, respond with JWT token.
     const userAccess = {
       userId: req.user.userId,
+      displayName: req.user.displayName,
       hash: hashAccess,
       type: 'GOOGLE',
     }
     const userRefresh = {
       userId: req.user.userId,
+      displayName: req.user.displayName,
       hash: hashRefresh,
       type: 'GOOGLE',
     }
@@ -379,8 +383,15 @@ module.exports = (app, db, auth, passport, io) => {
       }
 
       const insertId = await db.createSessionTimeRange(userId, sessionId, dtStart, dtEnd, status)
+      const sessionTimeRange = await db.getSessionTimeRangeById(insertId)
 
-      io.in(sessionCode).emit('message', {thing: 'Someone added a dt range.'});
+      io.in(sessionCode).emit("postDtRange", {
+        data: {
+          ...sessionTimeRange,
+          user_id: userId,
+          display_name: res.locals.user.displayName
+        },
+      });
 
       res.json({insertId: insertId})
 
