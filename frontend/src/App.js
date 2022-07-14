@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 
 import About from './components/About'
+import CookieToast from './components/CookieToast'
 import Header from './components/Header'
 import Home from './components/Home'
 import LandingPage from './components/LandingPage'
@@ -20,7 +21,7 @@ function App() {
   
   const [accessToken, setAccessToken] = useState('')
   const [refreshToken, setRefreshToken] = useState('')
-  const [loggedIn, setLoggedIn] = useState(false)
+  const [loggedIn, setLoggedIn] = useState(undefined)
   
   // When app loaded, manage login state
   useEffect(() => {
@@ -153,7 +154,9 @@ function App() {
         <Header logOut={ logOut } loggedIn={ loggedIn } />
         <Routes>
           <Route path="/" element={
-            loggedIn ? (
+            <>
+            {
+            loggedIn === true && (
               <>
               <Home /><br />
               Logged In: { loggedIn.toString() }<br />
@@ -164,13 +167,16 @@ function App() {
               <button onClick={refreshAccessToken}>Refresh Access token?</button><br />
               <button onClick={testEndpoint}>Test an endpoint</button><br />
               </>
-
-            ) : (
-              <>
-                <LandingPage />
-              </>
             )
-          } />
+            }
+            {
+            (loggedIn === false && loggedIn !== undefined) && (
+              <LandingPage />
+            )
+            }
+            </>
+
+          }/>
           <Route path="/sessioncreate" element={
             <>
             <SessionCreate />
@@ -212,6 +218,7 @@ function App() {
             </>
           } />
         </Routes>
+        <CookieToast />
         
       </div>
     </Router>

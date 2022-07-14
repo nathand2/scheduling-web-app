@@ -42,8 +42,8 @@ const Header = ({ logOut, loggedIn }) => {
           <>
             <NavDropdown title="Username" key='down' id='dropdown-menu-align-end'
               align='end'>
-                <NavDropdown.Item href="#action3">Profile</NavDropdown.Item>
-                <NavDropdown.Item href="#action4">Settings</NavDropdown.Item>
+                <NavDropdown.Item href="#profile" disabled>Profile</NavDropdown.Item>
+                <NavDropdown.Item href="#profile" disabled>Settings</NavDropdown.Item>
                 <NavDropdown.Divider />
                 <NavDropdown.Item onClick={ logOut } href="/">
                   Logout
