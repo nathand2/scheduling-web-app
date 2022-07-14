@@ -297,7 +297,9 @@ exports.createUserSessionBySessionInviteUuid = async (userId, uuid) => {
     const sessionIds = await dbConnection(`SELECT code, id FROM session WHERE id = (SELECT session_id FROM session_invite WHERE uuid = '${uuid}' LIMIT 1);`)
     console.log("STUFF:", sessionIds)
     const results = await dbConnection(`INSERT INTO user_session (user_id, session_id, role) VALUES (${userId}, ${sessionIds[0].id}, 'attendee');`)
-    return sessionIds[0].code
+    const newUserSessionInsertId = results.insertId
+    const newUserSession = await dbConnection(`SELECT user_session_subset.*, user.display_name FROM (SELECT * FROM user_session WHERE id = ${newUserSessionInsertId} LIMIT 1) AS user_session_subset LEFT JOIN user ON user_session_subset.user_id = user.id;`)
+    return {sessionCode: sessionIds[0].code, userSession: newUserSession}
   } catch(err) {
     throw err
   }
@@ -325,6 +327,15 @@ exports.createSessionTimeRange = async (userId, sessionId, dtStart, dtEnd, statu
   try {
     const results = await dbConnection(`INSERT INTO session_time_range (user_session_id, dt_start, dt_end, status) VALUES ((SELECT id FROM user_session WHERE user_id = ${userId} AND session_id = ${sessionId} LIMIT 1), '${dtStart}', '${dtEnd}', '${status}');`)
     return results.insertId
+  } catch(err) {
+    throw err
+  }
+}
+
+exports.getSessionTimeRangeById = async (id) => {
+  try {
+    const results = await dbConnection(`SELECT * from session_time_range WHERE id = ${id};`)
+    return results[0]
   } catch(err) {
     throw err
   }

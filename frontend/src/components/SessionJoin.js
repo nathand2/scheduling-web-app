@@ -9,6 +9,8 @@ const SessionJoin = () => {
   const [goToSession, setGoToSession] = useState(false)
   const [sessionCode, setSessionCode] = useState('')
 
+  let doOnce = true;
+
   useEffect(() => {
     let didCancel = false;
     const joinSession = async () => {
@@ -33,9 +35,11 @@ const SessionJoin = () => {
         }
       }
     }
-    joinSession();
-
     
+    if (doOnce) {
+      doOnce = false
+      joinSession();
+    }
   })
   return (
     <div>

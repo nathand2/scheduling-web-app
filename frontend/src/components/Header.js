@@ -7,9 +7,9 @@ const Header = ({ logOut, loggedIn }) => {
     <div className="header-container">
       <Navbar bg="light" expand="lg">
   <Container fluid>
-    <Link to='/' className='link-plain'>
-      <Navbar.Brand >Valorant Scheduler</Navbar.Brand>
-    </Link>
+    {/* <Link to='/' className='link-plain'> */}
+      <Navbar.Brand href="/">Valorant Scheduler</Navbar.Brand>
+    {/* </Link> */}
     <Navbar.Toggle aria-controls="navbarScroll" />
     <Navbar.Collapse id="navbarScroll">
       <Nav
@@ -18,8 +18,15 @@ const Header = ({ logOut, loggedIn }) => {
         navbarScroll
       >
       <Nav.Link href="/">Home</Nav.Link>
-      <Nav.Link href="/sessions">Sessions</Nav.Link>
-      <Nav.Link href="/groups">Groups</Nav.Link>
+      {
+        loggedIn && (
+          <>
+            <Nav.Link href="/sessions">Sessions</Nav.Link>
+            <Nav.Link href="/groups" disabled>Groups</Nav.Link>
+          </>
+        )
+      }
+      <Nav.Link href="/about" >About</Nav.Link>
         
       </Nav>
       <div className="d-flex">
@@ -35,8 +42,8 @@ const Header = ({ logOut, loggedIn }) => {
           <>
             <NavDropdown title="Username" key='down' id='dropdown-menu-align-end'
               align='end'>
-                <NavDropdown.Item href="#action3">Profile</NavDropdown.Item>
-                <NavDropdown.Item href="#action4">Settings</NavDropdown.Item>
+                <NavDropdown.Item href="#profile" disabled>Profile</NavDropdown.Item>
+                <NavDropdown.Item href="#profile" disabled>Settings</NavDropdown.Item>
                 <NavDropdown.Divider />
                 <NavDropdown.Item onClick={ logOut } href="/">
                   Logout

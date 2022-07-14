@@ -1,10 +1,13 @@
 /**
  * Module for API functionality and routes.
  */
- const util = require('../services/util');
+
+
+const util = require('../services/util');
 
 const versionEndpoint = "/v1";
 const rootURL = "http://localhost:3000"
+
 
 // For Cookie security
 const secureCookieConfig = {
@@ -18,7 +21,7 @@ const semiSecureCookieConfig = {
 }
 
 
-module.exports = (app, db, auth, passport) => {
+module.exports = (app, db, auth, passport, io) => {
 
   app.get('/test', async (req, res) => {
     res.json({stuff: "potato"})
@@ -72,6 +75,7 @@ module.exports = (app, db, auth, passport) => {
     console.log("Refresh token... user:", res.locals.user)
     const newUser = {
       userId: res.locals.user.userId,
+      displayName: res.locals.user.displayName,
       hash: hashAccess,
       type: res.locals.user.type
     }
@@ -104,16 +108,19 @@ module.exports = (app, db, auth, passport) => {
       res.sendStatus(500);
       return
     }
-    console.log("User (googleauth):", req.user)
+    console.log("User (googleauth!):", req.user)
+    console.log("User (googleauth!) displayname:", req.user.displayName)
 
     // On successful authentication, respond with JWT token.
     const userAccess = {
       userId: req.user.userId,
+      displayName: req.user.displayName,
       hash: hashAccess,
       type: 'GOOGLE',
     }
     const userRefresh = {
       userId: req.user.userId,
+      displayName: req.user.displayName,
       hash: hashRefresh,
       type: 'GOOGLE',
     }
@@ -322,9 +329,10 @@ module.exports = (app, db, auth, passport) => {
       console.log("Userid:", userId)
       console.log("inviteCode:", inviteCode)
 
-      const sessionCodes = await db.createUserSessionBySessionInviteUuid(userId, inviteCode)
-      res.json({sessionCode: sessionCodes})
-      // res.redirect(`${rootURL}/session/${sessionCodes[0]}`)
+      const {sessionCode, userSession} = await db.createUserSessionBySessionInviteUuid(userId, inviteCode)
+      io.in(sessionCode).emit("joinSession", userSession[0]);  // Emit message to people in session.
+
+      res.json({sessionCode: sessionCode})
     } catch(err) {
       console.log(err)
       res.sendStatus(500) // Internal db error.
@@ -335,7 +343,7 @@ module.exports = (app, db, auth, passport) => {
   app.post('/sessiontimerange', auth.authenticateToken, async (req, res) => {
     try {
       const userId = res.locals.user.userId  // User Id from JWT token
-      const { sessionId, dtStart, dtEnd, status } = req.body  // Post body
+      const { sessionId, sessionCode, dtStart, dtEnd, status } = req.body  // Post body
 
       console.log("Date type:", typeof dtStart)
       console.log("Dates:", new Date(dtStart), new Date(dtEnd))
@@ -376,6 +384,16 @@ module.exports = (app, db, auth, passport) => {
       }
 
       const insertId = await db.createSessionTimeRange(userId, sessionId, dtStart, dtEnd, status)
+      const sessionTimeRange = await db.getSessionTimeRangeById(insertId)
+
+      io.in(sessionCode).emit("postDtRange", {
+        data: {
+          ...sessionTimeRange,
+          user_id: userId,
+          display_name: res.locals.user.displayName
+        },
+      });
+
       res.json({insertId: insertId})
 
     } catch(err) {

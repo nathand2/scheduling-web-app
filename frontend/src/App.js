@@ -2,7 +2,11 @@ import './App.css';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 
+import About from './components/About'
+import CookieToast from './components/CookieToast'
 import Header from './components/Header'
+import Home from './components/Home'
+import LandingPage from './components/LandingPage'
 import LogIn from './components/LogIn'
 import SignUp from './components/SignUp'
 import Sessions from './components/Sessions'
@@ -17,7 +21,7 @@ function App() {
   
   const [accessToken, setAccessToken] = useState('')
   const [refreshToken, setRefreshToken] = useState('')
-  const [loggedIn, setLoggedIn] = useState(false)
+  const [loggedIn, setLoggedIn] = useState(undefined)
   
   // When app loaded, manage login state
   useEffect(() => {
@@ -151,16 +155,28 @@ function App() {
         <Routes>
           <Route path="/" element={
             <>
-            Home<br />
-            Logged In: { loggedIn.toString() }<br />
-            Access Token: { accessToken }<br />
-            Refresh Token:  { refreshToken }<br />
-            <button onClick={testRequest}>Test auth stuff</button><br />
-            
-            <button onClick={refreshAccessToken}>Refresh Access token?</button><br />
-            <button onClick={testEndpoint}>Test an endpoint</button><br />
+            {
+            loggedIn === true && (
+              <>
+              <Home /><br />
+              Logged In: { loggedIn.toString() }<br />
+              Access Token: { accessToken }<br />
+              Refresh Token:  { refreshToken }<br />
+              <button onClick={testRequest}>Test auth stuff</button><br />
+              
+              <button onClick={refreshAccessToken}>Refresh Access token?</button><br />
+              <button onClick={testEndpoint}>Test an endpoint</button><br />
+              </>
+            )
+            }
+            {
+            (loggedIn === false && loggedIn !== undefined) && (
+              <LandingPage />
+            )
+            }
             </>
-          } />
+
+          }/>
           <Route path="/sessioncreate" element={
             <>
             <SessionCreate />
@@ -196,7 +212,13 @@ function App() {
             <SessionJoin />
             </>
           } />
+          <Route path="/about" element={
+            <>
+            <About />
+            </>
+          } />
         </Routes>
+        <CookieToast />
         
       </div>
     </Router>

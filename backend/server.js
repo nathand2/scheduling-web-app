@@ -18,13 +18,13 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(cookieParser());
-
-//Middleware
 app.use(express.json());
 app.use(passport.initialize());
 require('./services/googleStrategy');
 
-require('./version/v1')(app, db, auth, passport);
+const temp = require('./services/webSockets');
+const io = temp.setUpWebSockets(app)
+require('./version/v1')(app, db, auth, passport, io);
 
 app.listen(port, () => {
   console.log(`Listening on http://localhost:${port}/`)

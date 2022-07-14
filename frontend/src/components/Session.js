@@ -1,30 +1,39 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 
+import { io } from "socket.io-client";
+
 import Button from "react-bootstrap/Button";
 import Modal from "react-bootstrap/Modal";
 import Form from "react-bootstrap/Form";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
+import Container from "react-bootstrap/Container";
 import Flatpickr from "react-flatpickr";
 
 import SessionHeader from "./SessionHeader";
 import SessionInfo from "./SessionInfo";
 import SessionShareModal from "./SessionShareModal";
+import SessionToast from "./SessionToast";
 import SessionChart from "./SessionChart";
 import SessionAttendence from "./SessionAttendence";
 
 import { RequestHandler } from "../js/requestHandler";
-import { Container } from "react-bootstrap";
 const util = require("../js/util");
 
+const ENDPOINT = "ws://localhost:6500/";
+
 const Session = () => {
+  
   const [params, setParams] = useState(useParams());
   const [session, setSession] = useState("");
   const [timeRanges, setTimeRanges] = useState([]);
   const [userSessions, setUserSessions] = useState([]);
   const [showDtModal, setShowDtModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+  const [toastTitle, setToastTitle] = useState("");
+  const [toastMessage, setToastMessage] = useState("");
   const [expiredSession, setExpiredSession] = useState(undefined);
   const [sessionResStatus, setSessionResStatus] = useState();
   const [otherSessionResViews, setOtherSessionResViews] = useState();
@@ -39,10 +48,11 @@ const Session = () => {
     minuteIncrement: 1,
   };
 
+  let didCancel = false;
   useEffect(() => {
-    let didCancel = false;
     const getSessionData = async () => {
       if (!didCancel) {
+        didCancel = true
         // Get session data from api
         try {
           const res = await getSession();
@@ -53,18 +63,60 @@ const Session = () => {
           }
           await getTimeRanges(sessionData.id);
           await getUserSessions(sessionData.id);
+          await setUpWebSocketConnection(sessionData.code);
         } catch (err) {
           console.log("Error:", err);
         }
       }
     };
+
+    console.log("useEffect once?")
     getSessionData();
   }, []);
 
-  // After fetching time ranges, generate chart?
-  const generateSessionChart = (callback) => {
-    callback();
-  };
+  const setUpWebSocketConnection = async (code) => {
+    // Connect to web socket if session.code not undefined
+    if (code !== undefined) {
+      console.log("Setting up websocket conn")
+      const socket = io('http://localhost:8000')
+      socket.on('connect', function() {
+        socket.emit('room', code);
+      });
+  
+      socket.on('connect_error', ()=>{
+        setTimeout(()=>socket.connect(), 5000)
+      });
+  
+      socket.on('connect', function() {
+        // Connected, let's sign-up for to receive messages for this room
+        socket.emit('room', code);
+      });
+      
+      socket.on('message', function(data) {
+          console.log('Incoming message:', data);
+      });
+      
+      socket.on('joinSession', function(data) {
+          console.log('New user joined!:', data);
+          setUserSessions((prev) => {
+            return [...prev, data]
+          });
+          setToastTitle(`Someone joined!`)
+          setToastMessage(`${data.display_name} joined the session!`)
+          setShowToast(true)
+      });
+      
+      socket.on('postDtRange', async function(data) {
+        // Adds new range to timeRanges state.
+          setTimeRanges((prev) => {
+            return [...prev, data.data]
+          });
+          setToastTitle(`Good News!`)
+          setToastMessage(`${data.data.display_name} is ${(data.data.status === 'maybe') ? 'maybe ' : ""}coming!`)
+          setShowToast(true)
+      });
+    }
+  }
 
   const handleCloseDt = () => setShowDtModal(false);
   const handleShowDt = () => setShowDtModal(true);
@@ -73,7 +125,6 @@ const Session = () => {
     setShowShareModal(false);
   };
   const handleShowShare = () => {
-    console.log("Trying to show share");
     setShowShareModal(true);
   };
 
@@ -86,13 +137,10 @@ const Session = () => {
     try {
       let res;
       res = await RequestHandler.req(`/session/${params.code}`, "GET");
-
-      console.log("Res with status:", res.status);
       setSessionResStatus(res.status);
 
       const sessionData = res.data.session;
 
-      console.log("Res data:", res);
       sessionData.dt_end = util.mySqlDtToJsDate(sessionData.dt_end);
       sessionData.dt_start = util.mySqlDtToJsDate(sessionData.dt_start);
       sessionData.dt_created = util.mySqlDtToJsDate(sessionData.dt_created);
@@ -100,7 +148,6 @@ const Session = () => {
 
       // Determine if session is expired
       setExpiredSession(new Date() > sessionData.dt_end);
-      console.log("Session?:", sessionData);
       return res;
     } catch (err) {
       throw err;
@@ -127,7 +174,6 @@ const Session = () => {
         `/timeranges?sessionid=${sessionId}`,
         "GET"
       );
-      console.log("Res:", res);
       const timeRangeData = res.data.results;
       console.log("Time Range results:", timeRangeData);
       setTimeRanges(timeRangeData);
@@ -161,7 +207,7 @@ const Session = () => {
       }
 
       console.log("Date type:", String(typeof dtStart));
-      console.log("Session:", session);
+      console.log("Session: ", session);
       console.log("Body:", {
         sessionId: session.id,
         dtStart: dtStart,
@@ -171,6 +217,7 @@ const Session = () => {
       let res;
       res = await RequestHandler.req("/sessiontimerange", "POST", {
         sessionId: session.id,
+        sessionCode: session.code,
         dtStart: dtStart,
         dtEnd: dtEnd,
         status: dtStatus,
@@ -228,6 +275,10 @@ const Session = () => {
               </Col>
             </Row>
           </Container>
+          {
+            showToast && 
+            <SessionToast title={toastTitle} message={toastMessage} show={showToast} setShow={setShowToast}/>
+          }
 
           <>
             <Modal show={showDtModal} onHide={handleCloseDt}>
