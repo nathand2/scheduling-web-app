@@ -390,11 +390,9 @@ module.exports = (app, db, auth, passport, io) => {
       const sessionTimeRange = await db.getSessionTimeRangeById(insertId)
 
       io.in(sessionCode).emit("postDtRange", {
-        data: {
-          ...sessionTimeRange,
-          user_id: userId,
-          display_name: res.locals.user.displayName
-        },
+        ...sessionTimeRange,
+        user_id: userId,
+        display_name: res.locals.user.displayName
       });
 
       res.json({insertId: insertId})

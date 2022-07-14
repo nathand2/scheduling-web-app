@@ -1,19 +1,17 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
 import { io } from "socket.io-client";
 
 import Button from "react-bootstrap/Button";
-import Modal from "react-bootstrap/Modal";
-import Form from "react-bootstrap/Form";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 import Container from "react-bootstrap/Container";
-import Flatpickr from "react-flatpickr";
 
 import SessionHeader from "./SessionHeader";
 import SessionInfo from "./SessionInfo";
 import SessionShareModal from "./SessionShareModal";
+import SessionAddRangeModal from "./SessionAddRangeModal";
 import SessionToast from "./SessionToast";
 import SessionChart from "./SessionChart";
 import SessionAttendence from "./SessionAttendence";
@@ -37,16 +35,6 @@ const Session = () => {
   const [expiredSession, setExpiredSession] = useState(undefined);
   const [sessionResStatus, setSessionResStatus] = useState();
   const [otherSessionResViews, setOtherSessionResViews] = useState();
-
-  const [dtStatus, setDtStatus] = useState("going");
-  const [dtStart, setdtStart] = useState(new Date());
-  const [dtEnd, setdtEnd] = useState(
-    new Date(new Date().getTime() + 60 * 60 * 2 * 1000)
-  );
-
-  const dtOptionsConfig = {
-    minuteIncrement: 1,
-  };
 
   let didCancel = false;
   useEffect(() => {
@@ -109,11 +97,17 @@ const Session = () => {
       socket.on('postDtRange', async function(data) {
         // Adds new range to timeRanges state.
           setTimeRanges((prev) => {
-            return [...prev, data.data]
+            return [...prev, data]
           });
-          setToastTitle(`Good News!`)
-          setToastMessage(`${data.data.display_name} is ${(data.data.status === 'maybe') ? 'maybe ' : ""}coming!`)
-          setShowToast(true)
+          if (data.user_id !== localStorage.userId) {
+            setToastTitle(`Thanks for joining!`)
+            setToastMessage(`We'll tell everyone here you are ${(data.status === 'maybe') ? 'maybe ' : ""}joining`)
+            setShowToast(true)
+          } else {
+            setToastTitle(`Good News!`)
+            setToastMessage(`${data.display_name} is ${(data.status === 'maybe') ? 'maybe ' : ""}coming!`)
+            setShowToast(true)
+          }
       });
     }
   }
@@ -126,11 +120,6 @@ const Session = () => {
   };
   const handleShowShare = () => {
     setShowShareModal(true);
-  };
-
-  const submitDtRange = () => {
-    handleCloseDt();
-    addDtRange();
   };
 
   const getSession = async () => {
@@ -198,41 +187,6 @@ const Session = () => {
     }
   };
 
-  const addDtRange = async () => {
-    try {
-      // Check for valid dt range
-      if (new Date(dtStart) > new Date(dtEnd)) {
-        console.log("Invalid dt range.");
-        throw new Error("Invalid dt Range");
-      }
-
-      console.log("Date type:", String(typeof dtStart));
-      console.log("Session: ", session);
-      console.log("Body:", {
-        sessionId: session.id,
-        dtStart: dtStart,
-        dtEnd: dtEnd,
-        status: dtStatus,
-      });
-      let res;
-      res = await RequestHandler.req("/sessiontimerange", "POST", {
-        sessionId: session.id,
-        sessionCode: session.code,
-        dtStart: dtStart,
-        dtEnd: dtEnd,
-        status: dtStatus,
-      });
-      if (res.status !== 200) return;
-      const resData = res.data;
-      console.log("Res:", res);
-      const insertId = resData.insertId;
-      console.log("Inserted dtRange with insertId:", insertId);
-    } catch (err) {
-      console.log("Error:", err);
-      return;
-    }
-  };
-
   return (
     <div>
       {sessionResStatus === undefined && <>loading session</>}
@@ -241,9 +195,13 @@ const Session = () => {
           <SessionHeader showShareModal={handleShowShare} />
           <SessionShareModal
             show={showShareModal}
-            onHide={handleCloseShare}
             handleClose={handleCloseShare}
           />
+          <SessionAddRangeModal 
+            show={showDtModal}
+            handleClose={handleCloseDt}
+            session={session}
+            />
 
           <Container fluid>
             <Row className="justify-content-md-center">
@@ -279,56 +237,6 @@ const Session = () => {
             showToast && 
             <SessionToast title={toastTitle} message={toastMessage} show={showToast} setShow={setShowToast}/>
           }
-
-          <>
-            <Modal show={showDtModal} onHide={handleCloseDt}>
-              <Modal.Header closeButton>
-                <Modal.Title>Add Date Time Range</Modal.Title>
-              </Modal.Header>
-              <Modal.Body>
-                Start &nbsp;
-                <Flatpickr
-                  data-enable-time
-                  value={dtStart}
-                  onChange={(dt) => {
-                    setdtStart(dt);
-                  }}
-                />
-                <br />
-                End &nbsp;
-                <Flatpickr
-                  data-enable-time
-                  value={dtEnd}
-                  onChange={(dt) => {
-                    setdtEnd(dt);
-                  }}
-                  options={{
-                    ...dtOptionsConfig,
-                    minDate: dtStart,
-                  }}
-                />
-                <Form.Group className="mb-3">
-                  <Form.Label>Who can attend my Session? &nbsp;</Form.Label>
-                  <Form.Select
-                    aria-label="Default select example"
-                    value={dtStatus}
-                    onChange={(e) => setDtStatus(e.target.value)}
-                  >
-                    <option value="going">Going 👍</option>
-                    <option value="maybe">Maybe 🤷‍♂️</option>
-                  </Form.Select>
-                </Form.Group>
-              </Modal.Body>
-              <Modal.Footer>
-                <Button variant="secondary" onClick={handleCloseDt}>
-                  Close
-                </Button>
-                <Button variant="primary" onClick={submitDtRange}>
-                  Submit
-                </Button>
-              </Modal.Footer>
-            </Modal>
-          </>
 
           <br />
         </>
