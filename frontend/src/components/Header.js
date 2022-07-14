@@ -18,8 +18,15 @@ const Header = ({ logOut, loggedIn }) => {
         navbarScroll
       >
       <Nav.Link href="/">Home</Nav.Link>
-      <Nav.Link href="/sessions">Sessions</Nav.Link>
-      <Nav.Link href="/groups">Groups</Nav.Link>
+      {
+        loggedIn && (
+          <>
+            <Nav.Link href="/sessions">Sessions</Nav.Link>
+            <Nav.Link href="/groups" disabled>Groups</Nav.Link>
+          </>
+        )
+      }
+      <Nav.Link href="/about" >About</Nav.Link>
         
       </Nav>
       <div className="d-flex">

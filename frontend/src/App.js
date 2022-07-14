@@ -2,6 +2,7 @@ import './App.css';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 
+import About from './components/About'
 import Header from './components/Header'
 import Home from './components/Home'
 import LandingPage from './components/LandingPage'
@@ -203,6 +204,11 @@ function App() {
           <Route path="/sessionjoin" element={
             <>
             <SessionJoin />
+            </>
+          } />
+          <Route path="/about" element={
+            <>
+            <About />
             </>
           } />
         </Routes>
