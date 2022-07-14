@@ -135,6 +135,9 @@ module.exports = (app, db, auth, passport, io) => {
       // Unsecure cookies for tokens to be stored in session storage.
       res.cookie('accessToken', accessToken, semiSecureCookieConfig)
       res.cookie('refreshToken', refreshToken, semiSecureCookieConfig)
+      // Send back displayName and userId as cookie client knows who user is
+      res.cookie('userId', req.user.userId, semiSecureCookieConfig)
+      res.cookie('displayName', req.user.displayName, semiSecureCookieConfig)
 
       // Secure, hardened cookies
       res.cookie('userContextAccess', randStringAccess, secureCookieConfig);

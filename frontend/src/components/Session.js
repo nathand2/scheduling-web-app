@@ -21,7 +21,7 @@ import SessionAttendence from "./SessionAttendence";
 import { RequestHandler } from "../js/requestHandler";
 const util = require("../js/util");
 
-const ENDPOINT = "ws://localhost:6500/";
+const webSocketEndpoint = "http://localhost:8000";
 
 const Session = () => {
   
@@ -78,7 +78,7 @@ const Session = () => {
     // Connect to web socket if session.code not undefined
     if (code !== undefined) {
       console.log("Setting up websocket conn")
-      const socket = io('http://localhost:8000')
+      const socket = io(webSocketEndpoint)
       socket.on('connect', function() {
         socket.emit('room', code);
       });

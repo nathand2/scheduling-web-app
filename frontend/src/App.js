@@ -18,14 +18,17 @@ import Groups from './components/Groups'
 import {RequestHandler} from './js/requestHandler'
 
 function App() {
-  
   const [accessToken, setAccessToken] = useState('')
   const [refreshToken, setRefreshToken] = useState('')
   const [loggedIn, setLoggedIn] = useState(undefined)
+  const [userId, setUserId] = useState(undefined)
+  const [displayName, setDisplayName] = useState('')
+
   
   // When app loaded, manage login state
   useEffect(() => {
     processJWTTokens();
+    getUserData();
   }, [])
   
   const getCookie = (name) => {
@@ -38,6 +41,7 @@ function App() {
     document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
   }
 
+
   const setSessionStorageJWTTokens = async () => {
     // Get JWT and refresh token from cookies.
     const accessToken = getCookie('accessToken');
@@ -49,6 +53,23 @@ function App() {
     if (refreshToken !== undefined) {
       await window.localStorage.setItem('refreshToken', refreshToken);
     }
+  }
+
+  const getUserData = async () => {
+    console.log("Tried to get user data")
+    if (!localStorage.getItem('userId') || !localStorage.getItem('displayName')) {
+      console.log("Getting userData from cookies")
+      const userIdFromCookie = getCookie('userId');
+      const displayNameFromCookie = getCookie('displayName');
+      localStorage.setItem('userId', decodeURI(userIdFromCookie))
+      localStorage.setItem('displayName', decodeURI(displayNameFromCookie))
+    }
+    await setUserId(localStorage.getItem('userId'))
+    await setDisplayName(localStorage.getItem('displayName'))
+
+    // Delete cookies
+    // deleteCookie('userId')
+    // deleteCookie('displayName')
   }
 
   const processJWTTokens = async () => {
@@ -77,10 +98,13 @@ function App() {
         }
       });
       localStorage.removeItem('refreshToken');
+      localStorage.removeItem('userId');
+      localStorage.removeItem('displayName');
       sessionStorage.removeItem('accessToken');
       setLoggedIn(false)
       setAccessToken("")
       setRefreshToken("")
+      window.location.href = "/";  // Redirect to home
     } catch(err) {
       console.log("Error when logging out")
     }
@@ -151,7 +175,7 @@ function App() {
   return (
     <Router>
       <div className="App">
-        <Header logOut={ logOut } loggedIn={ loggedIn } />
+        <Header logOut={ logOut } loggedIn={ loggedIn } displayName={displayName} />
         <Routes>
           <Route path="/" element={
             <>
@@ -160,6 +184,8 @@ function App() {
               <>
               <Home /><br />
               Logged In: { loggedIn.toString() }<br />
+              UserId: { userId }<br />
+              displayName: { displayName }<br />
               Access Token: { accessToken }<br />
               Refresh Token:  { refreshToken }<br />
               <button onClick={testRequest}>Test auth stuff</button><br />

@@ -2,7 +2,7 @@ import { Navbar, Container, Nav, NavDropdown } from 'react-bootstrap';
 import { Link } from 'react-router-dom'
 
 
-const Header = ({ logOut, loggedIn }) => {
+const Header = ({ logOut, loggedIn, displayName }) => {
   return (
     <div className="header-container">
       <Navbar bg="light" expand="lg">
@@ -40,12 +40,12 @@ const Header = ({ logOut, loggedIn }) => {
 
         { loggedIn &&
           <>
-            <NavDropdown title="Username" key='down' id='dropdown-menu-align-end'
+            <NavDropdown title={displayName} key='down' id='dropdown-menu-align-end'
               align='end'>
                 <NavDropdown.Item href="#profile" disabled>Profile</NavDropdown.Item>
                 <NavDropdown.Item href="#profile" disabled>Settings</NavDropdown.Item>
                 <NavDropdown.Divider />
-                <NavDropdown.Item onClick={ logOut } href="/">
+                <NavDropdown.Item onClick={ logOut }>
                   Logout
                 </NavDropdown.Item>
               </NavDropdown>
