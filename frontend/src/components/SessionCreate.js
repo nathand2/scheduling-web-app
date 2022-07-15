@@ -139,7 +139,7 @@ const SessionCreate = () => {
 
         <Form.Group className="mb-3">
           <Button variant="primary" type="submit">
-            Submit (Go to fake session)
+            Create the session
           </Button>
         </Form.Group>
       </Form>

@@ -78,8 +78,8 @@ exports.googleAuth = async (googleID, displayName) => {
     } else {
       console.log("Existing Google User logged in.");
       const userId = results[0].id;
-      const username = results[0].username;
-      return {userId: userId, username: username};
+      const displayName = results[0].display_name;
+      return {userId: userId, displayName: displayName};
     }
   } catch(err) {
     throw err;
@@ -365,6 +365,15 @@ exports.getSesssionTimeRanges = async (sessionId) => {
 exports.getUserSessionsBySessionId = async (sessionId) => {
   try {
     const results = await dbConnection(`SELECT user_session_subset.*, user.display_name FROM ((SELECT * FROM user_session WHERE session_id = ${sessionId}) as user_session_subset INNER JOIN user ON user_session_subset.user_id = user.id);`)
+    return results
+  } catch(err) {
+    throw err
+  }
+}
+
+exports.updateDisplayName = async (userId, displayName) => {
+  try {
+    const results =  await dbConnection(`UPDATE user SET display_name = '${displayName}' WHERE id = ${userId}`)
     return results
   } catch(err) {
     throw err

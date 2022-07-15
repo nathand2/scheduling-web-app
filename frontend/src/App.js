@@ -14,6 +14,7 @@ import SessionCreate from './components/SessionCreate'
 import SessionJoin from './components/SessionJoin'
 import Session from './components/Session'
 import Groups from './components/Groups'
+import UserSettings from './components/UserSettings'
 
 import {RequestHandler} from './js/requestHandler'
 
@@ -252,6 +253,11 @@ function App() {
           <Route path="/about" element={
             <>
             <About />
+            </>
+          } />
+          <Route path="/settings" element={
+            <>
+            <UserSettings setAppDisplayName={setDisplayName}/>
             </>
           } />
         </Routes>

@@ -10,8 +10,8 @@ const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 const authUser = async (request, accessToken, refreshToken, profile, done) => {
   try {
     console.log("Profile:", profile)
-    const {userId, username} = await db.googleAuth(profile.id, profile.displayName);
-    profile.username = username
+    const {userId, displayName} = await db.googleAuth(profile.id, profile.displayName);
+    profile.displayName = displayName
     profile.userId = userId
     console.log("profile:", profile)
   } catch (err) {

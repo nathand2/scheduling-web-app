@@ -23,6 +23,8 @@ export class RequestHandler {
       if (res.status === 200) {
         const data = await res.json();  // JWT token valid, return results.
         return {status: 200, data: data}
+      } else if (res.status === 204) {
+        return {status: 204}
       } else if (res.status === 401 ) {
         return await this.refreshJWT(resource, reqMethod, reqBody);  // Expired Access token, attempt to refresh JWT
       } else if (res.status === 403 ) {
@@ -60,6 +62,8 @@ export class RequestHandler {
       if (res.status === 200) {
         const data = await res.json();  // JWT token valid, return results.
         return {status: 200, data: data}
+      } else if (res.status === 204) {
+        return {status: 204}
       } else if (res.status === 401) {
         console.log("Newly created JWT problem. Forbidden")
         return {status: 401}

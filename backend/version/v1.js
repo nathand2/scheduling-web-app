@@ -467,4 +467,25 @@ module.exports = (app, db, auth, passport, io) => {
       return
     }
   })
+
+  app.put('/displayname', auth.authenticateToken, async (req, res) => {
+    try {
+      const userId = res.locals.user.userId  // User Id from JWT token
+      const {displayName} = req.body;
+  
+      if (!displayName || displayName.length > 25 || displayName.length < 4) {
+        console.log("Invalid username")
+        res.sendStatus(400)
+        return
+      }
+      const results = db.updateDisplayName(userId, displayName)
+      console.log("Successfully updated displayName")
+      res.sendStatus(204)  // No content
+      return
+    } catch(err) {
+      console.log(err)
+      res.sendStatus(500) // Internal db error.
+      return
+    }
+  })
 }

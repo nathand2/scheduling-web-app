@@ -38,3 +38,24 @@ $oauth-icon-height: 60px;
   overflow-x: scroll;
   word-wrap: break-word;
 }
+
+.large-icon {
+  width: 50px;
+  height: 50px;
+}
+
+.hover-cursor {
+  &:hover {
+    cursor: pointer;
+    border-color: grey;
+  }
+}
+
+.small-form-group {
+  width: 50vw;
+  margin-right: auto;
+  margin-left: auto;
+}
+.small-form-input {
+  width: 10px;
+}

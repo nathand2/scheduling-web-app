@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import { IoMdAddCircle } from 'react-icons/io'
 
 import { Container } from 'react-bootstrap';
 import Card from 'react-bootstrap/Card';
@@ -39,15 +40,19 @@ const Sessions = () => {
     <div>
       Sessions
       <Container className='sessions-preview d-flex flex-wrap bd-highlight'>
-        <Card style={{ width: '18rem' }} bg="secondary" text="white">
-            <Link to='/sessioncreate' className='link-plain'>
+        <Card style={{ width: '18rem' }} bg="light" text="primary">
+            {/* <Link to='/sessioncreate' className='link-plain'> */}
+            <a href='/sessioncreate' className='link-plain'>
             <Card.Body>
-            <Card.Title>Add</Card.Title>
+            {/* <Card.Title>Add</Card.Title> */}
+            <br />
+            <IoMdAddCircle className='large-icon' />
             <Card.Text className='link-plain'>
-              Add stuff
+              Create a Session
             </Card.Text>
             </Card.Body>
-          </Link>
+          </a>
+          {/* </Link> */}
         </Card>
         {
           sessions.map((session) => (<SessionCard key={session.id} code={session.code} title={session.session_title} desc={session.session_desc} dt_created={session.dt_created} status={"Status"}  />))
