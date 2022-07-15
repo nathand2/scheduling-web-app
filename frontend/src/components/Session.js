@@ -99,7 +99,7 @@ const Session = () => {
           setTimeRanges((prev) => {
             return [...prev, data]
           });
-          if (data.user_id !== localStorage.userId) {
+          if (data.user_id === parseInt(localStorage.userId)) {
             setToastTitle(`Thanks for joining!`)
             setToastMessage(`We'll tell everyone here you are ${(data.status === 'maybe') ? 'maybe ' : ""}joining`)
             setShowToast(true)

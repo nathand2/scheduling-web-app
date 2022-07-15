@@ -57,19 +57,30 @@ function App() {
 
   const getUserData = async () => {
     console.log("Tried to get user data")
-    if (!localStorage.getItem('userId') || !localStorage.getItem('displayName')) {
-      console.log("Getting userData from cookies")
-      const userIdFromCookie = getCookie('userId');
-      const displayNameFromCookie = getCookie('displayName');
-      localStorage.setItem('userId', decodeURI(userIdFromCookie))
-      localStorage.setItem('displayName', decodeURI(displayNameFromCookie))
+    const userIdFromCookie = getCookie('userId');
+    const displayNameFromCookie = getCookie('displayName');
+
+    if (userIdFromCookie !== undefined) {
+      await window.localStorage.setItem('userId', userIdFromCookie);
     }
+    if (displayNameFromCookie !== undefined) {
+      await window.localStorage.setItem('displayName', displayNameFromCookie);
+    }
+    deleteCookie('userId')
+    deleteCookie('displayName')
+
     await setUserId(localStorage.getItem('userId'))
     await setDisplayName(localStorage.getItem('displayName'))
 
+    // if (!localStorage.getItem('userId') || !localStorage.getItem('displayName')) {
+    //   console.log("Getting userData from cookies")
+    //   const userIdFromCookie = getCookie('userId');
+    //   const displayNameFromCookie = getCookie('displayName');
+    //   localStorage.setItem('userId', decodeURI(userIdFromCookie))
+    //   localStorage.setItem('displayName', decodeURI(displayNameFromCookie))
+    // }
+
     // Delete cookies
-    // deleteCookie('userId')
-    // deleteCookie('displayName')
   }
 
   const processJWTTokens = async () => {
@@ -97,9 +108,9 @@ function App() {
           Authorization: `token ${window.localStorage.getItem('refreshToken')}`
         }
       });
-      localStorage.removeItem('refreshToken');
       localStorage.removeItem('userId');
       localStorage.removeItem('displayName');
+      localStorage.removeItem('refreshToken');
       sessionStorage.removeItem('accessToken');
       setLoggedIn(false)
       setAccessToken("")
