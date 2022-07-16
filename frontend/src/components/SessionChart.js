@@ -33,6 +33,11 @@ const SessionChart = ({ timeRanges, session }) => {
     const barGap = 5;
     const barWidth = width / (data.length + 3) - barGap;
     const barColor = "lightgreen";
+    const popupDimenX = 150
+    const popupDimenY = 20
+    const infoOffsetX = 10;
+    const infoOffsetY = 10;        
+
     const svgCanvas = d3
       .select(canvas.current)
       .append("svg")
@@ -134,20 +139,100 @@ const SessionChart = ({ timeRanges, session }) => {
           .attr("x2", width)
           .attr("y2", minuteDifferenceFromNowToEnd + margin.top);
   
-        // CurrTime stamp
-        // svgCanvas
-        //   .append("text")
-        //   .attr("class", "currTime")
-        //   .attr("x", 0)
-        //   .attr("y", minuteDifferenceFromNowToEnd + margin.top)
-        //   .attr("font-size", 9)
-        //   .attr("dy", "0.35em")
-        //   .text(function () {
-        //     return new Date().toLocaleTimeString([], {
-        //       hour: "2-digit",
-        //       minute: "2-digit",
-        //     });
-        //   });
+        svgCanvas
+          .append("line")
+          .attr("class", "pointer")
+          .style("stroke", "aqua")
+          .style("stroke-width", 1)
+          .attr("x1", 0)
+          .attr("y1", 0)
+          .attr("x2", 0)
+          .attr("y2", 0);
+
+        svgCanvas
+          .append("g")
+          .attr("class", "info")
+          .append("circle")
+          .attr("class", "circle")
+          .style('fill', 'red')
+          .attr('r', 2)
+          .attr("cx", 0 - 10)
+          .attr("cy", 0 - 10)
+        
+          
+        svgCanvas
+          .selectAll("g.info")
+          .append("rect")
+          .attr("class", "info")
+          .attr("width", popupDimenX)
+          .attr("height", popupDimenY)
+          .attr('fill', 'white')
+          .attr('stroke', 'grey')
+          .style("stroke-width", 1)
+          .attr("rx", 6)
+          .attr("ry", 6)
+          .attr("x", -popupDimenX)
+          .attr("y", -popupDimenY)
+
+        svgCanvas
+          .selectAll("g.info")
+          .append("text")
+          .attr("class", "info")
+          .attr(
+            "x", 0)
+          .attr("y", 0)
+          .attr("dy", "-0.35em")
+          .attr("dx", -4)
+          .text("Attending: 6  Maybe: 1")
+          .attr("font-size", 12)
+          .attr("text-anchor", "start")
+
+          svgCanvas
+          .on("mousemove", function(event){
+            let pointer = d3.pointers(event);
+            svgCanvas
+              .selectAll("line.pointer")
+              .attr("x1", margin.left)
+              .attr("x2", width)
+              .attr("y1", pointer[0][1])
+              .attr("y2", pointer[0][1]);
+            svgCanvas
+              .selectAll("circle.circle")
+              .attr("cx", pointer[0][0])
+              .attr("cy", pointer[0][1])
+            
+            svgCanvas
+              .selectAll("text.info")
+              .attr("x", pointer[0][0] + infoOffsetX + 10)
+              .attr("y", pointer[0][1] + infoOffsetY)
+              .text(() => {
+                return `Going: ?  Maybe: ?`
+              })
+
+            svgCanvas
+              .selectAll("rect.info")
+              .attr("x", pointer[0][0] + infoOffsetX)
+              .attr("y", pointer[0][1] - 10 + infoOffsetY - popupDimenY / 2)
+            
+          })
+          .on("mouseout", function(){  
+            svgCanvas
+              .selectAll("line.pointer")
+              .attr("x1", 0)
+              .attr("x2", 0)
+              .attr("y1", 0)
+              .attr("y2", 0);            
+
+          })
+          .on("mouseover", function(event){  
+            let pointer = d3.pointers(event);
+            svgCanvas
+              .selectAll("line.pointer")
+              .attr("x1", margin.left)
+              .attr("x2", width)
+              .attr("y1", pointer[0][1])
+              .attr("y2", pointer[0][1]);
+          })
       };
       
     const updateCurrentTimeLine = () => {
@@ -169,25 +254,29 @@ const SessionChart = ({ timeRanges, session }) => {
         .attr("y1", minuteDifferenceFromNowToEnd + margin.top)
         .attr("x2", width)
         .attr("y2", minuteDifferenceFromNowToEnd + margin.top);
-
-      // CurrTime stamp
-      // svgCanvas
-      //   .selectAll("text.currTime")
-      //   .attr("x", 0)
-      //   .attr("y", minuteDifferenceFromNowToEnd + margin.top)
-      //   .attr("font-size", 9)
-      //   .attr("dy", "0.35em")
-      //   .text(function () {
-      //     return new Date().toLocaleTimeString([], {
-      //       hour: "2-digit",
-      //       minute: "2-digit",
-      //     });
-      //   });
     };
 
     drawCurrentTimeLine();
     setInterval(updateCurrentTimeLine, 1000 * 30); // Draw line every 30s
   };
+
+  // const getCurrentAttendence = (timeStamp) => {
+  //   // console.log(timeStamp)
+  //   let attendence = {
+  //     going: 0,
+  //     maybe: 0
+  //   }
+  //   for (let i = 0; i < timeRanges.length; i++) {
+  //     let range = timeRanges[i]
+
+  //     // if between to and height
+  //     if (range.top < timeStamp < range.top + range.height) {
+  //       attendence[range.status]++
+  //     }
+  //   }
+  //   console.log(attendence)
+  //   return timeStamp
+  // }
 
   const processTimeRanges = () => {
     let ranges = [];

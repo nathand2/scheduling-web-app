@@ -7,6 +7,7 @@ import Card from 'react-bootstrap/Card';
 import SessionCard from './SessionCard'
 
 import {RequestHandler} from '../js/requestHandler'
+const util = require("../js/util");
 
 const Sessions = () => {
   const [sessions, setSessions] = useState([])
@@ -27,6 +28,8 @@ const Sessions = () => {
           data = res.data
           console.log("data:", data)
           console.log("Res data:", data.sessions)
+          data.sessions.map((session) => session.dt_created = util.mySqlDtToJsDate(session.dt_created))
+          console.log("Formatted:", data.sessions)
           setSessions(data.sessions)
         } catch(err) {
           console.log("Error:", err);
@@ -55,7 +58,7 @@ const Sessions = () => {
           {/* </Link> */}
         </Card>
         {
-          sessions.map((session) => (<SessionCard key={session.id} code={session.code} title={session.session_title} desc={session.session_desc} dt_created={session.dt_created} status={"Status"}  />))
+          sessions.map((session) => (<SessionCard key={session.id} code={session.code} title={session.session_title} desc={session.session_desc} dt_created={session.dt_created.toLocaleString()} status={"Status"}  />))
         }
       </Container>
     </div>
