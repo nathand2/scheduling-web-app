@@ -106,7 +106,7 @@ const Session = () => {
           });
           if (data.user_id === parseInt(localStorage.userId)) {
             setToastTitle(`Thanks for joining!`)
-            setToastMessage(`We'll tell everyone here you are ${(data.status === 'maybe') ? 'maybe ' : ""}joining`)
+            setToastMessage(`We'll let everyone here know`)
             setShowToast(true)
           } else {
             setToastTitle(`Good News!`)
