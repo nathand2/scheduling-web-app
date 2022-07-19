@@ -402,8 +402,27 @@ module.exports = (app, db, auth, passport, io) => {
       res.sendStatus(500) // Internal db error.
       return
     }
+  })
 
+  app.delete('/sessiontimerange', auth.authenticateToken, async (req, res) => {
+    try {
+      const userId = res.locals.user.userId  // User Id from JWT token
+      const {sessionTimeRangeId, userSessionId} = req.body;
+      
+      if (!sessionTimeRangeId) return res.sendStatus(400);
 
+      const results = await db.deleteSessionTimeRangeByIdAndUserId(userId, sessionTimeRangeId, userSessionId)
+      console.log('results.affectedRows', results)
+      if (results.affectedRows > 0) {
+        return res.sendStatus(204)  // No content
+      } else {
+        return res.sendStatus(403)  // Forbidden
+      }
+    } catch(err) {
+      console.log(err)
+      res.sendStatus(500) // Internal db error.
+      return
+    }
   })
 
   app.get('/timeranges', auth.authenticateToken, async (req, res) => {

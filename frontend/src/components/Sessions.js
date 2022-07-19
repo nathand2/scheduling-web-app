@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
 import { IoMdAddCircle } from 'react-icons/io'
 
 import { Container } from 'react-bootstrap';
@@ -28,7 +27,7 @@ const Sessions = () => {
           data = res.data
           console.log("data:", data)
           console.log("Res data:", data.sessions)
-          data.sessions.map((session) => session.dt_created = util.mySqlDtToJsDate(session.dt_created))
+          data.sessions.map((session) => session.dt_created = util.convertUTCStringToDate(session.dt_created))
           console.log("Formatted:", data.sessions)
           setSessions(data.sessions)
         } catch(err) {

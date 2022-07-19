@@ -332,6 +332,17 @@ exports.createSessionTimeRange = async (userId, sessionId, dtStart, dtEnd, statu
   }
 }
 
+exports.deleteSessionTimeRangeByIdAndUserId = async (userId, timeRangeId, userSessionId) => {
+  
+  try {
+    const deleteResults = await dbConnection(`DELETE FROM session_time_range WHERE user_session_id = (SELECT id FROM user_session WHERE id = ${userSessionId} AND user_id = ${userId} LIMIT 1) AND id=${timeRangeId};`)
+    console.log("results", deleteResults)
+    return deleteResults
+  } catch(err) {
+    throw err
+  }
+}
+
 exports.getSessionTimeRangeById = async (id) => {
   try {
     const results = await dbConnection(`SELECT * from session_time_range WHERE id = ${id};`)

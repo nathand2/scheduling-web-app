@@ -1,7 +1,7 @@
 const http = require('http');
 const socketIo = require("socket.io");
 
-exports.setUpWebSockets = (app) => {
+exports.setUpWebSockets = (app, port) => {
 
   console.log("Socket module connected")
   // TODO: Move Web Socket to different server.
@@ -28,7 +28,7 @@ exports.setUpWebSockets = (app) => {
       })
   });
 
-  io.listen(8000);  // Web Socket listen on port 8000
+  server.listen(port)
 
   return io;
 
