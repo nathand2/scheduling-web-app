@@ -24,7 +24,7 @@ const webSocketEndpoint = "http://localhost:6500";
 const Session = () => {
   
   const [params, setParams] = useState(useParams());
-  const [session, setSession] = useState("");
+  const [session, setSession] = useState(undefined);
   const [timeRanges, setTimeRanges] = useState([]);
   const [userSessions, setUserSessions] = useState([]);
   const [showDtModal, setShowDtModal] = useState(false);
@@ -51,7 +51,9 @@ const Session = () => {
           }
           await getTimeRanges(sessionData.id);
           await getUserSessions(sessionData.id);
-          await setUpWebSocketConnection(sessionData.code);
+          if (!session) {
+            await setUpWebSocketConnection(sessionData.code);
+          }
         } catch (err) {
           console.log("Error:", err);
         }
