@@ -7,7 +7,6 @@ import { RequestHandler } from "../js/requestHandler";
 const SessionSelectRangeModal = ({ handleClose, show, range, session }) => {
   const [warning, setWarning] = useState("");
   const [warningClass, setWarningClass] = useState("text-warning");
-  const [userId, setUserId] = useState(undefined);
   const [showDelete, setShowDelete] = useState(false);
 
   useEffect(() => {
@@ -21,7 +20,6 @@ const SessionSelectRangeModal = ({ handleClose, show, range, session }) => {
   }, [range]);
 
   const deleteRange = async () => {
-    console.log("Simulate delete");
     try {
       const res = await RequestHandler.req("/sessiontimerange", "DELETE", {
         sessionTimeRangeId: range.id,
@@ -62,7 +60,7 @@ const SessionSelectRangeModal = ({ handleClose, show, range, session }) => {
             </Modal.Body>
             <Modal.Footer>
               <p className={warningClass}>{warning}</p>
-              {true && (
+              {showDelete && (
                 <Button variant="danger" onClick={deleteRange}>
                   Delete
                 </Button>
