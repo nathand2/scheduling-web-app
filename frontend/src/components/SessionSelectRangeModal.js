@@ -7,12 +7,12 @@ import { RequestHandler } from "../js/requestHandler";
 const SessionSelectRangeModal = ({ handleClose, show, range, session }) => {
   const [warning, setWarning] = useState("");
   const [warningClass, setWarningClass] = useState("text-warning");
+  const [userId, setUserId] = useState(undefined);
   const [showDelete, setShowDelete] = useState(false);
 
   useEffect(() => {
     try {
       if (range === undefined) return;
-      setUserId(range.user_id);
       setShowDelete(range.user_id === parseInt(localStorage.userId));
     } catch (err) {
       console.log(err);
