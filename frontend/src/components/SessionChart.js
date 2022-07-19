@@ -1,10 +1,16 @@
 import { useEffect, useState, useRef } from "react";
 import * as d3 from "d3";
+import SessionSelectRangeModal from "./SessionSelectRangeModal";
 const util = require("../js/util");
+
 
 const SessionChart = ({ timeRanges, session }) => {
   const canvas = useRef(null);
   const [barTimeRanges, setBarTimeRanges] = useState([])
+  const [showSelectRangeModal, setShowSelectRangeModal] = useState(false);
+  const [focusRange, setFocusRange] = useState(undefined)
+
+  const handleCloseSelect = () => setShowSelectRangeModal(false);
 
   // Abritrary scale for chart and barTimeRanges
   const chartScale = 5;
@@ -39,13 +45,12 @@ const SessionChart = ({ timeRanges, session }) => {
     const width = 500 + margin.right;
     const barGap = 5;
     const barWidth = width / (data.length + 3) - barGap;
-    const barColor = "lightgreen";
+    const barColors = {'maybe': 'orange', 'going': 'LightSkyBlue'}
     const popupDimenX = 150
     const popupDimenY = 20
     const infoOffsetX = 10;
     const infoOffsetY = 10;
     
-    const barColors = {'maybe': 'orange', 'going': 'LightSkyBlue'}
 
     const svgCanvas = d3
       .select(canvas.current)
@@ -129,6 +134,8 @@ const SessionChart = ({ timeRanges, session }) => {
         })
         .on("click", function (event, datapoint) {
           console.log("Range clicked!")
+          setFocusRange(datapoint)
+          setShowSelectRangeModal(true)
         });
   
       // Bar names
@@ -372,6 +379,11 @@ const SessionChart = ({ timeRanges, session }) => {
 
   return (
     <div>
+      <SessionSelectRangeModal
+        show={showSelectRangeModal}
+        handleClose={handleCloseSelect}
+        range={focusRange}
+      />
       <div className="canvas-container" ref={canvas}></div>
     </div>
   );
