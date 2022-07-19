@@ -74,12 +74,12 @@ exports.googleAuth = async (googleID, displayName) => {
       console.log("Added user to db with google_id:", googleID);
       // Assume no username created for new account
       const userId = res.insertId
-      return {userId: userId, username: undefined};
+      return {userId: userId, displayName: displayName};
     } else {
       console.log("Existing Google User logged in.");
       const userId = results[0].id;
-      const username = results[0].username;
-      return {userId: userId, username: username};
+      const displayName = results[0].display_name;
+      return {userId: userId, displayName: displayName};
     }
   } catch(err) {
     throw err;
@@ -332,6 +332,17 @@ exports.createSessionTimeRange = async (userId, sessionId, dtStart, dtEnd, statu
   }
 }
 
+exports.deleteSessionTimeRangeByIdAndUserId = async (userId, timeRangeId, userSessionId) => {
+  
+  try {
+    const deleteResults = await dbConnection(`DELETE FROM session_time_range WHERE user_session_id = (SELECT id FROM user_session WHERE id = ${userSessionId} AND user_id = ${userId} LIMIT 1) AND id=${timeRangeId};`)
+    console.log("results", deleteResults)
+    return deleteResults
+  } catch(err) {
+    throw err
+  }
+}
+
 exports.getSessionTimeRangeById = async (id) => {
   try {
     const results = await dbConnection(`SELECT * from session_time_range WHERE id = ${id};`)
@@ -365,6 +376,15 @@ exports.getSesssionTimeRanges = async (sessionId) => {
 exports.getUserSessionsBySessionId = async (sessionId) => {
   try {
     const results = await dbConnection(`SELECT user_session_subset.*, user.display_name FROM ((SELECT * FROM user_session WHERE session_id = ${sessionId}) as user_session_subset INNER JOIN user ON user_session_subset.user_id = user.id);`)
+    return results
+  } catch(err) {
+    throw err
+  }
+}
+
+exports.updateDisplayName = async (userId, displayName) => {
+  try {
+    const results =  await dbConnection(`UPDATE user SET display_name = '${displayName}' WHERE id = ${userId}`)
     return results
   } catch(err) {
     throw err

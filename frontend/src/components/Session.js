@@ -1,19 +1,17 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
 import { io } from "socket.io-client";
 
 import Button from "react-bootstrap/Button";
-import Modal from "react-bootstrap/Modal";
-import Form from "react-bootstrap/Form";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 import Container from "react-bootstrap/Container";
-import Flatpickr from "react-flatpickr";
 
 import SessionHeader from "./SessionHeader";
 import SessionInfo from "./SessionInfo";
 import SessionShareModal from "./SessionShareModal";
+import SessionAddRangeModal from "./SessionAddRangeModal";
 import SessionToast from "./SessionToast";
 import SessionChart from "./SessionChart";
 import SessionAttendence from "./SessionAttendence";
@@ -21,12 +19,12 @@ import SessionAttendence from "./SessionAttendence";
 import { RequestHandler } from "../js/requestHandler";
 const util = require("../js/util");
 
-const ENDPOINT = "ws://localhost:6500/";
+const webSocketEndpoint = "http://localhost:6500";
 
 const Session = () => {
   
   const [params, setParams] = useState(useParams());
-  const [session, setSession] = useState("");
+  const [session, setSession] = useState(undefined);
   const [timeRanges, setTimeRanges] = useState([]);
   const [userSessions, setUserSessions] = useState([]);
   const [showDtModal, setShowDtModal] = useState(false);
@@ -37,16 +35,6 @@ const Session = () => {
   const [expiredSession, setExpiredSession] = useState(undefined);
   const [sessionResStatus, setSessionResStatus] = useState();
   const [otherSessionResViews, setOtherSessionResViews] = useState();
-
-  const [dtStatus, setDtStatus] = useState("going");
-  const [dtStart, setdtStart] = useState(new Date());
-  const [dtEnd, setdtEnd] = useState(
-    new Date(new Date().getTime() + 60 * 60 * 2 * 1000)
-  );
-
-  const dtOptionsConfig = {
-    minuteIncrement: 1,
-  };
 
   let didCancel = false;
   useEffect(() => {
@@ -63,7 +51,9 @@ const Session = () => {
           }
           await getTimeRanges(sessionData.id);
           await getUserSessions(sessionData.id);
-          await setUpWebSocketConnection(sessionData.code);
+          if (!session) {
+            await setUpWebSocketConnection(sessionData.code);
+          }
         } catch (err) {
           console.log("Error:", err);
         }
@@ -78,7 +68,7 @@ const Session = () => {
     // Connect to web socket if session.code not undefined
     if (code !== undefined) {
       console.log("Setting up websocket conn")
-      const socket = io('http://localhost:8000')
+      const socket = io(webSocketEndpoint)
       socket.on('connect', function() {
         socket.emit('room', code);
       });
@@ -107,30 +97,42 @@ const Session = () => {
       });
       
       socket.on('postDtRange', async function(data) {
+        // Convert UTC date strings to dates
+        data.dt_end = util.convertUTCStringToDate(data.dt_end);
+        data.dt_start = util.convertUTCStringToDate(data.dt_start);
+        data.dt_created = util.convertUTCStringToDate(data.dt_created);
+
         // Adds new range to timeRanges state.
           setTimeRanges((prev) => {
-            return [...prev, data.data]
+            return [...prev, data]
           });
-          setToastTitle(`Good News!`)
-          setToastMessage(`${data.data.display_name} is ${(data.data.status === 'maybe') ? 'maybe ' : ""}coming!`)
-          setShowToast(true)
+          if (data.user_id === parseInt(localStorage.userId)) {
+            setToastTitle(`Thanks for joining!`)
+            setToastMessage(`We'll let everyone here know`)
+            setShowToast(true)
+          } else {
+            setToastTitle(`Good News!`)
+            setToastMessage(`${data.display_name} is ${(data.status === 'maybe') ? 'maybe ' : ""}coming!`)
+            setShowToast(true)
+          }
       });
+      socket.on('deleteTimeRange', function(data) {
+        console.log('Someone deleted timerange!:', data);
+        setTimeRanges((prev) => {
+          return prev.filter(range => range.id !== data.sessionTimeRangeId)
+        });
+    });
     }
   }
 
   const handleCloseDt = () => setShowDtModal(false);
   const handleShowDt = () => setShowDtModal(true);
-
+  
   const handleCloseShare = () => {
     setShowShareModal(false);
   };
   const handleShowShare = () => {
     setShowShareModal(true);
-  };
-
-  const submitDtRange = () => {
-    handleCloseDt();
-    addDtRange();
   };
 
   const getSession = async () => {
@@ -141,9 +143,9 @@ const Session = () => {
 
       const sessionData = res.data.session;
 
-      sessionData.dt_end = util.mySqlDtToJsDate(sessionData.dt_end);
-      sessionData.dt_start = util.mySqlDtToJsDate(sessionData.dt_start);
-      sessionData.dt_created = util.mySqlDtToJsDate(sessionData.dt_created);
+      sessionData.dt_end = util.convertUTCStringToDate(sessionData.dt_end);
+      sessionData.dt_start = util.convertUTCStringToDate(sessionData.dt_start);
+      sessionData.dt_created = util.convertUTCStringToDate(sessionData.dt_created);
       await setSession(sessionData);
 
       // Determine if session is expired
@@ -176,6 +178,14 @@ const Session = () => {
       );
       const timeRangeData = res.data.results;
       console.log("Time Range results:", timeRangeData);
+
+      // Convert DT strings to dates
+      timeRangeData.map((timeRange) => {
+        timeRange.dt_created = util.convertUTCStringToDate(timeRange.dt_created)
+        timeRange.dt_start = util.convertUTCStringToDate(timeRange.dt_start)
+        timeRange.dt_end = util.convertUTCStringToDate(timeRange.dt_end)
+      })
+      
       setTimeRanges(timeRangeData);
     } catch (err) {
       throw err;
@@ -198,41 +208,6 @@ const Session = () => {
     }
   };
 
-  const addDtRange = async () => {
-    try {
-      // Check for valid dt range
-      if (new Date(dtStart) > new Date(dtEnd)) {
-        console.log("Invalid dt range.");
-        throw new Error("Invalid dt Range");
-      }
-
-      console.log("Date type:", String(typeof dtStart));
-      console.log("Session: ", session);
-      console.log("Body:", {
-        sessionId: session.id,
-        dtStart: dtStart,
-        dtEnd: dtEnd,
-        status: dtStatus,
-      });
-      let res;
-      res = await RequestHandler.req("/sessiontimerange", "POST", {
-        sessionId: session.id,
-        sessionCode: session.code,
-        dtStart: dtStart,
-        dtEnd: dtEnd,
-        status: dtStatus,
-      });
-      if (res.status !== 200) return;
-      const resData = res.data;
-      console.log("Res:", res);
-      const insertId = resData.insertId;
-      console.log("Inserted dtRange with insertId:", insertId);
-    } catch (err) {
-      console.log("Error:", err);
-      return;
-    }
-  };
-
   return (
     <div>
       {sessionResStatus === undefined && <>loading session</>}
@@ -241,9 +216,13 @@ const Session = () => {
           <SessionHeader showShareModal={handleShowShare} />
           <SessionShareModal
             show={showShareModal}
-            onHide={handleCloseShare}
             handleClose={handleCloseShare}
           />
+          <SessionAddRangeModal 
+            show={showDtModal}
+            handleClose={handleCloseDt}
+            session={session}
+            />
 
           <Container fluid>
             <Row className="justify-content-md-center">
@@ -255,7 +234,7 @@ const Session = () => {
                 <Button variant="primary" onClick={handleShowDt}>
                   Add DtRange
                 </Button>
-                <SessionChart timeRanges={timeRanges} session={session} />
+                <SessionChart timeRanges={timeRanges} setTimeRanges={setTimeRanges} session={session} />
                 <Button variant="primary" onClick={handleShowDt}>
                   Add DtRange
                 </Button>
@@ -279,56 +258,6 @@ const Session = () => {
             showToast && 
             <SessionToast title={toastTitle} message={toastMessage} show={showToast} setShow={setShowToast}/>
           }
-
-          <>
-            <Modal show={showDtModal} onHide={handleCloseDt}>
-              <Modal.Header closeButton>
-                <Modal.Title>Add Date Time Range</Modal.Title>
-              </Modal.Header>
-              <Modal.Body>
-                Start &nbsp;
-                <Flatpickr
-                  data-enable-time
-                  value={dtStart}
-                  onChange={(dt) => {
-                    setdtStart(dt);
-                  }}
-                />
-                <br />
-                End &nbsp;
-                <Flatpickr
-                  data-enable-time
-                  value={dtEnd}
-                  onChange={(dt) => {
-                    setdtEnd(dt);
-                  }}
-                  options={{
-                    ...dtOptionsConfig,
-                    minDate: dtStart,
-                  }}
-                />
-                <Form.Group className="mb-3">
-                  <Form.Label>Who can attend my Session? &nbsp;</Form.Label>
-                  <Form.Select
-                    aria-label="Default select example"
-                    value={dtStatus}
-                    onChange={(e) => setDtStatus(e.target.value)}
-                  >
-                    <option value="going">Going 👍</option>
-                    <option value="maybe">Maybe 🤷‍♂️</option>
-                  </Form.Select>
-                </Form.Group>
-              </Modal.Body>
-              <Modal.Footer>
-                <Button variant="secondary" onClick={handleCloseDt}>
-                  Close
-                </Button>
-                <Button variant="primary" onClick={submitDtRange}>
-                  Submit
-                </Button>
-              </Modal.Footer>
-            </Modal>
-          </>
 
           <br />
         </>

@@ -6,10 +6,10 @@ import Badge from 'react-bootstrap/Badge';
 
 const SessionCard = ({ id, code, title, desc, dt_created, status }) => {
   const navigate = useNavigate();
-  const handleOnClick = useCallback(() => navigate(`/session/${code}`, {replace: true}), [navigate]);
+  const handleOnClick = useCallback(() => navigate(`/session/${code}`, {replace: false}), [navigate]);
 
   return (
-    <Card style={{ width: '18rem' }} onClick={handleOnClick}>
+    <Card style={{ width: '18rem' }} onClick={handleOnClick} className="hover-cursor">
       <Card.Img variant="top" />
       <Card.Body>
         <Card.Title>{ title }</Card.Title>

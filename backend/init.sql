@@ -59,12 +59,14 @@ CREATE TABLE user_session (
   dt_joined datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id, user_id, session_id),
   FOREIGN KEY(user_id) REFERENCES user(id) ON DELETE CASCADE,
-  FOREIGN KEY (session_id) REFERENCES session(id) ON DELETE CASCADE
+  FOREIGN KEY (session_id) REFERENCES session(id) ON DELETE CASCADE,
+  UNIQUE (user_id, session_id)
 );
 
 CREATE TABLE session_time_range (
   id bigint NOT NULL AUTO_INCREMENT UNIQUE,
   user_session_id bigint NOT NULL,
+  dt_created datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   dt_start datetime NOT NULL,
   dt_end datetime NOT NULL,
   status varchar(20) NOT NULL DEFAULT "going",

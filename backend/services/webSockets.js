@@ -1,7 +1,7 @@
 const http = require('http');
 const socketIo = require("socket.io");
 
-exports.setUpWebSockets = (app) => {
+exports.setUpWebSockets = (app, port) => {
 
   console.log("Socket module connected")
   // TODO: Move Web Socket to different server.
@@ -16,7 +16,6 @@ exports.setUpWebSockets = (app) => {
 
   // handle incoming connections from clients
   io.on('connection', function(socket) {
-    console.log("Connection to socket?")
       // once a client has connected, we expect to get a ping from them saying what room they want to join
       socket.on('room', function(room) {
         io.in(room).emit('message', 'Someone joined the room');
@@ -28,7 +27,7 @@ exports.setUpWebSockets = (app) => {
       })
   });
 
-  io.listen(8000);  // Web Socket listen on port 8000
+  server.listen(port)
 
   return io;
 

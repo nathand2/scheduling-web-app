@@ -16,7 +16,7 @@ const SessionInfo = ({ session, expiredSession }) => {
           )
         }
         <div className='flex-row'>
-        <p >Created {session.dt_created.toLocaleString()}</p>
+        <p style={{fontSize: 12}}>Created {session.dt_created.toLocaleString()}</p>
         </div>
       </Container>
     </div>

@@ -135,6 +135,9 @@ module.exports = (app, db, auth, passport, io) => {
       // Unsecure cookies for tokens to be stored in session storage.
       res.cookie('accessToken', accessToken, semiSecureCookieConfig)
       res.cookie('refreshToken', refreshToken, semiSecureCookieConfig)
+      // Send back displayName and userId as cookie client knows who user is
+      res.cookie('userId', req.user.userId, semiSecureCookieConfig)
+      res.cookie('displayName', req.user.displayName, semiSecureCookieConfig)
 
       // Secure, hardened cookies
       res.cookie('userContextAccess', randStringAccess, secureCookieConfig);
@@ -385,13 +388,11 @@ module.exports = (app, db, auth, passport, io) => {
 
       const insertId = await db.createSessionTimeRange(userId, sessionId, dtStart, dtEnd, status)
       const sessionTimeRange = await db.getSessionTimeRangeById(insertId)
-
+      console.log("res.locals.user in post dtrange:", res.locals.user)
       io.in(sessionCode).emit("postDtRange", {
-        data: {
-          ...sessionTimeRange,
-          user_id: userId,
-          display_name: res.locals.user.displayName
-        },
+        ...sessionTimeRange,
+        user_id: userId,
+        display_name: res.locals.user.displayName
       });
 
       res.json({insertId: insertId})
@@ -401,8 +402,30 @@ module.exports = (app, db, auth, passport, io) => {
       res.sendStatus(500) // Internal db error.
       return
     }
+  })
 
+  app.delete('/sessiontimerange', auth.authenticateToken, async (req, res) => {
+    try {
+      const userId = res.locals.user.userId  // User Id from JWT token
+      const {sessionTimeRangeId, userSessionId, sessionCode} = req.body;
+      
+      // Not sessionTimeRangeId in body, return 400
+      if (!sessionTimeRangeId) return res.sendStatus(400);
 
+      const results = await db.deleteSessionTimeRangeByIdAndUserId(userId, sessionTimeRangeId, userSessionId)
+
+      // If no rows affect, no deletion. Range doesn't belong to user
+      if (results.affectedRows > 0) {
+        io.in(sessionCode).emit("deleteTimeRange", {sessionTimeRangeId: sessionTimeRangeId});  // Emit message to people in session.
+        return res.sendStatus(204)  // No content
+      } else {
+        return res.sendStatus(403)  // Forbidden
+      }
+    } catch(err) {
+      console.log(err)
+      res.sendStatus(500) // Internal db error.
+      return
+    }
   })
 
   app.get('/timeranges', auth.authenticateToken, async (req, res) => {
@@ -460,6 +483,27 @@ module.exports = (app, db, auth, passport, io) => {
       // Fetch user sessions
       const userSessionsForSession = await db.getUserSessionsBySessionId(sessionId);
       res.send({userSessions: userSessionsForSession})
+    } catch(err) {
+      console.log(err)
+      res.sendStatus(500) // Internal db error.
+      return
+    }
+  })
+
+  app.put('/displayname', auth.authenticateToken, async (req, res) => {
+    try {
+      const userId = res.locals.user.userId  // User Id from JWT token
+      const {displayName} = req.body;
+  
+      if (!displayName || displayName.length > 25 || displayName.length < 4) {
+        console.log("Invalid username")
+        res.sendStatus(400)
+        return
+      }
+      const results = db.updateDisplayName(userId, displayName)
+      console.log("Successfully updated displayName")
+      res.sendStatus(204)  // No content
+      return
     } catch(err) {
       console.log(err)
       res.sendStatus(500) // Internal db error.
