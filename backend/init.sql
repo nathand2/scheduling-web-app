@@ -65,6 +65,7 @@ CREATE TABLE user_session (
 CREATE TABLE session_time_range (
   id bigint NOT NULL AUTO_INCREMENT UNIQUE,
   user_session_id bigint NOT NULL,
+  dt_created datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   dt_start datetime NOT NULL,
   dt_end datetime NOT NULL,
   status varchar(20) NOT NULL DEFAULT "going",

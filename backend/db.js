@@ -74,7 +74,7 @@ exports.googleAuth = async (googleID, displayName) => {
       console.log("Added user to db with google_id:", googleID);
       // Assume no username created for new account
       const userId = res.insertId
-      return {userId: userId, username: undefined};
+      return {userId: userId, displayName: displayName};
     } else {
       console.log("Existing Google User logged in.");
       const userId = results[0].id;

@@ -78,7 +78,7 @@ const SessionCreate = () => {
       }
       <Container className="sessions-preview d-flex flex-wrap bd-highlight"></Container>
       <Form onSubmit={createSession}>
-        <Form.Group className="mb-3" controlId="formGroupEmail">
+        <Form.Group className="mb-3" controlId="formGroupTitle">
           <Form.Label>Session Title</Form.Label>
           <Form.Control
             placeholder="Title"
@@ -86,7 +86,7 @@ const SessionCreate = () => {
             required
           />
         </Form.Group>
-        <Form.Group className="mb-3" controlId="formGroupPassword">
+        <Form.Group className="mb-3" controlId="formGroupDesc">
           <Form.Label>Session Desciption</Form.Label>
           <Form.Control
             placeholder="Description"

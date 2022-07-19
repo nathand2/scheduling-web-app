@@ -388,7 +388,7 @@ module.exports = (app, db, auth, passport, io) => {
 
       const insertId = await db.createSessionTimeRange(userId, sessionId, dtStart, dtEnd, status)
       const sessionTimeRange = await db.getSessionTimeRangeById(insertId)
-
+      console.log("res.locals.user in post dtrange:", res.locals.user)
       io.in(sessionCode).emit("postDtRange", {
         ...sessionTimeRange,
         user_id: userId,

@@ -1,24 +1,31 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import * as d3 from "d3";
 const util = require("../js/util");
 
 const SessionChart = ({ timeRanges, session }) => {
   const canvas = useRef(null);
+  const [barTimeRanges, setBarTimeRanges] = useState([])
 
-  // Abritrary scale for chart and bars
+  // Abritrary scale for chart and barTimeRanges
   const chartScale = 5;
+
+  const showHoverInfo = false;
 
   let doOnce = true;
 
   useEffect(() => {
     if (doOnce) {
-      doOnce = false;
-      generateChart();
+      const setUpChart =  async () => {
+        doOnce = false;
+        await generateChart();
+      }
+      setUpChart();
     }
   }, [timeRanges]); // Will update chart if timeRanges changes
 
-  const generateChart = () => {
-    const ranges = processTimeRanges();
+  const generateChart = async () => {
+    const ranges = await processTimeRanges();
+    console.log("BarTimeRanges:", barTimeRanges)
     drawBarChart(ranges);
   };
   const drawBarChart = (data) => {
@@ -36,7 +43,9 @@ const SessionChart = ({ timeRanges, session }) => {
     const popupDimenX = 150
     const popupDimenY = 20
     const infoOffsetX = 10;
-    const infoOffsetY = 10;        
+    const infoOffsetY = 10;
+    
+    const barColors = {'maybe': 'orange', 'going': 'LightSkyBlue'}
 
     const svgCanvas = d3
       .select(canvas.current)
@@ -46,75 +55,142 @@ const SessionChart = ({ timeRanges, session }) => {
       .attr("height", height)
       .style("border", "1px solid black");
 
-    // Y-Axis Start
-    // Create scale
-    const yScale = d3
-      .scaleTime()
-      .domain([session.dt_start, session.dt_end])
-      .range([margin.top, height - margin.bottom]); // This works kinda
 
-    // Add scales to axis
-    var yAxis = d3.axisLeft(yScale).ticks(20).tickSize(-width); // Lines across ticks
+    const setUpAxis = () => {
+      // Y-Axis Start
+      // Create scale
+      const yScale = d3
+        .scaleTime()
+        .domain([session.dt_start, session.dt_end])
+        .range([margin.top, height - margin.bottom]); // This works kinda
+  
+      // Add scales to axis
+      var yAxis = d3.axisLeft(yScale).ticks(20).tickSize(-width); // Lines across ticks
+  
+      // Add yAxis
+      svgCanvas
+        .append("g")
+        .attr("transform", `translate(${margin.left}, 0)`)
+        //  .attr("transform", "translate(" + "0" + ",0)")
+        .call(yAxis);
+  
+      svgCanvas.selectAll(".tick line").attr("stroke", "steelBlue");
+      // Y-Axis End
 
-    // Add yAxis
-    svgCanvas
+    }
+
+    const setUpRects = () => {
+      // Draw rects
+      svgCanvas
+        .append("g")
+        .selectAll("rect")
+        .data(data)
+        .join("rect")
+        .attr("fill", (datapoint, iteration) => barColors[datapoint.status] ? barColors[datapoint.status] : "purple")
+        .attr(
+          "x",
+          (datapoint, iteration) =>
+            iteration * (barWidth + barGap) + margin.left + barGap
+        )
+        .attr("y", (datapoint) => datapoint.top + margin.top)
+        .attr("width", barWidth)
+        .attr("height", (datapoint) => datapoint.height)
+        .attr("opacity", "1")
+        // On bar mouseover, show info panel
+        .on("mousemove", function (event, datapoint) {
+          d3.select(this).transition().duration("50").attr("opacity", ".85");
+          let pointer = d3.pointers(event)[0];
+          svgCanvas
+                .selectAll("text.rectinfo")
+                .attr(
+                  "x", 10 + pointer[0])
+                .attr("y", 20 + pointer[1])
+                .text(() => {
+                  return `${datapoint.display_name}: ${datapoint.status}`
+                })
+  
+          svgCanvas
+            .selectAll("rect.rectinfo")
+            .attr("x", pointer[0])
+            .attr("y", pointer[1])
+        })
+        // On mouseout, hide info panel
+        .on("mouseout", function (d, i) {
+          d3.select(this).transition().duration("50").attr("opacity", "1");
+          svgCanvas
+          .selectAll("text.rectinfo")
+          .attr("x", -popupDimenX)
+          .attr("y", -popupDimenY)
+
+          svgCanvas
+            .selectAll("rect.rectinfo")
+            .attr("x", -popupDimenX)
+            .attr("y", -popupDimenY)
+        })
+        .on("click", function (event, datapoint) {
+          console.log("Range clicked!")
+        });
+  
+      // Bar names
+      svgCanvas
+        .append("g")
+        .attr("fill", "black")
+        .attr("text-anchor", "end")
+        .attr("font-family", "sans-serif")
+        .attr("font-size", 10)
+        .selectAll("text")
+        .data(data)
+        .join("text")
+        .attr(
+          "x",
+          (datapoint, iteration) =>
+            iteration * (barWidth + barGap) + margin.left + barGap
+        )
+        .attr("y", (datapoint) => margin.top + 10 + datapoint.top)
+        .attr("dy", "0.35em")
+        .attr("dx", -4)
+        .text(function (d, i) {
+          return d.display_name;
+        })
+        .attr("font-size", 12)
+        .attr("text-anchor", "start")
+        .attr("transform", function (d, i) {
+          return "translate(" + 5 + ", " + 0 + ") " + "rotate(0)";
+        });
+      
+      // Set up bar hover info elements
+      svgCanvas
       .append("g")
-      .attr("transform", `translate(${margin.left}, 0)`)
-      //  .attr("transform", "translate(" + "0" + ",0)")
-      .call(yAxis);
+      .attr("class", "rectinfo")
 
-    svgCanvas.selectAll(".tick line").attr("stroke", "steelBlue");
-    // Y-Axis End
-
-    // Draw rects
-    svgCanvas
-      .append("g")
-      .attr("fill", barColor)
-      .selectAll("rect")
-      .data(data)
-      .join("rect")
-      .attr(
-        "x",
-        (datapoint, iteration) =>
-          iteration * (barWidth + barGap) + margin.left + barGap
-      )
-      .attr("y", (datapoint) => datapoint.top + margin.top)
-      .attr("width", barWidth)
-      .attr("height", (datapoint) => datapoint.height)
-      .attr("opacity", "1")
-      .on("mouseover", function (datapoint, i) {
-        d3.select(this).transition().duration("50").attr("opacity", ".85");
-      })
-      .on("mouseout", function (d, i) {
-        d3.select(this).transition().duration("50").attr("opacity", "1");
-      });
-
-    // Bar names
-    svgCanvas
-      .append("g")
-      .attr("fill", "black")
-      .attr("text-anchor", "end")
-      .attr("font-family", "sans-serif")
-      .attr("font-size", 10)
-      .selectAll("text")
-      .data(data)
-      .join("text")
-      .attr(
-        "x",
-        (datapoint, iteration) =>
-          iteration * (barWidth + barGap) + margin.left + barGap
-      )
-      .attr("y", (datapoint) => margin.top + 10 + datapoint.top)
-      .attr("dy", "0.35em")
-      .attr("dx", -4)
-      .text(function (d, i) {
-        return d.display_name;
-      })
-      .attr("font-size", 12)
-      .attr("text-anchor", "start")
-      .attr("transform", function (d, i) {
-        return "translate(" + 5 + ", " + 0 + ") " + "rotate(0)";
-      });
+      // Info rect
+      svgCanvas
+          .selectAll("g.rectinfo")
+          .append("rect")
+          .attr("class", "rectinfo")
+          .attr("width", popupDimenX)
+          .attr("height", popupDimenY)
+          .attr('fill', 'white')
+          .attr('stroke', 'grey')
+          .style("stroke-width", 1)
+          .attr("rx", 6)
+          .attr("ry", 6)
+          .attr("x", -popupDimenX)
+          .attr("y", -popupDimenX)
+        // Info text
+        svgCanvas
+          .selectAll("g.rectinfo")
+          .append("text")
+          .attr("class", "rectinfo")
+          .attr(
+            "x", -infoOffsetX)
+          .attr("y", -infoOffsetY)
+          .attr("dy", "-0.35em")
+          .attr("dx", -4)
+          .text("Attending: 6  Maybe: 1")
+          .attr("font-size", 12)
+          .attr("text-anchor", "start")
+    }
 
       const drawCurrentTimeLine = () => {
         const currDate = new Date();
@@ -138,8 +214,11 @@ const SessionChart = ({ timeRanges, session }) => {
           .attr("y1", minuteDifferenceFromNowToEnd + margin.top)
           .attr("x2", width)
           .attr("y2", minuteDifferenceFromNowToEnd + margin.top);
-  
-        svgCanvas
+      };
+    
+    // Sets up line shown when mousing over chart
+    const setUpHoverLine = () => {
+      svgCanvas
           .append("line")
           .attr("class", "pointer")
           .style("stroke", "aqua")
@@ -200,20 +279,21 @@ const SessionChart = ({ timeRanges, session }) => {
               .selectAll("circle.circle")
               .attr("cx", pointer[0][0])
               .attr("cy", pointer[0][1])
-            
-            svgCanvas
-              .selectAll("text.info")
-              .attr("x", pointer[0][0] + infoOffsetX + 10)
-              .attr("y", pointer[0][1] + infoOffsetY)
-              .text(() => {
-                return `Going: ?  Maybe: ?`
-              })
+            if (showHoverInfo) {
 
-            svgCanvas
-              .selectAll("rect.info")
-              .attr("x", pointer[0][0] + infoOffsetX)
-              .attr("y", pointer[0][1] - 10 + infoOffsetY - popupDimenY / 2)
-            
+              svgCanvas
+                .selectAll("text.info")
+                .attr("x", pointer[0][0] + infoOffsetX + 10)
+                .attr("y", pointer[0][1] + infoOffsetY)
+                .text(() => {
+                  return `Going: ?  Maybe: ?`
+                })
+  
+              svgCanvas
+                .selectAll("rect.info")
+                .attr("x", pointer[0][0] + infoOffsetX)
+                .attr("y", pointer[0][1] - 10 + infoOffsetY - popupDimenY / 2)
+            }
           })
           .on("mouseout", function(){  
             svgCanvas
@@ -233,7 +313,7 @@ const SessionChart = ({ timeRanges, session }) => {
               .attr("y1", pointer[0][1])
               .attr("y2", pointer[0][1]);
           })
-      };
+    }
       
     const updateCurrentTimeLine = () => {
       const currDate = new Date();
@@ -256,33 +336,36 @@ const SessionChart = ({ timeRanges, session }) => {
         .attr("y2", minuteDifferenceFromNowToEnd + margin.top);
     };
 
+    setUpAxis();
     drawCurrentTimeLine();
+    setUpHoverLine();
+    setUpRects();
     setInterval(updateCurrentTimeLine, 1000 * 30); // Draw line every 30s
   };
 
   // const getCurrentAttendence = (timeStamp) => {
-  //   // console.log(timeStamp)
   //   let attendence = {
   //     going: 0,
   //     maybe: 0
   //   }
-  //   for (let i = 0; i < timeRanges.length; i++) {
-  //     let range = timeRanges[i]
 
-  //     // if between to and height
-  //     if (range.top < timeStamp < range.top + range.height) {
-  //       attendence[range.status]++
-  //     }
-  //   }
-  //   console.log(attendence)
-  //   return timeStamp
+  //   // timeRanges.map((range) => {
+  //   //   if (range.top < timeStamp < range.top + range.height) {
+  //   //     attendence[range.status]++
+  //   //   }
+  //   // })
+  //   console.log("Attendence in func", attendence)
+  //   console.log("barTimeRanges in func", barTimeRanges)
+  //   console.log("timeRanges in func", timeRanges)
+  //   // return timeStamp
+  //   return `Going: ?  Maybe: ?`
   // }
 
   const processTimeRanges = () => {
     let ranges = [];
     timeRanges.map((range) => {
-      const dtRangeStart = util.mySqlDtToJsDate(range.dt_start);
-      const dtRangeEnd = util.mySqlDtToJsDate(range.dt_end);
+      const dtRangeStart = range.dt_start;
+      const dtRangeEnd = range.dt_end;
 
       // Height of the bar
       const minuteRangeDifference = (dtRangeEnd - dtRangeStart) / (1000 * 60); // Get minute diff
@@ -298,7 +381,7 @@ const SessionChart = ({ timeRanges, session }) => {
       });
     });
     console.log("Range stuff:", ranges);
-    // setData(ranges)
+    setBarTimeRanges(ranges)
     return ranges;
   };
 

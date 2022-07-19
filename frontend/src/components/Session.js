@@ -95,6 +95,11 @@ const Session = () => {
       });
       
       socket.on('postDtRange', async function(data) {
+        // Convert UTC date strings to dates
+        data.dt_end = util.convertUTCStringToDate(data.dt_end);
+        data.dt_start = util.convertUTCStringToDate(data.dt_start);
+        data.dt_created = util.convertUTCStringToDate(data.dt_created);
+
         // Adds new range to timeRanges state.
           setTimeRanges((prev) => {
             return [...prev, data]
@@ -130,9 +135,9 @@ const Session = () => {
 
       const sessionData = res.data.session;
 
-      sessionData.dt_end = util.mySqlDtToJsDate(sessionData.dt_end);
-      sessionData.dt_start = util.mySqlDtToJsDate(sessionData.dt_start);
-      sessionData.dt_created = util.mySqlDtToJsDate(sessionData.dt_created);
+      sessionData.dt_end = util.convertUTCStringToDate(sessionData.dt_end);
+      sessionData.dt_start = util.convertUTCStringToDate(sessionData.dt_start);
+      sessionData.dt_created = util.convertUTCStringToDate(sessionData.dt_created);
       await setSession(sessionData);
 
       // Determine if session is expired
@@ -165,6 +170,14 @@ const Session = () => {
       );
       const timeRangeData = res.data.results;
       console.log("Time Range results:", timeRangeData);
+
+      // Convert DT strings to dates
+      timeRangeData.map((timeRange) => {
+        timeRange.dt_created = util.convertUTCStringToDate(timeRange.dt_created)
+        timeRange.dt_start = util.convertUTCStringToDate(timeRange.dt_start)
+        timeRange.dt_end = util.convertUTCStringToDate(timeRange.dt_end)
+      })
+      
       setTimeRanges(timeRangeData);
     } catch (err) {
       throw err;
@@ -213,7 +226,7 @@ const Session = () => {
                 <Button variant="primary" onClick={handleShowDt}>
                   Add DtRange
                 </Button>
-                <SessionChart timeRanges={timeRanges} session={session} />
+                <SessionChart timeRanges={timeRanges} setTimeRanges={setTimeRanges} session={session} />
                 <Button variant="primary" onClick={handleShowDt}>
                   Add DtRange
                 </Button>
