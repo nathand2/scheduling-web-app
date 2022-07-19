@@ -407,13 +407,16 @@ module.exports = (app, db, auth, passport, io) => {
   app.delete('/sessiontimerange', auth.authenticateToken, async (req, res) => {
     try {
       const userId = res.locals.user.userId  // User Id from JWT token
-      const {sessionTimeRangeId, userSessionId} = req.body;
+      const {sessionTimeRangeId, userSessionId, sessionCode} = req.body;
       
+      // Not sessionTimeRangeId in body, return 400
       if (!sessionTimeRangeId) return res.sendStatus(400);
 
       const results = await db.deleteSessionTimeRangeByIdAndUserId(userId, sessionTimeRangeId, userSessionId)
-      console.log('results.affectedRows', results)
+
+      // If no rows affect, no deletion. Range doesn't belong to user
       if (results.affectedRows > 0) {
+        io.in(sessionCode).emit("deleteTimeRange", {sessionTimeRangeId: sessionTimeRangeId});  // Emit message to people in session.
         return res.sendStatus(204)  // No content
       } else {
         return res.sendStatus(403)  // Forbidden

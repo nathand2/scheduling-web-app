@@ -114,6 +114,12 @@ const Session = () => {
             setShowToast(true)
           }
       });
+      socket.on('deleteTimeRange', function(data) {
+        console.log('Someone deleted timerange!:', data);
+        setTimeRanges((prev) => {
+          return prev.filter(range => range.id !== data.sessionTimeRangeId)
+        });
+    });
     }
   }
 

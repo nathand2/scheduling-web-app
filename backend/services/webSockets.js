@@ -16,7 +16,6 @@ exports.setUpWebSockets = (app, port) => {
 
   // handle incoming connections from clients
   io.on('connection', function(socket) {
-    console.log("Connection to socket?")
       // once a client has connected, we expect to get a ping from them saying what room they want to join
       socket.on('room', function(room) {
         io.in(room).emit('message', 'Someone joined the room');

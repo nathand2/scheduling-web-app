@@ -383,6 +383,7 @@ const SessionChart = ({ timeRanges, session }) => {
         show={showSelectRangeModal}
         handleClose={handleCloseSelect}
         range={focusRange}
+        session={session}
       />
       <div className="canvas-container" ref={canvas}></div>
     </div>
