@@ -226,18 +226,7 @@ const SessionChart = ({ timeRanges, session }) => {
           .attr("x1", 0)
           .attr("y1", 0)
           .attr("x2", 0)
-          .attr("y2", 0);
-
-        svgCanvas
-          .append("g")
-          .attr("class", "info")
-          .append("circle")
-          .attr("class", "circle")
-          .style('fill', 'red')
-          .attr('r', 2)
-          .attr("cx", 0 - 10)
-          .attr("cy", 0 - 10)
-        
+          .attr("y2", 0);        
           
         svgCanvas
           .selectAll("g.info")
@@ -275,10 +264,6 @@ const SessionChart = ({ timeRanges, session }) => {
               .attr("x2", width)
               .attr("y1", pointer[0][1])
               .attr("y2", pointer[0][1]);
-            svgCanvas
-              .selectAll("circle.circle")
-              .attr("cx", pointer[0][0])
-              .attr("cy", pointer[0][1])
             if (showHoverInfo) {
 
               svgCanvas

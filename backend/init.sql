@@ -59,7 +59,8 @@ CREATE TABLE user_session (
   dt_joined datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id, user_id, session_id),
   FOREIGN KEY(user_id) REFERENCES user(id) ON DELETE CASCADE,
-  FOREIGN KEY (session_id) REFERENCES session(id) ON DELETE CASCADE
+  FOREIGN KEY (session_id) REFERENCES session(id) ON DELETE CASCADE,
+  UNIQUE (user_id, session_id)
 );
 
 CREATE TABLE session_time_range (
