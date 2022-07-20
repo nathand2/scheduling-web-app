@@ -120,7 +120,20 @@ const SessionChart = ({ timeRanges, session }) => {
             .text(() => {
               return `${datapoint.display_name}: ${datapoint.status}`;
             });
-
+          svgCanvas
+            .selectAll("rect.rectinfo")
+            .attr("x", pointer[0])
+            .attr("y", pointer[1]);
+        })
+        .on("mouseover", function (event, datapoint) {
+          let pointer = d3.pointers(event)[0];
+          svgCanvas
+            .selectAll("text.rectinfo")
+            .attr("x", 10 + pointer[0])
+            .attr("y", 20 + pointer[1])
+            .text(() => {
+              return `${datapoint.display_name}: ${datapoint.status}`;
+            });
           svgCanvas
             .selectAll("rect.rectinfo")
             .attr("x", pointer[0])
