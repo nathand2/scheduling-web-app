@@ -64,4 +64,17 @@
 .small-form-input {
   width: 10px;
 }
+
+.center-container {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-pack: center;
+      -ms-flex-pack: center;
+          justify-content: center;
+}
+
+.auth-card {
+  width: 80vw;
+}
 /*# sourceMappingURL=index.css.map */
