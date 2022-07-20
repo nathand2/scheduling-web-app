@@ -450,7 +450,7 @@ module.exports = (app, db, auth, passport, io) => {
         return
       }
 
-      const results = await db.getSesssionTimeRanges(sessionId)
+      const results = await db.getSessionTimeRanges(sessionId)
       res.json({results: results})
 
     } catch(err) {
