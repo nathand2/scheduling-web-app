@@ -361,11 +361,11 @@ exports.getSessionIdBySessionCode = async (sessionCode) => {
   }
 }
 
-exports.getSesssionTimeRanges = async (sessionId) => {
+exports.getSessionTimeRanges = async (sessionId) => {
   try {
     const results = await dbConnection(
       // `SELECT * FROM (SELECT session_time_range.*, user_session_subset.user_id FROM (SELECT * FROM user_session WHERE session_id = ${sessionId}) AS user_session_subset INNER JOIN session_time_range ON user_session_subset.id = session_time_range.user_session_id) AS subset1;`
-      `SELECT session_time_range_subset.*, user.display_name FROM (SELECT session_time_range.*, user_session_subset.user_id FROM (SELECT * FROM user_session WHERE session_id = ${sessionId}) AS user_session_subset INNER JOIN session_time_range ON user_session_subset.id = session_time_range.user_session_id) AS session_time_range_subset LEFT JOIN user ON session_time_range_subset.user_id = user.id;`
+      `SELECT session_time_range_subset.*, user.display_name FROM (SELECT session_time_range.*, user_session_subset.user_id FROM (SELECT * FROM user_session WHERE session_id = ${sessionId}) AS user_session_subset INNER JOIN session_time_range ON user_session_subset.id = session_time_range.user_session_id) AS session_time_range_subset LEFT JOIN user ON session_time_range_subset.user_id = user.id ORDER BY session_time_range_subset.dt_created;`
     );
     return results
   } catch(err) {

@@ -450,7 +450,7 @@ module.exports = (app, db, auth, passport, io) => {
         return
       }
 
-      const results = await db.getSesssionTimeRanges(sessionId)
+      const results = await db.getSessionTimeRanges(sessionId)
       res.json({results: results})
 
     } catch(err) {
@@ -502,8 +502,63 @@ module.exports = (app, db, auth, passport, io) => {
       }
       const results = db.updateDisplayName(userId, displayName)
       console.log("Successfully updated displayName")
-      res.sendStatus(204)  // No content
-      return
+
+      // Generate random string and hash for user context verification.
+      let randStringAccess, hashAccess;
+      let randStringRefresh, hashRefresh;
+      try {
+        [randStringAccess, hashAccess] = await auth.getRandomStringAndHash();
+        [randStringRefresh, hashRefresh] = await auth.getRandomStringAndHash();
+      } catch(err) {
+        console.log(err)
+        res.sendStatus(500);
+        return
+      }
+      // Generate new JWT and refresh tokens
+      const userAccess = {
+        userId: userId,
+        displayName: displayName,
+        hash: hashAccess,
+        type: res.locals.user.type,
+      }
+      const userRefresh = {
+        userId: userId,
+        displayName: displayName,
+        hash: hashRefresh,
+        type: res.locals.user.type,
+      }
+
+    const accessToken = auth.generateAccessToken(userAccess);
+    const refreshToken = auth.generateRefreshToken(userRefresh);
+
+
+    // Get refresh token from authorization headers
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      res.sendStatus(401); // No authorization header
+      return;
+    }
+    const token = authHeader.split(' ')[1]; // Extract token.
+    // Remove refresh token from db
+    await db.deleteRefreshToken(token)
+
+    // Add token to db
+    await db.deleteRefreshToken()
+    await db.insertRefreshToken(refreshToken);
+
+    // Unsecure cookies for tokens to be stored in session storage.
+    res.cookie('accessToken', accessToken, semiSecureCookieConfig)
+    res.cookie('refreshToken', refreshToken, semiSecureCookieConfig)
+    // Send back displayName and userId as cookie client knows who user is
+    res.cookie('userId', userId, semiSecureCookieConfig)
+    res.cookie('displayName', displayName, semiSecureCookieConfig)
+
+    // Secure, hardened cookies
+    res.cookie('userContextAccess', randStringAccess, secureCookieConfig);
+    res.cookie('userContextRefresh', randStringRefresh, {...secureCookieConfig, expires: util.dtRefreshFingerprintCookieExpires()});
+
+    res.sendStatus(204)  // No content
+    return
     } catch(err) {
       console.log(err)
       res.sendStatus(500) // Internal db error.
