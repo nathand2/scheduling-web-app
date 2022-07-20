@@ -39,6 +39,10 @@ const UserSettings = ({ setAppDisplayName }) => {
         setStatusColor('text-success')
         localStorage.setItem('displayName', reqDisplayName)
         setAppDisplayName(reqDisplayName)
+
+        // Set tokens
+        processJWTTokens()
+
       } else {
         console.log("Failed")
         setStatus('Failed to change display name')
@@ -50,6 +54,43 @@ const UserSettings = ({ setAppDisplayName }) => {
       throw err;
     }
   }
+
+  const getCookie = (name) => {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+  }
+
+  const deleteCookie = (name) => {
+    document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+  }
+
+  const setSessionStorageJWTTokens = async () => {
+    // Get JWT and refresh token from cookies.
+    const accessToken = getCookie('accessToken');
+    const refreshToken = getCookie('refreshToken');
+
+    if (accessToken !== undefined) {
+      await window.sessionStorage.setItem('accessToken', accessToken);
+    }
+    if (refreshToken !== undefined) {
+      await window.localStorage.setItem('refreshToken', refreshToken);
+    }
+  }
+
+  const processJWTTokens = async () => {
+    await setSessionStorageJWTTokens();
+    deleteCookie('accessToken')
+    deleteCookie('refreshToken')
+    
+    const displayNameFromCookie = getCookie('displayName');
+    if (displayNameFromCookie !== undefined) {
+      await window.localStorage.setItem('displayName', displayNameFromCookie);
+    }
+    deleteCookie('userId')
+    deleteCookie('displayName')
+  }
+
   return (
     <div>
       UserSettings
