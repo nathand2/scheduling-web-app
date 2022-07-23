@@ -25,6 +25,7 @@ function App() {
   const [userId, setUserId] = useState(undefined)
   const [displayName, setDisplayName] = useState('')
 
+  const [isDev, setIsDev] = useState((!process.env.NODE_ENV || process.env.NODE_ENV === 'development'))
   
   // When app loaded, manage login state
   useEffect(() => {
@@ -72,16 +73,6 @@ function App() {
 
     await setUserId(localStorage.getItem('userId'))
     await setDisplayName(localStorage.getItem('displayName'))
-
-    // if (!localStorage.getItem('userId') || !localStorage.getItem('displayName')) {
-    //   console.log("Getting userData from cookies")
-    //   const userIdFromCookie = getCookie('userId');
-    //   const displayNameFromCookie = getCookie('displayName');
-    //   localStorage.setItem('userId', decodeURI(userIdFromCookie))
-    //   localStorage.setItem('displayName', decodeURI(displayNameFromCookie))
-    // }
-
-    // Delete cookies
   }
 
   const processJWTTokens = async () => {
@@ -198,8 +189,14 @@ function App() {
               Logged In: { loggedIn.toString() }<br />
               UserId: { userId }<br />
               displayName: { displayName }<br />
-              Access Token: { accessToken }<br />
-              Refresh Token:  { refreshToken }<br />
+              {
+                isDev && (
+                  <>
+                    Access Token: { accessToken }<br />
+                    Refresh Token: { refreshToken }<br />
+                  </>
+                )
+              }
               <button onClick={testRequest}>Test auth stuff</button><br />
               
               <button onClick={refreshAccessToken}>Refresh Access token?</button><br />

@@ -7,7 +7,7 @@ require('dotenv').config() // Environment variables stored in .env file
 const auth = require('./services/jwtAuth');
 const db = require('./db');
 
-const port = 6500;
+const port = process.env.PORT || 6500;
 
 const app = express();
 
