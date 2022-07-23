@@ -36,8 +36,19 @@ const Sessions = () => {
       }
     }
     getSessions();
+
     
   }, [])
+  const calculateSessionStatus = (dtStartString, dtEndString) => {
+    const now = new Date();
+    if (util.convertUTCStringToDate(dtEndString) < now) {
+      return "Expired"
+    } else if (util.convertUTCStringToDate(dtStartString) > now) {
+      return "Upcoming"
+    } else {
+      return "Active"
+    }
+  }
   return (
     <div>
       Sessions
@@ -57,7 +68,7 @@ const Sessions = () => {
           {/* </Link> */}
         </Card>
         {
-          sessions.map((session) => (<SessionCard key={session.id} code={session.code} title={session.session_title} desc={session.session_desc} dt_created={session.dt_created.toLocaleString()} status={"Status"}  />))
+          sessions.map((session) => (<SessionCard key={session.id} code={session.code} title={session.session_title} desc={session.session_desc} dt_created={session.dt_created.toLocaleString()} status={calculateSessionStatus(session.dt_start, session.dt_end)}  />))
         }
       </Container>
     </div>
