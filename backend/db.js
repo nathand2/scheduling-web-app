@@ -1,9 +1,11 @@
+require('dotenv').config() // Environment variables stored in .env file
 const mysql = require('mysql')
+
 const config = {
-  host: 'localhost',
-  user: 'root',
-  password: '',
-  database: 'scheduler',
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD ? process.env.DB_PASSWORD : '', // Empty string if undefined
+  database: process.env.DB_DATABASE,
   timezone: 'UTC', // Interpret all received timestamps as UTC. Otherwise local timezone is assumed.
 	dateStrings: [
 		'DATE', // DATE's are returned as strings (otherwise they would be interpreted as YYYY-MM-DD 00:00:00+00:00)
