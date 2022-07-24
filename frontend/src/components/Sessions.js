@@ -25,10 +25,8 @@ const Sessions = () => {
             return
           }
           data = res.data
-          console.log("data:", data)
-          console.log("Res data:", data.sessions)
           data.sessions.map((session) => session.dt_created = util.convertUTCStringToDate(session.dt_created))
-          console.log("Formatted:", data.sessions)
+          console.log("Sessions:", data.sessions)
           setSessions(data.sessions)
         } catch(err) {
           console.log("Error:", err);

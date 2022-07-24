@@ -213,12 +213,9 @@ module.exports = (app, db, auth, passport, io) => {
       }
 
       const sessionId = await db.createSession(sessionCode, title, dtStart, dtEnd, attendType, desc)
-      console.log("User in /session:", res.locals.user)
-      // const userId = await db.getUserIdByExternalID(res.locals.user.userId, res.locals.user.type)
       const userId = res.locals.user.userId
       
       const userSessionId =  await db.createUserSession(userId, sessionId, 'owner')
-      console.log("New session with code:", sessionCode)
       res.json({code: sessionCode, url: rootURL + "/session/" + sessionCode})
     } catch(err) {
       console.log(err)
@@ -347,11 +344,6 @@ module.exports = (app, db, auth, passport, io) => {
     try {
       const userId = res.locals.user.userId  // User Id from JWT token
       const { sessionId, sessionCode, dtStart, dtEnd, status } = req.body  // Post body
-
-      console.log("Date type:", typeof dtStart)
-      console.log("Dates:", new Date(dtStart), new Date(dtEnd))
-      console.log("Greater than?:", new Date(dtStart) < new Date(dtEnd))
-
       const dateStart = new Date(dtStart)
       const dateEnd = new Date(dtEnd)
       // Check for valid dt range
@@ -362,20 +354,15 @@ module.exports = (app, db, auth, passport, io) => {
       }
 
       const session = (await db.getSessionById(sessionId))[0]
-      console.log("Session:", session)
       const sessionDtStart = session.dt_start
       const sessionDtEnd = session.dt_end
-      // console.log("Types:", typeof dt_start, typeof dt_end)
       
       const sessionDateStart = new Date(sessionDtStart)
       const sessionDateEnd = new Date(sessionDtEnd)
-      console.log("Dates:", sessionDateStart, sessionDateEnd)
       
       if ((sessionDateStart <= dateStart && sessionDateEnd >= dateEnd)) {
         console.log("Invalid dt range.")
         return res.sendStatus(400)  // Client Error
-      } else {
-        console.log("Valid dt range")
       }
       
       // Check if user is apart of session
@@ -388,7 +375,6 @@ module.exports = (app, db, auth, passport, io) => {
 
       const insertId = await db.createSessionTimeRange(userId, sessionId, dtStart, dtEnd, status)
       const sessionTimeRange = await db.getSessionTimeRangeById(insertId)
-      console.log("res.locals.user in post dtrange:", res.locals.user)
       io.in(sessionCode).emit("postDtRange", {
         ...sessionTimeRange,
         user_id: userId,

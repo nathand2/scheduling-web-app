@@ -20,6 +20,7 @@ import { RequestHandler } from "../js/requestHandler";
 const util = require("../js/util");
 
 const webSocketEndpoint = "http://localhost:6500";
+const showDtRangeUpdateToast = false;  // Websocket for dtrange add
 
 const Session = () => {
   
@@ -67,7 +68,6 @@ const Session = () => {
   const setUpWebSocketConnection = async (code) => {
     // Connect to web socket if session.code not undefined
     if (code !== undefined) {
-      console.log("Setting up websocket conn")
       const socket = io(webSocketEndpoint)
       socket.on('connect', function() {
         socket.emit('room', code);
@@ -83,7 +83,7 @@ const Session = () => {
       });
       
       socket.on('message', function(data) {
-          console.log('Incoming message:', data);
+        console.log('Incoming message:', data);
       });
       
       socket.on('joinSession', function(data) {
@@ -106,14 +106,16 @@ const Session = () => {
           setTimeRanges((prev) => {
             return [...prev, data]
           });
-          if (data.user_id === parseInt(localStorage.userId)) {
-            setToastTitle(`Thanks for joining!`)
-            setToastMessage(`We'll let everyone here know`)
-            setShowToast(true)
-          } else {
-            setToastTitle(`Good News!`)
-            setToastMessage(`${data.display_name} is ${(data.status === 'maybe') ? 'maybe ' : ""}coming!`)
-            setShowToast(true)
+          if (showDtRangeUpdateToast) {
+            if (data.user_id === parseInt(localStorage.userId)) {
+              setToastTitle(`Thanks for joining!`)
+              setToastMessage(`We'll let everyone here know`)
+              setShowToast(true)
+            } else {
+              setToastTitle(`Good News!`)
+              setToastMessage(`${data.display_name} is ${(data.status === 'maybe') ? 'maybe ' : ""}coming!`)
+              setShowToast(true)
+            }
           }
       });
       socket.on('deleteTimeRange', function(data) {
@@ -156,6 +158,10 @@ const Session = () => {
     }
   };
 
+  /**
+   * Change view for non-OK responses.
+   * @param {object} res 
+   */
   const changeOtherSessionViews = (res) => {
     if (res.status == 401) {
       setOtherSessionResViews(<>Please log in</>);
@@ -168,6 +174,10 @@ const Session = () => {
     }
   };
 
+  /**
+   * Gets time ranges from api
+   * @param {int} sessionId 
+   */
   const getTimeRanges = async (sessionId) => {
     try {
       let res;
@@ -192,7 +202,11 @@ const Session = () => {
     }
   };
 
-  const getUserSessions = async (sessionId, res) => {
+  /**
+   * Gets user sessions from api
+   * @param {int} sessionId
+   */
+  const getUserSessions = async (sessionId) => {
     try {
       let res;
       // Get user sessions
