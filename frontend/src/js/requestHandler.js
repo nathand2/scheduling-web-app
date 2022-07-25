@@ -5,7 +5,8 @@
  */
 
 export class RequestHandler {
-  static endpointRoot = "http://localhost:6500";
+  // static endpointRoot = "http://localhost:6500";
+  static endpointRoot = "https://api.nathandong.com/scheduler";
 
   // First API request and silent JWT refresh if needed.
   static async req(resource, reqMethod, reqBody=undefined) {

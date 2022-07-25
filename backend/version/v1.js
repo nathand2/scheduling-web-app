@@ -6,6 +6,7 @@
 const util = require('../services/util');
 
 const versionEndpoint = "/v1";
+const resource = ""
 const rootURL = "http://localhost:3000"
 
 
@@ -23,11 +24,11 @@ const semiSecureCookieConfig = {
 
 module.exports = (app, db, auth, passport, io) => {
 
-  app.get('/test', async (req, res) => {
+  app.get(resource + '/test', async (req, res) => {
     res.json({stuff: "potato"})
   })
 
-  app.post("/testauth", auth.authenticateToken, (req, res) => {
+  app.post(resource + "/testauth", auth.authenticateToken, (req, res) => {
     res.json({status: "Authentication Successful"})
   });
 
@@ -38,7 +39,7 @@ module.exports = (app, db, auth, passport, io) => {
    * Requests need valid fingerprint(user context) in hardened http-only cookie.
    * 
    */
-  app.post('/token', auth.checkIfFingerPrintExists, async (req, res, next) => {
+  app.post(resource + '/token', auth.checkIfFingerPrintExists, async (req, res, next) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) {
       console.log("401: No auth header")
@@ -87,11 +88,11 @@ module.exports = (app, db, auth, passport, io) => {
   }
   )
 
-  app.get('/auth/google',
+  app.get(resource + '/auth/google',
     passport.authenticate('google', { scope: [ 'email', 'profile' ]})
   );
 
-  app.get('/auth/google/callback', passport.authenticate( 'google', {
+  app.get(resource + '/auth/google/callback', passport.authenticate( 'google', {
     failureRedirect: 'http://localhost:3000/login',
     failWithError: true,
     session: false
@@ -128,6 +129,7 @@ module.exports = (app, db, auth, passport, io) => {
     const accessToken = auth.generateAccessToken(userAccess);
     const refreshToken = auth.generateRefreshToken(userRefresh);
 
+    console.log("Generated Access Tokens")
     // Add token to db
     try {
       db.insertRefreshToken(refreshToken);
@@ -158,7 +160,7 @@ module.exports = (app, db, auth, passport, io) => {
   /**
    * Deletes Refresh Tokens
    */
-  app.delete("/logout", (req, res) => {
+  app.delete(resource + "/logout", (req, res) => {
     // Get refresh token from authorization headers
     const authHeader = req.headers.authorization;
     if (!authHeader) {
@@ -186,7 +188,7 @@ module.exports = (app, db, auth, passport, io) => {
   /**
    * Creates a session
    */
-  app.post("/session", auth.authenticateToken, async (req, res) => {
+  app.post(resource + "/session", auth.authenticateToken, async (req, res) => {
     const {title, desc, dtStart, dtEnd, attendType} = req.body;
     try {
       console.log("/session Locals.user:", res.locals.user)
@@ -227,7 +229,7 @@ module.exports = (app, db, auth, passport, io) => {
   /**
    * Gets a session by session code
    */
-  app.get("/session/:code", auth.authenticateToken, async (req, res) => {
+  app.get(resource + "/session/:code", auth.authenticateToken, async (req, res) => {
   try {
     const sessionCode = req.params.code;
     // const userId = await db.getUserIdByExternalID(res.locals.user.name, res.locals.user.type)
@@ -249,7 +251,7 @@ module.exports = (app, db, auth, passport, io) => {
   /**
    * Get sessions associated with user
    */
-  app.get("/sessions", auth.authenticateToken, async (req, res) => {
+  app.get(resource + "/sessions", auth.authenticateToken, async (req, res) => {
     const user = res.locals.user
     const userId = user.userId
     try {
@@ -262,7 +264,7 @@ module.exports = (app, db, auth, passport, io) => {
     }
   })
 
-  app.post("/sessioninvite", auth.authenticateToken, async (req, res) => {
+  app.post(resource + "/sessioninvite", auth.authenticateToken, async (req, res) => {
     try {
       const { sessionCode } = req.body
       const userId = res.locals.user.userId
@@ -286,7 +288,7 @@ module.exports = (app, db, auth, passport, io) => {
 
   })
 
-  app.get("/sessioninvite", auth.authenticateToken, async (req, res) => {
+  app.get(resource + "/sessioninvite", auth.authenticateToken, async (req, res) => {
     try {
       const sessionCode = req.query.code
       if (!sessionCode) {
@@ -321,7 +323,7 @@ module.exports = (app, db, auth, passport, io) => {
 
   })
 
-  app.post("/joinsession", auth.authenticateToken, async (req, res) => {
+  app.post(resource + "/joinsession", auth.authenticateToken, async (req, res) => {
     try {
       const inviteCode = req.body.inviteCode.inviteCode
       const userId = res.locals.user.userId
@@ -340,7 +342,7 @@ module.exports = (app, db, auth, passport, io) => {
     }
   })
 
-  app.post('/sessiontimerange', auth.authenticateToken, async (req, res) => {
+  app.post(resource + '/sessiontimerange', auth.authenticateToken, async (req, res) => {
     try {
       const userId = res.locals.user.userId  // User Id from JWT token
       const { sessionId, sessionCode, dtStart, dtEnd, status } = req.body  // Post body
@@ -390,7 +392,7 @@ module.exports = (app, db, auth, passport, io) => {
     }
   })
 
-  app.delete('/sessiontimerange', auth.authenticateToken, async (req, res) => {
+  app.delete(resource + '/sessiontimerange', auth.authenticateToken, async (req, res) => {
     try {
       const userId = res.locals.user.userId  // User Id from JWT token
       const {sessionTimeRangeId, userSessionId, sessionCode} = req.body;
@@ -414,7 +416,7 @@ module.exports = (app, db, auth, passport, io) => {
     }
   })
 
-  app.get('/timeranges', auth.authenticateToken, async (req, res) => {
+  app.get(resource + '/timeranges', auth.authenticateToken, async (req, res) => {
       
     try {
       const sessionId = req.query.sessionid
@@ -446,7 +448,7 @@ module.exports = (app, db, auth, passport, io) => {
     }
   })
 
-  app.get("/usersessions", auth.authenticateToken, async (req, res) => {
+  app.get(resource + "/usersessions", auth.authenticateToken, async (req, res) => {
     // Get user sessions for specific session
     const sessionId = req.query.sessionid
     const userId = res.locals.user.userId  // User Id from JWT token
@@ -476,7 +478,7 @@ module.exports = (app, db, auth, passport, io) => {
     }
   })
 
-  app.put('/displayname', auth.authenticateToken, async (req, res) => {
+  app.put(resource + '/displayname', auth.authenticateToken, async (req, res) => {
     try {
       const userId = res.locals.user.userId  // User Id from JWT token
       const {displayName} = req.body;

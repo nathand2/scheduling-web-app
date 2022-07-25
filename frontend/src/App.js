@@ -18,6 +18,9 @@ import UserSettings from './components/UserSettings'
 
 import {RequestHandler} from './js/requestHandler'
 
+const endpointRoot = 'https://api.nathandong.com/scheduler'
+// const endpointRoot = 'http://localhost:6500'
+
 function App() {
   const [accessToken, setAccessToken] = useState('')
   const [refreshToken, setRefreshToken] = useState('')
@@ -77,8 +80,8 @@ function App() {
 
   const processJWTTokens = async () => {
     await setSessionStorageJWTTokens();
-    deleteCookie('accessToken')
-    deleteCookie('refreshToken')
+    // deleteCookie('accessToken')
+    // deleteCookie('refreshToken')
 
     setAccessToken(window.sessionStorage.getItem('accessToken'))
     setRefreshToken(window.localStorage.getItem('refreshToken'))
@@ -94,7 +97,7 @@ function App() {
   const logOut = async () => {
     console.log("attempt to log out")
     try {
-      await fetch('http://localhost:6500/logout', {
+      await fetch(endpointRoot + '/logout', {
         method: 'DELETE',
         headers: {
           Authorization: `token ${window.localStorage.getItem('refreshToken')}`
@@ -126,7 +129,7 @@ function App() {
   // Manually refresh JWT
   const refreshAccessToken = async () => {
     try {
-      const res = await fetch('http://localhost:6500/token', {
+      const res = await fetch(endpointRoot + '/token', {
         method: 'POST',
         credentials: 'include', // Include cookies in request
         headers: {

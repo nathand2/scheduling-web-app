@@ -1,14 +1,15 @@
 import { useState } from "react";
 import { FcGoogle } from "react-icons/fc";
 
-import Button from "react-bootstrap/Button";
-import Col from "react-bootstrap/Col";
-import Form from "react-bootstrap/Form";
-import Row from "react-bootstrap/Row";
+// import Button from "react-bootstrap/Button";
+// import Col from "react-bootstrap/Col";
+// import Form from "react-bootstrap/Form";
+// import Row from "react-bootstrap/Row";
 import Card from "react-bootstrap/Card";
 
 const LogIn = () => {
-  const googleAuthEndpoint = "http://localhost:6500/auth/google";
+  // const googleAuthEndpoint = "http://localhost:6500/auth/google";
+  const googleAuthEndpoint = "https://api.nathandong.com/scheduler/auth/google";
   
   const [userName, setUsername] = useState('')
   const [password, setPassword] = useState('')
