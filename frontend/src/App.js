@@ -18,8 +18,8 @@ import UserSettings from './components/UserSettings'
 
 import {RequestHandler} from './js/requestHandler'
 
-const endpointRoot = 'https://api.nathandong.com/scheduler'
-// const endpointRoot = 'http://localhost:6500'
+// const endpointRoot = 'https://api.nathandong.com/scheduler'
+const endpointRoot = RequestHandler.endpointRoot
 
 function App() {
   const [accessToken, setAccessToken] = useState('')
@@ -80,8 +80,8 @@ function App() {
 
   const processJWTTokens = async () => {
     await setSessionStorageJWTTokens();
-    // deleteCookie('accessToken')
-    // deleteCookie('refreshToken')
+    deleteCookie('accessToken')
+    deleteCookie('refreshToken')
 
     setAccessToken(window.sessionStorage.getItem('accessToken'))
     setRefreshToken(window.localStorage.getItem('refreshToken'))

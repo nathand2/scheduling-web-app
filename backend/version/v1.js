@@ -7,18 +7,21 @@ const util = require('../services/util');
 
 const versionEndpoint = "/v1";
 const resource = ""
-const rootURL = "http://localhost:3000"
-
+const rootURL = process.env.NODE_ENV === 'development' ? "http://localhost:3000" : "https://scheduler.nathandong.com"
+const cookieDomain = process.env.NODE_ENV === 'development' ? ".localhost" : '.nathandong.com';
+console.log("NODE_ENV:", process.env.NODE_ENV)
 
 // For Cookie security
 const secureCookieConfig = {
   secure: true,
   httpOnly: true,
-  sameSite: 'strict' // Won't work if api and auth on different domains. Helps against CSRF attacks.
+  ...(!(process.env.NODE_ENV === 'development') && { domain: cookieDomain })  // Exclude domain option if localhost
+  // sameSite: 'strict' // Won't work if api and auth on different domains. Helps against CSRF attacks.
 }
 const semiSecureCookieConfig = {
   secure: true,
-  sameSite: 'strict' // Won't work if api and auth on different domains. Helps against CSRF attacks.
+  ...(!(process.env.NODE_ENV === 'development') && { domain: cookieDomain })  // Exclude domain option if localhost
+  // sameSite: 'strict' // Won't work if api and auth on different domains. Helps against CSRF attacks.
 }
 
 
@@ -93,7 +96,7 @@ module.exports = (app, db, auth, passport, io) => {
   );
 
   app.get(resource + '/auth/google/callback', passport.authenticate( 'google', {
-    failureRedirect: 'http://localhost:3000/login',
+    failureRedirect: rootURL + '/login',
     failWithError: true,
     session: false
   }), async (req, res, next) => {

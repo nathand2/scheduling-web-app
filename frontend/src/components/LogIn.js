@@ -1,3 +1,5 @@
+import {RequestHandler} from '../js/requestHandler'
+
 import { useState } from "react";
 import { FcGoogle } from "react-icons/fc";
 
@@ -8,9 +10,8 @@ import { FcGoogle } from "react-icons/fc";
 import Card from "react-bootstrap/Card";
 
 const LogIn = () => {
-  // const googleAuthEndpoint = "http://localhost:6500/auth/google";
-  const googleAuthEndpoint = "https://api.nathandong.com/scheduler/auth/google";
-  
+  const googleAuthEndpoint = RequestHandler.endpointRoot + "/auth/google";
+
   const [userName, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [statusText, setStatusText] = useState('State')

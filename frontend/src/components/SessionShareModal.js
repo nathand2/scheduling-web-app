@@ -19,10 +19,10 @@ const SessionShareModal = ({ handleClose, show }) => {
       const results = res.data
       console.log("Created session invite:", results);
       console.log(
-        "http://localhost:3000/sessionjoin?code=" + results.inviteCode
+        RequestHandler.appRoot + "/sessionjoin?code=" + results.inviteCode
       );
 
-      const inviteLink = "http://localhost:3000/sessionjoin?code=" + results.inviteCode
+      const inviteLink = RequestHandler.appRoot + "/sessionjoin?code=" + results.inviteCode
 
       /* Copy the text inside the text field */
       navigator.clipboard.writeText(inviteLink);
@@ -43,10 +43,10 @@ const SessionShareModal = ({ handleClose, show }) => {
       const results = res.data
       console.log("Got invite code:", results);
       console.log(
-        "http://localhost:3000/sessionjoin?code=" + results.inviteCode
+        RequestHandler.endpointRoot + "/sessionjoin?code=" + results.inviteCode
       );
 
-      const inviteLink = "http://localhost:3000/sessionjoin?code=" + results.inviteCode
+      const inviteLink = RequestHandler.appRoot + "/sessionjoin?code=" + results.inviteCode
 
       /* Copy the text inside the text field */
       navigator.clipboard.writeText(inviteLink);

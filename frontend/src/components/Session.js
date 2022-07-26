@@ -19,7 +19,7 @@ import SessionAttendence from "./SessionAttendence";
 import { RequestHandler } from "../js/requestHandler";
 const util = require("../js/util");
 
-const webSocketEndpoint = "http://localhost:6500";
+const webSocketEndpoint = RequestHandler.webSocketEndpoint;
 const showDtRangeUpdateToast = false;  // Websocket for dtrange add
 
 const Session = () => {
