@@ -335,7 +335,9 @@ module.exports = (app, db, auth, passport, io) => {
       console.log("inviteCode:", inviteCode)
 
       const {sessionCode, userSession} = await db.createUserSessionBySessionInviteUuid(userId, inviteCode)
-      io.in(sessionCode).emit("joinSession", userSession[0]);  // Emit message to people in session.
+      if (userSession !== undefined) {
+        io.in(sessionCode).emit("joinSession", userSession[0]);  // Emit message to people in session.
+      }
 
       res.json({sessionCode: sessionCode})
     } catch(err) {

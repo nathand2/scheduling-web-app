@@ -293,7 +293,7 @@ exports.createUserSessionBySessionInviteUuid = async (userId, uuid) => {
     
     // If user_session exists for user and session, return sessionId
     if (existingUserSessionCodes.length > 0) {
-      return existingUserSessionCodes[0].code
+      return {sessionCode: existingUserSessionCodes[0].code}
     }
     const sessionIds = await dbConnection(`SELECT code, id FROM session WHERE id = (SELECT session_id FROM session_invite WHERE uuid = '${uuid}' LIMIT 1);`)
     console.log("STUFF:", sessionIds)

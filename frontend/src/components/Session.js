@@ -16,6 +16,7 @@ import SessionToast from "./SessionToast";
 import SessionChart from "./SessionChart";
 import SessionAttendence from "./SessionAttendence";
 
+
 import { RequestHandler } from "../js/requestHandler";
 const util = require("../js/util");
 
@@ -68,7 +69,14 @@ const Session = () => {
   const setUpWebSocketConnection = async (code) => {
     // Connect to web socket if session.code not undefined
     if (code !== undefined) {
-      const socket = io(webSocketEndpoint)
+      let socket;
+      try {
+        socket = io(webSocketEndpoint)
+        console.log("WebSocket connection successful")
+      } catch (err) {
+        console.log("WebSocket connection error:", err)
+      }
+
       socket.on('connect', function() {
         socket.emit('room', code);
       });
