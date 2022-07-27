@@ -16,6 +16,10 @@ const SessionShareModal = ({ handleClose, show }) => {
        res = await RequestHandler.req("/sessioninvite", "POST", {
         sessionCode: params.code,
       });
+      if (res.status != 200) {
+        console.log("You can't create a share link. You are not an owner.")
+        return;
+      }
       const results = res.data
       console.log("Created session invite:", results);
       console.log(
@@ -68,7 +72,7 @@ const SessionShareModal = ({ handleClose, show }) => {
         <Modal.Body>
           Share With Link
           <br />
-          <p className="text-underline" onClick={shareWithLink}>Copy Link</p>
+          <p className="text-underline" onClick={shareWithLink}>Copy Link (Owners Only)</p>
           <p className="text-underline" onClick={getShareLink}>Get Link</p>
         </Modal.Body>
         <Modal.Footer>

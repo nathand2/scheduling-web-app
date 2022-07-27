@@ -336,7 +336,7 @@ module.exports = (app, db, auth, passport, io) => {
 
       const {sessionCode, userSession} = await db.createUserSessionBySessionInviteUuid(userId, inviteCode)
       if (userSession !== undefined) {
-        io.in(sessionCode).emit("joinSession", userSession[0]);  // Emit message to people in session.
+        // io.in(sessionCode).emit("joinSession", userSession[0]);  // Emit message to people in session.
       }
 
       res.json({sessionCode: sessionCode})
@@ -382,11 +382,11 @@ module.exports = (app, db, auth, passport, io) => {
 
       const insertId = await db.createSessionTimeRange(userId, sessionId, dtStart, dtEnd, status)
       const sessionTimeRange = await db.getSessionTimeRangeById(insertId)
-      io.in(sessionCode).emit("postDtRange", {
-        ...sessionTimeRange,
-        user_id: userId,
-        display_name: res.locals.user.displayName
-      });
+      // io.in(sessionCode).emit("postDtRange", {
+      //   ...sessionTimeRange,
+      //   user_id: userId,
+      //   display_name: res.locals.user.displayName
+      // });
 
       res.json({insertId: insertId})
 
@@ -409,7 +409,7 @@ module.exports = (app, db, auth, passport, io) => {
 
       // If no rows affect, no deletion. Range doesn't belong to user
       if (results.affectedRows > 0) {
-        io.in(sessionCode).emit("deleteTimeRange", {sessionTimeRangeId: sessionTimeRangeId});  // Emit message to people in session.
+        // io.in(sessionCode).emit("deleteTimeRange", {sessionTimeRangeId: sessionTimeRangeId});  // Emit message to people in session.
         return res.sendStatus(204)  // No content
       } else {
         return res.sendStatus(403)  // Forbidden
