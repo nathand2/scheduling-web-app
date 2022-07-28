@@ -1,3 +1,6 @@
+/**
+ * REST api server
+ */
 const express = require('express');
 const passport = require('passport');
 const cors = require('cors')
@@ -22,8 +25,6 @@ app.use(cookieParser());
 app.use(passport.initialize());
 require('./services/googleStrategy');
 
-// const temp = require('./services/webSockets');
-// const io = temp.setUpWebSockets(app, port)
 require('./version/v1')(app, db, auth, passport);
 
 app.listen(port, () => {
