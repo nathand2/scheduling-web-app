@@ -104,7 +104,7 @@ const Session = () => {
           setShowToast(true)
       });
       
-      socket.on('postDtRange', async function(data) {
+      socket.on('postSessionTimeRange', async function(data) {
         // Convert UTC date strings to dates
         data.dt_end = util.convertUTCStringToDate(data.dt_end);
         data.dt_start = util.convertUTCStringToDate(data.dt_start);
@@ -126,7 +126,7 @@ const Session = () => {
             }
           }
       });
-      socket.on('deleteTimeRange', function(data) {
+      socket.on('deleteSessionTimeRange', function(data) {
         console.log('Someone deleted timerange!:', data);
         setTimeRanges((prev) => {
           return prev.filter(range => range.id !== data.sessionTimeRangeId)

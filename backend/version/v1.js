@@ -2,13 +2,16 @@
  * Module for API functionality and routes.
  */
 
+const axios = require("axios").default;
 
 const util = require('../services/util');
 
 const versionEndpoint = "/v1";
-const resource = ""
-const rootURL = process.env.NODE_ENV === 'development' ? "http://localhost:3000" : "https://scheduler.nathandong.com"
+const resource = process.env.NODE_ENV === 'development' ? "" : "/scheduler";
+const socketEndpointRoot = process.env.NODE_ENV === 'development' ? "http://localhost:7500" : "http://socket.nathandong.com/";
+const rootURL = process.env.NODE_ENV === 'development' ? "http://localhost:3000" : "https://scheduler.nathandong.com";
 const cookieDomain = process.env.NODE_ENV === 'development' ? ".localhost" : '.nathandong.com';
+
 console.log("NODE_ENV:", process.env.NODE_ENV)
 
 // For Cookie security
@@ -323,7 +326,6 @@ module.exports = (app, db, auth, passport, io) => {
       res.sendStatus(500) // Internal db error.
       return
     }
-
   })
 
   app.post(resource + "/joinsession", auth.authenticateToken, async (req, res) => {
@@ -335,8 +337,19 @@ module.exports = (app, db, auth, passport, io) => {
       console.log("inviteCode:", inviteCode)
 
       const {sessionCode, userSession} = await db.createUserSessionBySessionInviteUuid(userId, inviteCode)
+      
+      // If new userSession created, notify session attendees
       if (userSession !== undefined) {
-        // io.in(sessionCode).emit("joinSession", userSession[0]);  // Emit message to people in session.
+        // Send post request to websocket api
+        try {
+          const response = await axios.post(socketEndpointRoot + '/usersession', {
+            userSessionData: userSession[0],
+            sessionCode: sessionCode
+          });
+          console.log(response);
+        } catch (error) {
+          console.error(error);
+        }
       }
 
       res.json({sessionCode: sessionCode})
@@ -382,11 +395,21 @@ module.exports = (app, db, auth, passport, io) => {
 
       const insertId = await db.createSessionTimeRange(userId, sessionId, dtStart, dtEnd, status)
       const sessionTimeRange = await db.getSessionTimeRangeById(insertId)
-      // io.in(sessionCode).emit("postDtRange", {
-      //   ...sessionTimeRange,
-      //   user_id: userId,
-      //   display_name: res.locals.user.displayName
-      // });
+      const postBody = {
+        sessionTimeRange: {
+          ...sessionTimeRange,
+          user_id: userId,
+          display_name: res.locals.user.displayName
+        },
+        sessionCode: sessionCode
+      }
+      // Send post request to websocket api
+      try {
+        const response = await axios.post(socketEndpointRoot + '/sessiontimerange', postBody);
+        console.log(response);
+      } catch (error) {
+        console.error(error);
+      }
 
       res.json({insertId: insertId})
 
@@ -409,7 +432,18 @@ module.exports = (app, db, auth, passport, io) => {
 
       // If no rows affect, no deletion. Range doesn't belong to user
       if (results.affectedRows > 0) {
-        // io.in(sessionCode).emit("deleteTimeRange", {sessionTimeRangeId: sessionTimeRangeId});  // Emit message to people in session.
+        // Send Delete request to websocket api
+        try {
+          const deleteBody = {
+            sessionTimeRangeId: sessionTimeRangeId,
+            sessionCode: sessionCode
+          }
+          console.log("Delete Body:", deleteBody)
+          await axios.delete(socketEndpointRoot + '/sessiontimerange', {data: deleteBody});
+        } catch (error) {
+          console.error(error);
+        }
+
         return res.sendStatus(204)  // No content
       } else {
         return res.sendStatus(403)  // Forbidden
@@ -430,8 +464,6 @@ module.exports = (app, db, auth, passport, io) => {
         res.sendStatus(400)  // Client error
         return
       }
-
-      // const sessionId = await db.getSessionIdBySessionCode(sessionCode)[0]
       console.log("SessionId:", sessionId)
 
       const userId = res.locals.user.userId  // User Id from JWT token

@@ -2,6 +2,7 @@ const express = require('express');
 const passport = require('passport');
 const cors = require('cors')
 const cookieParser = require('cookie-parser');
+
 require('dotenv').config() // Environment variables stored in .env file
 
 const auth = require('./services/jwtAuth');
