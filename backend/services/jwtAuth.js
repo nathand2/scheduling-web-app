@@ -6,13 +6,12 @@
  */
 
 const jwt = require('jsonwebtoken');
-const bcrypt = require('bcrypt')
 const crypto = require('crypto')
 
+const createHash = crypto.createHash;
 const accessTokenSecret = process.env.ACCESS_TOKEN_SECRET;
 const refreshTokenSecret = process.env.REFRESH_TOKEN_SECRET;
 const jwtExpiresIn = '10m';
-const saltRounds = 5;
 
 /**
  * Authenticates token in authorization header
@@ -44,20 +43,17 @@ exports.authenticateToken = (req, res, next) => {
     const userContextHashed = user.hash; // User context for access token
 
     // Verify user context.
-    bcrypt.compare(userContext, userContextHashed, function(err, result) {
-      if (err){
-        res.sendStatus(500)
-        return
-      }
-      if (result) {
+    try {
+      if (this.compareStringAndHash(userContext, userContextHashed)) {
         // Pass user object from JWT to next middleware.
         res.locals.user = user
         next() // Serve content using next callback
       } else {
-        res.sendStatus(401)
-        return
+        return res.sendStatus(401)
       }
-    });
+    } catch (err) {
+      return res.sendStatus(500)
+    }
   })
 }
 
@@ -100,20 +96,17 @@ exports.refreshAccessToken = (req, res, next) => {
     const userContextHashed = user.hash; // User context for access token
 
     // Verify user context.
-    bcrypt.compare(userContext, userContextHashed, function(err, result) {
-      if (err){
-        res.sendStatus(500)
-        return
-      }
-      console.log("bcrypt result:", result)
-      if (result) {
-        res.locals.user = user;
-        next();
+    try {
+      if (this.compareStringAndHash(userContext, userContextHashed)) {
+        // Pass user object from JWT to next middleware.
+        res.locals.user = user
+        next() // Serve content using next callback
       } else {
-        res.sendStatus(401)
-        return
+        return res.sendStatus(401)
       }
-    });
+    } catch (err) {
+      return res.sendStatus(500)
+    }
   })
 }
 
@@ -142,25 +135,44 @@ exports.checkIfFingerPrintExists = (req, res, next) => {
 }
 
 /**
- * Hashes a string using crypto. TODO: Consider using bcrypt
+ * Hashes a string using crypto.
  * @param {string} input 
  * @returns hashed string
  */
-exports.hashString = async (input) => {
-  const hashedPassword = new Promise((resolve, reject) => {
-    bcrypt.hash(input, saltRounds, function(err, hash) {
-      if (err) reject(err)
-      resolve(hash)
-    });
-  })
-  return hashedPassword
+ exports.hashString = (input) => {
+  try {
+    const hash = createHash('sha256');
+    hash.update(input);
+    return hash.copy().digest('hex');
+  } catch (err) {
+    throw err
+  }
 }
 
+/**
+ * Generates random string and it's SHA-256 hash
+ * @returns array [string, string]
+ */
 exports.getRandomStringAndHash = async () => {
   try {
     const randString = await this.getRandomString();
-    const stringHash = await this.hashString(randString);
+    const stringHash = this.hashString(randString);
     return [randString, stringHash];
+  } catch (err) {
+    throw err
+  }
+}
+
+/**
+ * Returns whether string being hashed is same as hash
+ * @param {string} string 
+ * @param {string} hash 
+ * @returns 
+ */
+exports.compareStringAndHash = (string, hash) => {
+  try {
+    const hashedString = this.hashString(string)
+    return hashedString === hash;
   } catch (err) {
     throw err
   }

@@ -2,32 +2,39 @@
  * Module for API functionality and routes.
  */
 
+const axios = require("axios").default;
 
 const util = require('../services/util');
 
 const versionEndpoint = "/v1";
-const rootURL = "http://localhost:3000"
+const resource = process.env.NODE_ENV === 'development' ? "" : "/scheduler";
+const socketEndpointRoot = process.env.NODE_ENV === 'development' ? "http://localhost:7500" : "http://socket.nathandong.com/";
+const rootURL = process.env.NODE_ENV === 'development' ? "http://localhost:3000" : "https://scheduler.nathandong.com";
+const cookieDomain = process.env.NODE_ENV === 'development' ? ".localhost" : '.nathandong.com';
 
+console.log("NODE_ENV:", process.env.NODE_ENV)
 
 // For Cookie security
 const secureCookieConfig = {
   secure: true,
   httpOnly: true,
-  sameSite: 'strict' // Won't work if api and auth on different domains. Helps against CSRF attacks.
+  ...(!(process.env.NODE_ENV === 'development') && { domain: cookieDomain })  // Exclude domain option if localhost
+  // sameSite: 'strict' // Won't work if api and auth on different domains. Helps against CSRF attacks.
 }
 const semiSecureCookieConfig = {
   secure: true,
-  sameSite: 'strict' // Won't work if api and auth on different domains. Helps against CSRF attacks.
+  ...(!(process.env.NODE_ENV === 'development') && { domain: cookieDomain })  // Exclude domain option if localhost
+  // sameSite: 'strict' // Won't work if api and auth on different domains. Helps against CSRF attacks.
 }
 
 
 module.exports = (app, db, auth, passport, io) => {
 
-  app.get('/test', async (req, res) => {
+  app.get(resource + '/test', async (req, res) => {
     res.json({stuff: "potato"})
   })
 
-  app.post("/testauth", auth.authenticateToken, (req, res) => {
+  app.post(resource + "/testauth", auth.authenticateToken, (req, res) => {
     res.json({status: "Authentication Successful"})
   });
 
@@ -38,7 +45,7 @@ module.exports = (app, db, auth, passport, io) => {
    * Requests need valid fingerprint(user context) in hardened http-only cookie.
    * 
    */
-  app.post('/token', auth.checkIfFingerPrintExists, async (req, res, next) => {
+  app.post(resource + '/token', auth.checkIfFingerPrintExists, async (req, res, next) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) {
       console.log("401: No auth header")
@@ -87,12 +94,12 @@ module.exports = (app, db, auth, passport, io) => {
   }
   )
 
-  app.get('/auth/google',
+  app.get(resource + '/auth/google',
     passport.authenticate('google', { scope: [ 'email', 'profile' ]})
   );
 
-  app.get('/auth/google/callback', passport.authenticate( 'google', {
-    failureRedirect: 'http://localhost:3000/login',
+  app.get(resource + '/auth/google/callback', passport.authenticate( 'google', {
+    failureRedirect: rootURL + '/login',
     failWithError: true,
     session: false
   }), async (req, res, next) => {
@@ -128,6 +135,7 @@ module.exports = (app, db, auth, passport, io) => {
     const accessToken = auth.generateAccessToken(userAccess);
     const refreshToken = auth.generateRefreshToken(userRefresh);
 
+    console.log("Generated Access Tokens")
     // Add token to db
     try {
       db.insertRefreshToken(refreshToken);
@@ -158,7 +166,7 @@ module.exports = (app, db, auth, passport, io) => {
   /**
    * Deletes Refresh Tokens
    */
-  app.delete("/logout", (req, res) => {
+  app.delete(resource + "/logout", (req, res) => {
     // Get refresh token from authorization headers
     const authHeader = req.headers.authorization;
     if (!authHeader) {
@@ -186,7 +194,7 @@ module.exports = (app, db, auth, passport, io) => {
   /**
    * Creates a session
    */
-  app.post("/session", auth.authenticateToken, async (req, res) => {
+  app.post(resource + "/session", auth.authenticateToken, async (req, res) => {
     const {title, desc, dtStart, dtEnd, attendType} = req.body;
     try {
       console.log("/session Locals.user:", res.locals.user)
@@ -213,12 +221,9 @@ module.exports = (app, db, auth, passport, io) => {
       }
 
       const sessionId = await db.createSession(sessionCode, title, dtStart, dtEnd, attendType, desc)
-      console.log("User in /session:", res.locals.user)
-      // const userId = await db.getUserIdByExternalID(res.locals.user.userId, res.locals.user.type)
       const userId = res.locals.user.userId
       
       const userSessionId =  await db.createUserSession(userId, sessionId, 'owner')
-      console.log("New session with code:", sessionCode)
       res.json({code: sessionCode, url: rootURL + "/session/" + sessionCode})
     } catch(err) {
       console.log(err)
@@ -230,7 +235,7 @@ module.exports = (app, db, auth, passport, io) => {
   /**
    * Gets a session by session code
    */
-  app.get("/session/:code", auth.authenticateToken, async (req, res) => {
+  app.get(resource + "/session/:code", auth.authenticateToken, async (req, res) => {
   try {
     const sessionCode = req.params.code;
     // const userId = await db.getUserIdByExternalID(res.locals.user.name, res.locals.user.type)
@@ -252,7 +257,7 @@ module.exports = (app, db, auth, passport, io) => {
   /**
    * Get sessions associated with user
    */
-  app.get("/sessions", auth.authenticateToken, async (req, res) => {
+  app.get(resource + "/sessions", auth.authenticateToken, async (req, res) => {
     const user = res.locals.user
     const userId = user.userId
     try {
@@ -265,7 +270,7 @@ module.exports = (app, db, auth, passport, io) => {
     }
   })
 
-  app.post("/sessioninvite", auth.authenticateToken, async (req, res) => {
+  app.post(resource + "/sessioninvite", auth.authenticateToken, async (req, res) => {
     try {
       const { sessionCode } = req.body
       const userId = res.locals.user.userId
@@ -289,7 +294,7 @@ module.exports = (app, db, auth, passport, io) => {
 
   })
 
-  app.get("/sessioninvite", auth.authenticateToken, async (req, res) => {
+  app.get(resource + "/sessioninvite", auth.authenticateToken, async (req, res) => {
     try {
       const sessionCode = req.query.code
       if (!sessionCode) {
@@ -321,10 +326,9 @@ module.exports = (app, db, auth, passport, io) => {
       res.sendStatus(500) // Internal db error.
       return
     }
-
   })
 
-  app.post("/joinsession", auth.authenticateToken, async (req, res) => {
+  app.post(resource + "/joinsession", auth.authenticateToken, async (req, res) => {
     try {
       const inviteCode = req.body.inviteCode.inviteCode
       const userId = res.locals.user.userId
@@ -333,7 +337,20 @@ module.exports = (app, db, auth, passport, io) => {
       console.log("inviteCode:", inviteCode)
 
       const {sessionCode, userSession} = await db.createUserSessionBySessionInviteUuid(userId, inviteCode)
-      io.in(sessionCode).emit("joinSession", userSession[0]);  // Emit message to people in session.
+      
+      // If new userSession created, notify session attendees
+      if (userSession !== undefined) {
+        // Send post request to websocket api
+        try {
+          const response = await axios.post(socketEndpointRoot + '/usersession', {
+            userSessionData: userSession[0],
+            sessionCode: sessionCode
+          });
+          console.log(response);
+        } catch (error) {
+          console.error(error);
+        }
+      }
 
       res.json({sessionCode: sessionCode})
     } catch(err) {
@@ -343,15 +360,10 @@ module.exports = (app, db, auth, passport, io) => {
     }
   })
 
-  app.post('/sessiontimerange', auth.authenticateToken, async (req, res) => {
+  app.post(resource + '/sessiontimerange', auth.authenticateToken, async (req, res) => {
     try {
       const userId = res.locals.user.userId  // User Id from JWT token
       const { sessionId, sessionCode, dtStart, dtEnd, status } = req.body  // Post body
-
-      console.log("Date type:", typeof dtStart)
-      console.log("Dates:", new Date(dtStart), new Date(dtEnd))
-      console.log("Greater than?:", new Date(dtStart) < new Date(dtEnd))
-
       const dateStart = new Date(dtStart)
       const dateEnd = new Date(dtEnd)
       // Check for valid dt range
@@ -362,20 +374,15 @@ module.exports = (app, db, auth, passport, io) => {
       }
 
       const session = (await db.getSessionById(sessionId))[0]
-      console.log("Session:", session)
       const sessionDtStart = session.dt_start
       const sessionDtEnd = session.dt_end
-      // console.log("Types:", typeof dt_start, typeof dt_end)
       
       const sessionDateStart = new Date(sessionDtStart)
       const sessionDateEnd = new Date(sessionDtEnd)
-      console.log("Dates:", sessionDateStart, sessionDateEnd)
       
       if ((sessionDateStart <= dateStart && sessionDateEnd >= dateEnd)) {
         console.log("Invalid dt range.")
         return res.sendStatus(400)  // Client Error
-      } else {
-        console.log("Valid dt range")
       }
       
       // Check if user is apart of session
@@ -388,12 +395,21 @@ module.exports = (app, db, auth, passport, io) => {
 
       const insertId = await db.createSessionTimeRange(userId, sessionId, dtStart, dtEnd, status)
       const sessionTimeRange = await db.getSessionTimeRangeById(insertId)
-      console.log("res.locals.user in post dtrange:", res.locals.user)
-      io.in(sessionCode).emit("postDtRange", {
-        ...sessionTimeRange,
-        user_id: userId,
-        display_name: res.locals.user.displayName
-      });
+      const postBody = {
+        sessionTimeRange: {
+          ...sessionTimeRange,
+          user_id: userId,
+          display_name: res.locals.user.displayName
+        },
+        sessionCode: sessionCode
+      }
+      // Send post request to websocket api
+      try {
+        const response = await axios.post(socketEndpointRoot + '/sessiontimerange', postBody);
+        console.log(response);
+      } catch (error) {
+        console.error(error);
+      }
 
       res.json({insertId: insertId})
 
@@ -404,7 +420,7 @@ module.exports = (app, db, auth, passport, io) => {
     }
   })
 
-  app.delete('/sessiontimerange', auth.authenticateToken, async (req, res) => {
+  app.delete(resource + '/sessiontimerange', auth.authenticateToken, async (req, res) => {
     try {
       const userId = res.locals.user.userId  // User Id from JWT token
       const {sessionTimeRangeId, userSessionId, sessionCode} = req.body;
@@ -416,7 +432,18 @@ module.exports = (app, db, auth, passport, io) => {
 
       // If no rows affect, no deletion. Range doesn't belong to user
       if (results.affectedRows > 0) {
-        io.in(sessionCode).emit("deleteTimeRange", {sessionTimeRangeId: sessionTimeRangeId});  // Emit message to people in session.
+        // Send Delete request to websocket api
+        try {
+          const deleteBody = {
+            sessionTimeRangeId: sessionTimeRangeId,
+            sessionCode: sessionCode
+          }
+          console.log("Delete Body:", deleteBody)
+          await axios.delete(socketEndpointRoot + '/sessiontimerange', {data: deleteBody});
+        } catch (error) {
+          console.error(error);
+        }
+
         return res.sendStatus(204)  // No content
       } else {
         return res.sendStatus(403)  // Forbidden
@@ -428,7 +455,7 @@ module.exports = (app, db, auth, passport, io) => {
     }
   })
 
-  app.get('/timeranges', auth.authenticateToken, async (req, res) => {
+  app.get(resource + '/timeranges', auth.authenticateToken, async (req, res) => {
       
     try {
       const sessionId = req.query.sessionid
@@ -437,8 +464,6 @@ module.exports = (app, db, auth, passport, io) => {
         res.sendStatus(400)  // Client error
         return
       }
-
-      // const sessionId = await db.getSessionIdBySessionCode(sessionCode)[0]
       console.log("SessionId:", sessionId)
 
       const userId = res.locals.user.userId  // User Id from JWT token
@@ -460,7 +485,7 @@ module.exports = (app, db, auth, passport, io) => {
     }
   })
 
-  app.get("/usersessions", auth.authenticateToken, async (req, res) => {
+  app.get(resource + "/usersessions", auth.authenticateToken, async (req, res) => {
     // Get user sessions for specific session
     const sessionId = req.query.sessionid
     const userId = res.locals.user.userId  // User Id from JWT token
@@ -490,7 +515,7 @@ module.exports = (app, db, auth, passport, io) => {
     }
   })
 
-  app.put('/displayname', auth.authenticateToken, async (req, res) => {
+  app.put(resource + '/displayname', auth.authenticateToken, async (req, res) => {
     try {
       const userId = res.locals.user.userId  // User Id from JWT token
       const {displayName} = req.body;

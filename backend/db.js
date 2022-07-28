@@ -1,9 +1,11 @@
+require('dotenv').config() // Environment variables stored in .env file
 const mysql = require('mysql')
+
 const config = {
-  host: 'localhost',
-  user: 'root',
-  password: '',
-  database: 'scheduler',
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD ? process.env.DB_PASSWORD : '', // Empty string if undefined
+  database: process.env.DB_DATABASE,
   timezone: 'UTC', // Interpret all received timestamps as UTC. Otherwise local timezone is assumed.
 	dateStrings: [
 		'DATE', // DATE's are returned as strings (otherwise they would be interpreted as YYYY-MM-DD 00:00:00+00:00)
@@ -232,8 +234,7 @@ exports.getSession = async (userId, sessionCode) => {
 
 exports.getSessions = async (userId) => {
   try {
-    // const results = await dbConnection(`SELECT session.group_id, session.session_title, session.session_desc, session.dt_created FROM session INNER JOIN user_session ON session.id = user_session.session_id WHERE user_session.user_id = ${userId};`)
-    const results = await dbConnection(`SELECT session.id, session.code, session.group_id, session.session_title, session.session_desc, session.dt_created FROM session INNER JOIN user_session ON session.id = user_session.session_id WHERE user_session.user_id = ${userId} ORDER BY session.dt_created DESC;`)
+    const results = await dbConnection(`SELECT session.*, user_session.role FROM session INNER JOIN user_session ON session.id = user_session.session_id WHERE user_session.user_id = ${userId} ORDER BY session.dt_created DESC;`)
     return results
   } catch(err) {
     throw err
@@ -292,7 +293,7 @@ exports.createUserSessionBySessionInviteUuid = async (userId, uuid) => {
     
     // If user_session exists for user and session, return sessionId
     if (existingUserSessionCodes.length > 0) {
-      return existingUserSessionCodes[0].code
+      return {sessionCode: existingUserSessionCodes[0].code}
     }
     const sessionIds = await dbConnection(`SELECT code, id FROM session WHERE id = (SELECT session_id FROM session_invite WHERE uuid = '${uuid}' LIMIT 1);`)
     console.log("STUFF:", sessionIds)

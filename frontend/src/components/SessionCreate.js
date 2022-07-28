@@ -16,7 +16,6 @@ const SessionCreate = () => {
   const [dtEnd, setdtEnd] = useState(new Date(new Date().getTime() + 60 * 60 * 4 * 1000))
   const [viewOption, setViewOption] = useState('account-only')
 
-
   const [sessionCreated, setSessionCreated] = useState(false)
   const [sessionId, setSessionId] = useState('')
 
@@ -24,8 +23,6 @@ const SessionCreate = () => {
     minuteIncrement: 1,
   }
 
- 
-  
   const createSession = async (e) => {
     e.preventDefault();
 
@@ -38,8 +35,6 @@ const SessionCreate = () => {
 
     const diff = dtEnd.getTime() - dtStart.getTime();   
     const dayDiff = diff / (1000 * 60);  // Get difference in minutes
-    // console.log("Day Diff:", daydiff)
-    // return;
     if (dayDiff < 31) {
       alert('Session must be longer than 30 minutes.')
     }

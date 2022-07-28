@@ -16,10 +16,12 @@ import SessionToast from "./SessionToast";
 import SessionChart from "./SessionChart";
 import SessionAttendence from "./SessionAttendence";
 
+
 import { RequestHandler } from "../js/requestHandler";
 const util = require("../js/util");
 
-const webSocketEndpoint = "http://localhost:6500";
+const webSocketEndpoint = RequestHandler.webSocketEndpoint;
+const showDtRangeUpdateToast = false;  // Websocket for dtrange add
 
 const Session = () => {
   
@@ -67,8 +69,14 @@ const Session = () => {
   const setUpWebSocketConnection = async (code) => {
     // Connect to web socket if session.code not undefined
     if (code !== undefined) {
-      console.log("Setting up websocket conn")
-      const socket = io(webSocketEndpoint)
+      let socket;
+      try {
+        socket = io(webSocketEndpoint)
+        console.log("WebSocket connection successful")
+      } catch (err) {
+        console.log("WebSocket connection error:", err)
+      }
+
       socket.on('connect', function() {
         socket.emit('room', code);
       });
@@ -83,7 +91,7 @@ const Session = () => {
       });
       
       socket.on('message', function(data) {
-          console.log('Incoming message:', data);
+        console.log('Incoming message:', data);
       });
       
       socket.on('joinSession', function(data) {
@@ -96,7 +104,7 @@ const Session = () => {
           setShowToast(true)
       });
       
-      socket.on('postDtRange', async function(data) {
+      socket.on('postSessionTimeRange', async function(data) {
         // Convert UTC date strings to dates
         data.dt_end = util.convertUTCStringToDate(data.dt_end);
         data.dt_start = util.convertUTCStringToDate(data.dt_start);
@@ -106,17 +114,19 @@ const Session = () => {
           setTimeRanges((prev) => {
             return [...prev, data]
           });
-          if (data.user_id === parseInt(localStorage.userId)) {
-            setToastTitle(`Thanks for joining!`)
-            setToastMessage(`We'll let everyone here know`)
-            setShowToast(true)
-          } else {
-            setToastTitle(`Good News!`)
-            setToastMessage(`${data.display_name} is ${(data.status === 'maybe') ? 'maybe ' : ""}coming!`)
-            setShowToast(true)
+          if (showDtRangeUpdateToast) {
+            if (data.user_id === parseInt(localStorage.userId)) {
+              setToastTitle(`Thanks for joining!`)
+              setToastMessage(`We'll let everyone here know`)
+              setShowToast(true)
+            } else {
+              setToastTitle(`Good News!`)
+              setToastMessage(`${data.display_name} is ${(data.status === 'maybe') ? 'maybe ' : ""}coming!`)
+              setShowToast(true)
+            }
           }
       });
-      socket.on('deleteTimeRange', function(data) {
+      socket.on('deleteSessionTimeRange', function(data) {
         console.log('Someone deleted timerange!:', data);
         setTimeRanges((prev) => {
           return prev.filter(range => range.id !== data.sessionTimeRangeId)
@@ -156,6 +166,10 @@ const Session = () => {
     }
   };
 
+  /**
+   * Change view for non-OK responses.
+   * @param {object} res 
+   */
   const changeOtherSessionViews = (res) => {
     if (res.status == 401) {
       setOtherSessionResViews(<>Please log in</>);
@@ -168,6 +182,10 @@ const Session = () => {
     }
   };
 
+  /**
+   * Gets time ranges from api
+   * @param {int} sessionId 
+   */
   const getTimeRanges = async (sessionId) => {
     try {
       let res;
@@ -192,7 +210,11 @@ const Session = () => {
     }
   };
 
-  const getUserSessions = async (sessionId, res) => {
+  /**
+   * Gets user sessions from api
+   * @param {int} sessionId
+   */
+  const getUserSessions = async (sessionId) => {
     try {
       let res;
       // Get user sessions

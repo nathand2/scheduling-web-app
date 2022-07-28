@@ -28,7 +28,6 @@ const SessionChart = ({ timeRanges, session }) => {
 
   const generateChart = async () => {
     const { ranges, columns } = await processTimeRanges();
-    console.log("BarTimeRanges:", barTimeRanges);
     drawBarChart(ranges, columns);
   };
 
@@ -42,7 +41,6 @@ const SessionChart = ({ timeRanges, session }) => {
 
     const sessionLengthInMinutes =
       ((session.dt_end - session.dt_start) / (1000 * 60)) * chartScale; // Session length in minutes
-    console.log("sessionLengthInMinutes", sessionLengthInMinutes);
     const margin = { top: 20, right: 30, bottom: 30, left: 40 };
     const height = sessionLengthInMinutes + margin.top + margin.bottom;
     const width = 500 + margin.right;

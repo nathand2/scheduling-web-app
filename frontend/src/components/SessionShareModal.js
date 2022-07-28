@@ -16,13 +16,17 @@ const SessionShareModal = ({ handleClose, show }) => {
        res = await RequestHandler.req("/sessioninvite", "POST", {
         sessionCode: params.code,
       });
+      if (res.status != 200) {
+        console.log("You can't create a share link. You are not an owner.")
+        return;
+      }
       const results = res.data
       console.log("Created session invite:", results);
       console.log(
-        "http://localhost:3000/sessionjoin?code=" + results.inviteCode
+        RequestHandler.appRoot + "/sessionjoin?code=" + results.inviteCode
       );
 
-      const inviteLink = "http://localhost:3000/sessionjoin?code=" + results.inviteCode
+      const inviteLink = RequestHandler.appRoot + "/sessionjoin?code=" + results.inviteCode
 
       /* Copy the text inside the text field */
       navigator.clipboard.writeText(inviteLink);
@@ -43,10 +47,10 @@ const SessionShareModal = ({ handleClose, show }) => {
       const results = res.data
       console.log("Got invite code:", results);
       console.log(
-        "http://localhost:3000/sessionjoin?code=" + results.inviteCode
+        RequestHandler.endpointRoot + "/sessionjoin?code=" + results.inviteCode
       );
 
-      const inviteLink = "http://localhost:3000/sessionjoin?code=" + results.inviteCode
+      const inviteLink = RequestHandler.appRoot + "/sessionjoin?code=" + results.inviteCode
 
       /* Copy the text inside the text field */
       navigator.clipboard.writeText(inviteLink);
@@ -68,7 +72,7 @@ const SessionShareModal = ({ handleClose, show }) => {
         <Modal.Body>
           Share With Link
           <br />
-          <p className="text-underline" onClick={shareWithLink}>Copy Link</p>
+          <p className="text-underline" onClick={shareWithLink}>Copy Link (Owners Only)</p>
           <p className="text-underline" onClick={getShareLink}>Get Link</p>
         </Modal.Body>
         <Modal.Footer>

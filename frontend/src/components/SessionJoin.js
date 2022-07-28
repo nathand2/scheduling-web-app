@@ -23,8 +23,6 @@ const SessionJoin = () => {
               inviteCode: { inviteCode },
             });
             data = res.data
-            console.log("res data:", data);
-            console.log("http://localhost:3000/session/" + data.sessionCode)
             setSessionCode(data.sessionCode)
             setGoToSession(true)
           } catch (err) {

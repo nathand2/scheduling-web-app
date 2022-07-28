@@ -5,7 +5,10 @@
  */
 
 export class RequestHandler {
-  static endpointRoot = "http://localhost:6500";
+  // static webSocketEndpoint = process.env.NODE_ENV === 'development' ? "http://localhost:7500" : "https://api.nathandong.com/scheduler";
+  static webSocketEndpoint = process.env.NODE_ENV === 'development' ? "http://localhost:7500" : "https://socket.nathandong.com";
+  static endpointRoot = process.env.NODE_ENV === 'development' ? "http://localhost:6500" : "https://api.nathandong.com/scheduler";
+  static appRoot = process.env.NODE_ENV === 'development' ? "http://localhost:3000" : "https://scheduler.nathandong.com";  // Frontend url
 
   // First API request and silent JWT refresh if needed.
   static async req(resource, reqMethod, reqBody=undefined) {
@@ -86,7 +89,7 @@ export class RequestHandler {
       return {status: 401}
     }
     try {
-      const res = await fetch('http://localhost:6500/token', {
+      const res = await fetch(this.endpointRoot + '/token', {
         method: 'POST',
         credentials: 'include', // Include cookies in request
         headers: {
