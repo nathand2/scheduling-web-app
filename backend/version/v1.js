@@ -95,7 +95,11 @@ module.exports = (app, db, auth, passport, io) => {
   )
 
   app.get(resource + '/auth/google',
-    passport.authenticate('google', { scope: [ 'email', 'profile' ]})
+    (req, res, next) => {
+      console.log("uhhh")
+      // req._toParam = "Hello there";
+      passport.authenticate('google', { scope: [ 'email', 'profile' ], state: req.query.redirect})(req,res,next)
+    }
   );
 
   app.get(resource + '/auth/google/callback', passport.authenticate( 'google', {
@@ -151,7 +155,12 @@ module.exports = (app, db, auth, passport, io) => {
       res.cookie('userContextAccess', randStringAccess, secureCookieConfig);
       res.cookie('userContextRefresh', randStringRefresh, {...secureCookieConfig, expires: util.dtRefreshFingerprintCookieExpires()});
 
-      res.redirect(rootURL)
+      // If no special redirect given to passport, go to app home
+      if (req.user.redirect !== undefined) {
+        res.redirect(req.user.redirect)
+      } else {
+        res.redirect(rootURL)
+      }
 
     } catch(err) {
       console.log(err)
@@ -336,8 +345,15 @@ module.exports = (app, db, auth, passport, io) => {
       console.log("Userid:", userId)
       console.log("inviteCode:", inviteCode)
 
-      const {sessionCode, userSession} = await db.createUserSessionBySessionInviteUuid(userId, inviteCode)
+      let sessionCode, userSession;
+      const results = await db.createUserSessionBySessionInviteUuid(userId, inviteCode)
+      if (results === undefined) {
+        return res.sendStatus(404);  // Session not found
+      }
       
+      sessionCode = results.sessionCode
+      userSession = results.userSession
+
       // If new userSession created, notify session attendees
       if (userSession !== undefined) {
         // Send post request to websocket api
