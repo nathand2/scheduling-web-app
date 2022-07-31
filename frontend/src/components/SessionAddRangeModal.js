@@ -10,6 +10,7 @@ const SessionAddRangeModal = ({ handleClose, show, session }) => {
 
   const dtOptionsConfig = {
     minuteIncrement: 1,
+    dateFormat: "M d Y h:m K",
   };
   
   const [dtStatus, setDtStatus] = useState("going");
@@ -71,6 +72,10 @@ const SessionAddRangeModal = ({ handleClose, show, session }) => {
                   value={dtStart}
                   onChange={(dt) => {
                     setdtStart(dt);
+                  }}
+                  options={{
+                    ...dtOptionsConfig,
+                    minDate: dtStart,
                   }}
                 />
                 <br />
