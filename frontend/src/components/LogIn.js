@@ -2,7 +2,7 @@ import { useSearchParams } from "react-router-dom"
 
 import {RequestHandler} from '../js/requestHandler'
 
-import { useState } from "react";
+// import { useState } from "react";
 import { FcGoogle } from "react-icons/fc";
 
 // import Button from "react-bootstrap/Button";
@@ -15,19 +15,19 @@ const LogIn = () => {
   const googleAuthEndpoint = RequestHandler.endpointRoot + "/auth/google";
 
   const [searchParams, setSearchParams] = useSearchParams();
-  const [userName, setUsername] = useState('')
-  const [password, setPassword] = useState('')
-  const [statusText, setStatusText] = useState('State')
-  const [statusTextClass, setStatusTextClass] = useState('text-secondary')
+  // const [userName, setUsername] = useState('')
+  // const [password, setPassword] = useState('')
+  // const [statusText, setStatusText] = useState('State')
+  // const [statusTextClass, setStatusTextClass] = useState('text-secondary')
 
-  const userNameLogIn = async (event) => {
-    event.preventDefault();
-    const body = {
-      userName: userName,
-      password: password
-    }
-    console.log("Body:", body)
-  }
+  // const userNameLogIn = async (event) => {
+  //   event.preventDefault();
+  //   const body = {
+  //     userName: userName,
+  //     password: password
+  //   }
+  //   console.log("Body:", body)
+  // }
 
   return (
     <div>

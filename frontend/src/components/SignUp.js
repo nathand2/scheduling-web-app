@@ -1,7 +1,7 @@
 import { useSearchParams } from "react-router-dom"
 import {RequestHandler} from '../js/requestHandler'
 
-import { useState } from "react";
+// import { useState } from "react";
 import { FcGoogle } from 'react-icons/fc'
 
 // import Button from "react-bootstrap/Button";
@@ -14,21 +14,21 @@ const SignUp = () => {
   const googleAuthEndpoint = RequestHandler.endpointRoot + "/auth/google";
 
   const [searchParams, setSearchParams] = useSearchParams();
-  const [email, setEmail] = useState('')
-  const [userName, setUsername] = useState('')
-  const [password, setPassword] = useState('')
-  const [statusText, setStatusText] = useState('State')
-  const [statusTextClass, setStatusTextClass] = useState('text-secondary')
+  // const [email, setEmail] = useState('')
+  // const [userName, setUsername] = useState('')
+  // const [password, setPassword] = useState('')
+  // const [statusText, setStatusText] = useState('State')
+  // const [statusTextClass, setStatusTextClass] = useState('text-secondary')
 
-  const userNameSignUp = async (event) => {
-    event.preventDefault();
-    const body = {
-      email: email,
-      userName: userName,
-      password: password
-    }
-    console.log("Simulate submit")
-  }
+  // const userNameSignUp = async (event) => {
+  //   event.preventDefault();
+  //   const body = {
+  //     email: email,
+  //     userName: userName,
+  //     password: password
+  //   }
+  //   console.log("Simulate submit")
+  // }
 
   return (
     <div>
