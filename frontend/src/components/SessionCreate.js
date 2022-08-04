@@ -21,6 +21,7 @@ const SessionCreate = () => {
 
   const dtOptionsConfig = {
     minuteIncrement: 1,
+    dateFormat: "M d Y h:m K",
   }
 
   const createSession = async (e) => {

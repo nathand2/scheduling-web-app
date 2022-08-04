@@ -1,6 +1,7 @@
+import { useSearchParams } from "react-router-dom"
 import {RequestHandler} from '../js/requestHandler'
 
-import { useState } from "react";
+// import { useState } from "react";
 import { FcGoogle } from 'react-icons/fc'
 
 // import Button from "react-bootstrap/Button";
@@ -10,23 +11,24 @@ import { FcGoogle } from 'react-icons/fc'
 import Card from "react-bootstrap/Card";
 
 const SignUp = () => {
- const googleAuthEndpoint = RequestHandler.endpointRoot + "/auth/google";
+  const googleAuthEndpoint = RequestHandler.endpointRoot + "/auth/google";
 
-  const [email, setEmail] = useState('')
-  const [userName, setUsername] = useState('')
-  const [password, setPassword] = useState('')
-  const [statusText, setStatusText] = useState('State')
-  const [statusTextClass, setStatusTextClass] = useState('text-secondary')
+  const [searchParams, setSearchParams] = useSearchParams();
+  // const [email, setEmail] = useState('')
+  // const [userName, setUsername] = useState('')
+  // const [password, setPassword] = useState('')
+  // const [statusText, setStatusText] = useState('State')
+  // const [statusTextClass, setStatusTextClass] = useState('text-secondary')
 
-  const userNameSignUp = async (event) => {
-    event.preventDefault();
-    const body = {
-      email: email,
-      userName: userName,
-      password: password
-    }
-    console.log("Simulate submit")
-  }
+  // const userNameSignUp = async (event) => {
+  //   event.preventDefault();
+  //   const body = {
+  //     email: email,
+  //     userName: userName,
+  //     password: password
+  //   }
+  //   console.log("Simulate submit")
+  // }
 
   return (
     <div>
@@ -35,7 +37,7 @@ const SignUp = () => {
       <Card className="auth-card">
         <br />
         <h3>Sign Up using:</h3>
-        <a href={googleAuthEndpoint}>
+        <a href={googleAuthEndpoint + (searchParams.get('redirect') ? `?redirect=${searchParams.get('redirect')}` : "")}>
           <FcGoogle className="login-icon"></FcGoogle>
         </a>
         <br />
@@ -82,8 +84,7 @@ const SignUp = () => {
             </Col>
           </Form.Group>
         </Form> */}
-        <a href="/login">Already have an account? Log in here</a>
-      </Card>
+      <a href={`/login` + `${searchParams.get('redirect') && '?redirect=' + searchParams.get('redirect')}`}>Don't have an account? Sign up here</a>      </Card>
     </div>
     </div>
     

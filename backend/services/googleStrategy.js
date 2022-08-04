@@ -11,9 +11,11 @@ const appURL = process.env.NODE_ENV === 'development' ? "http://localhost:6500" 
 const authUser = async (request, accessToken, refreshToken, profile, done) => {
   try {
     console.log("Profile:", profile)
+    console.log("state?:", request.query.state)
     const {userId, displayName} = await db.googleAuth(profile.id, profile.displayName);
     profile.displayName = displayName
     profile.userId = userId
+    profile.redirect = request.query.state
   } catch (err) {
     // Don't authenticate if error
     console.log("Google Strategy Caught error:", err.code);

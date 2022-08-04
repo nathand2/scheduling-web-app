@@ -24,7 +24,7 @@ const endpointRoot = RequestHandler.endpointRoot
 function App() {
   const [accessToken, setAccessToken] = useState('')
   const [refreshToken, setRefreshToken] = useState('')
-  const [loggedIn, setLoggedIn] = useState(undefined)
+  const [loggedIn, setLoggedIn] = useState(localStorage.getItem("refreshToken") === null)
   const [userId, setUserId] = useState(undefined)
   const [displayName, setDisplayName] = useState('')
 
@@ -247,7 +247,7 @@ function App() {
           } />
           <Route path="/sessionjoin" element={
             <>
-            <SessionJoin />
+            <SessionJoin loggedIn={loggedIn}/>
             </>
           } />
           <Route path="/about" element={

@@ -296,7 +296,10 @@ exports.createUserSessionBySessionInviteUuid = async (userId, uuid) => {
       return {sessionCode: existingUserSessionCodes[0].code}
     }
     const sessionIds = await dbConnection(`SELECT code, id FROM session WHERE id = (SELECT session_id FROM session_invite WHERE uuid = '${uuid}' LIMIT 1);`)
-    console.log("STUFF:", sessionIds)
+    // console.log("STUFF:", sessionIds)
+    if (!(sessionIds.length > 0)) {
+      return  // Return undefined -> session not found (404)
+    }
     const results = await dbConnection(`INSERT INTO user_session (user_id, session_id, role) VALUES (${userId}, ${sessionIds[0].id}, 'attendee');`)
     const newUserSessionInsertId = results.insertId
     const newUserSession = await dbConnection(`SELECT user_session_subset.*, user.display_name FROM (SELECT * FROM user_session WHERE id = ${newUserSessionInsertId} LIMIT 1) AS user_session_subset LEFT JOIN user ON user_session_subset.user_id = user.id;`)
