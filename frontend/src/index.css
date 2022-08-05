@@ -74,7 +74,40 @@
           justify-content: center;
 }
 
+.center-list {
+  text-align: center;
+  list-style-position: inside;
+}
+
 .auth-card {
   width: 80vw;
+}
+
+.undecorated-list {
+  list-style: none;
+}
+
+.landingpage-container {
+  background: #eceff0;
+  background: linear-gradient(120deg, #eceff0 14%, #dce1e3 100%);
+  color: #5C5F58;
+  padding-top: 100px;
+}
+
+.aboutpage-container {
+  background: #eceff0;
+  background: linear-gradient(120deg, #eceff0 14%, #dce1e3 100%);
+  color: #5C5F58;
+  padding-top: 50px;
+}
+
+.action-button {
+  background-color: #004E7C;
+  color: orange;
+}
+
+.custom-btn {
+  background-color: purple;
+  color: white;
 }
 /*# sourceMappingURL=index.css.map */
