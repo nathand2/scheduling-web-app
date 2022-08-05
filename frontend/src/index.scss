@@ -1,6 +1,14 @@
 $oauth-icon-width: 60px;
 $oauth-icon-height: 60px;
 
+$background-light: '#DCE1E3';
+$text-dark: '#5C5F58';
+
+.header-container {
+  background-color: $background-light;
+  color: $text-dark;
+}
+
 .login-icon {
   width: $oauth-icon-width;
   height: $oauth-icon-height;
