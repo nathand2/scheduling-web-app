@@ -1,7 +1,7 @@
 import { Navbar, Container, Nav, NavDropdown } from "react-bootstrap";
 import Button from "react-bootstrap/Button";
 
-import {AiOutlineUserAdd} from "react-icons/ai"
+import { AiOutlineUserAdd } from "react-icons/ai";
 
 const SessionHeader = ({ showShareModal }) => {
   return (
