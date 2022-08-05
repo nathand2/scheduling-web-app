@@ -3,15 +3,15 @@ import Container from "react-bootstrap/Container";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 
-const colAccentBlue = '#004E7C'
-const colAccentRed = '#B73225'
+const colAccentBlue = "#004E7C";
+const colAccentRed = "#B73225";
 
 const About = () => {
   return (
-    <div className='border d-flex align-items-center justify-content-center'>
-      <Container className='aboutpage-container' fluid>
-        <Row style={{marginBottom:'100px'}}>
-          <h1 style={{color: colAccentBlue}}>About this Scheduler</h1>
+    <div className="border d-flex align-items-center justify-content-center">
+      <Container className="aboutpage-container" fluid>
+        <Row style={{ marginBottom: "100px" }}>
+          <h1 style={{ color: colAccentBlue }}>About this Scheduler</h1>
           <p>
             The idea came about when having trouble finding 5 friends at one
             time to play the game Valorant (1-3 & 5 players can queue at a
@@ -20,9 +20,9 @@ const About = () => {
             of 4 players waiting for a fifth.
           </p>
         </Row>
-        <Row style={{marginBottom:'100px'}}>
+        <Row style={{ marginBottom: "100px" }}>
           <Col>
-            <h1 style={{color: colAccentBlue}}>When to use!</h1>
+            <h1 style={{ color: colAccentBlue }}>When to use!</h1>
             <ul className="undecorated-list">
               <li>
                 <h6>Planning a gaming session!</h6>
@@ -36,7 +36,7 @@ const About = () => {
             </ul>
           </Col>
           <Col>
-            <h1 style={{color: colAccentRed}}>When NOT to use!</h1>
+            <h1 style={{ color: colAccentRed }}>When NOT to use!</h1>
             <ul className="undecorated-list">
               <li>
                 <h6>Planning an important meeting</h6>
@@ -50,17 +50,25 @@ const About = () => {
             </ul>
           </Col>
         </Row>
-        <Row style={{marginBottom:'100px'}}>
-          <h1 style={{color: colAccentBlue}}>How To Use</h1>
+        <Row style={{ marginBottom: "100px" }}>
+          <h1 style={{ color: colAccentBlue }}>How To Use</h1>
           <ol className="center-list">
             <li>
               <h6>
-                <a style={{color: colAccentBlue}} href="/login">Log In</a> or <a style={{color: colAccentBlue}} href="/signup">Sign up</a>
+                <a style={{ color: colAccentBlue }} href="/login">
+                  Log In
+                </a>{" "}
+                or{" "}
+                <a style={{ color: colAccentBlue }} href="/signup">
+                  Sign up
+                </a>
               </h6>
             </li>
             <li>
               <h6>
-                <a style={{color: colAccentBlue}} href="/sessioncreate">Create a Session</a>
+                <a style={{ color: colAccentBlue }} href="/sessioncreate">
+                  Create a Session
+                </a>
               </h6>
             </li>
             <li>

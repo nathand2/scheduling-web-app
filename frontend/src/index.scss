@@ -74,7 +74,6 @@ $text-dark: '#5C5F58';
 }
 
 .center-list {
-  // justify-content: center;
   text-align: center;
   list-style-position: inside;
 }
@@ -99,13 +98,4 @@ $text-dark: '#5C5F58';
   background: linear-gradient(120deg, rgba(236,239,240,1) 14%, rgba(220,225,227,1) 100%);
   color: #5C5F58;
   padding-top: 50px;
-}
-
-.action-button {
-  background-color: #004E7C;
-  color: orange;
-}
-.custom-btn {
-  background-color: purple;
-      color: white;
 }
