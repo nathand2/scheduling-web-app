@@ -1,6 +1,9 @@
-.header-container {
-  background-color: "#DCE1E3";
-  color: "#5C5F58";
+.text-accent-blue {
+  color: #004E7C;
+}
+
+.text-accent-red {
+  color: #B73225;
 }
 
 .login-icon {

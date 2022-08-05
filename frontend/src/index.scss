@@ -1,12 +1,22 @@
 $oauth-icon-width: 60px;
 $oauth-icon-height: 60px;
 
-$background-light: '#DCE1E3';
-$text-dark: '#5C5F58';
+$background-light: #DCE1E3;
+$background-lighter: #e9edee;
+$text-dark: #5C5F58;
+$text-accent-blue: #004E7C;
+$text-accent-red: #B73225;
+
+.text-accent-blue {
+  color: $text-accent-blue;
+}
+.text-accent-red {
+  color: $text-accent-red;
+}
 
 .header-container {
-  background-color: $background-light;
-  color: $text-dark;
+  // background-color: $background-lighter;
+  // color: $text-dark;
 }
 
 .login-icon {

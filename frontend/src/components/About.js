@@ -3,27 +3,34 @@ import Container from "react-bootstrap/Container";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 
-const colAccentBlue = "#004E7C";
-const colAccentRed = "#B73225";
-
 const About = () => {
   return (
     <div className="border d-flex align-items-center justify-content-center">
       <Container className="aboutpage-container" fluid>
         <Row style={{ marginBottom: "100px" }}>
-          <h1 style={{ color: colAccentBlue }}>About this Scheduler</h1>
+          <h1 className="text-accent-blue">About this Scheduler</h1>
+          <p>
+            The idea behind this collaborative scheduler was to develop a tool
+            to help with prelimary planning, a precursor to finalizing plans.
+            The scheduler wouldn't be used for concrete plans but rather to ask
+            people if and when they could make it for a specific session. After
+            everyone gave their input and their available time ranges, people
+            can discuss if and when the session will happen.
+          </p>
           <p>
             The idea came about when having trouble finding 5 friends at one
             time to play the game Valorant (1-3 & 5 players can queue at a
             time). We would always find it difficult finding 5 players for a
             given time, leading to many instances of waiting around in a lobby
-            of 4 players waiting for a fifth.
+            of 4 players waiting for a fifth. Furthermore, I was also curious
+            about how invitation links would work and decided I wanted that to
+            be apart of this project.
           </p>
         </Row>
         <Row style={{ marginBottom: "100px" }}>
           <Col>
-            <h1 style={{ color: colAccentBlue }}>When to use!</h1>
-            <ul className="undecorated-list">
+            <h1 className="text-accent-blue">When to use!</h1>
+            <ul className="undecorated-list text-accent-blue">
               <li>
                 <h6>Planning a gaming session!</h6>
               </li>
@@ -36,8 +43,8 @@ const About = () => {
             </ul>
           </Col>
           <Col>
-            <h1 style={{ color: colAccentRed }}>When NOT to use!</h1>
-            <ul className="undecorated-list">
+            <h1 className="text-accent-red">When NOT to use!</h1>
+            <ul className="undecorated-list text-accent-red">
               <li>
                 <h6>Planning an important meeting</h6>
               </li>
@@ -45,28 +52,28 @@ const About = () => {
                 <h6>Planning a doctors appointment?</h6>
               </li>
               <li>
-                <h6>and stuff</h6>
+                <h6>Events with ALOT of people</h6>
               </li>
             </ul>
           </Col>
         </Row>
         <Row style={{ marginBottom: "100px" }}>
-          <h1 style={{ color: colAccentBlue }}>How To Use</h1>
+          <h1 className="text-accent-blue">How To Use</h1>
           <ol className="center-list">
             <li>
               <h6>
-                <a style={{ color: colAccentBlue }} href="/login">
+                <a className="text-accent-blue" href="/login">
                   Log In
                 </a>{" "}
                 or{" "}
-                <a style={{ color: colAccentBlue }} href="/signup">
+                <a className="text-accent-blue" href="/signup">
                   Sign up
                 </a>
               </h6>
             </li>
             <li>
               <h6>
-                <a style={{ color: colAccentBlue }} href="/sessioncreate">
+                <a className="text-accent-blue" href="/sessioncreate">
                   Create a Session
                 </a>
               </h6>
@@ -101,6 +108,13 @@ const About = () => {
               </h6>
             </li>
           </ol>
+        </Row>
+        <Row style={{ marginBottom: "200px" }}>
+          <h1 className="text-accent-blue">
+            About me
+          </h1>
+          <p>I'm Nathan Dong, an aspiring developer looking to dip my toes into the the world of technology.</p>
+          <p>Find more of my work <a className="text-accent-blue" href="https://nathandong.com/">here</a></p>
         </Row>
       </Container>
     </div>
