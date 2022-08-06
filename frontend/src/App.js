@@ -24,9 +24,7 @@ const endpointRoot = RequestHandler.endpointRoot;
 function App() {
   const [accessToken, setAccessToken] = useState("");
   const [refreshToken, setRefreshToken] = useState("");
-  const [loggedIn, setLoggedIn] = useState(
-    localStorage.getItem("refreshToken") === null
-  );
+  const [loggedIn, setLoggedIn] = useState(undefined);
   const [userId, setUserId] = useState(undefined);
   const [displayName, setDisplayName] = useState("");
 
