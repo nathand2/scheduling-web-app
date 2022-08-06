@@ -40,7 +40,6 @@ const LogIn = () => {
             <FcGoogle className="login-icon"></FcGoogle>
           </a>
           <br />
-          Redirect: {searchParams.get('redirect')}
           {/* <Form onSubmit={userNameLogIn}>
             <Form.Group as={Row} className="mb-3" controlId="formHorizontalEmail">
               <Form.Label column sm={2}>
