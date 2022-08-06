@@ -48,9 +48,9 @@ const Sessions = () => {
     }
   }
   return (
-    <div>
+    <div className='flex'>
       Sessions
-      <Container className='sessions-preview d-flex flex-wrap bd-highlight'>
+      <Container className='sessions-preview d-flex justify-content-center flex-wrap bd-highlight'>
         <Card style={{ width: '18rem' }} bg="light" text="primary">
             {/* <Link to='/sessioncreate' className='link-plain'> */}
             <a href='/sessioncreate' className='link-plain'>

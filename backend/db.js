@@ -241,6 +241,15 @@ exports.getSessions = async (userId) => {
   }
 }
 
+exports.getMySessions = async (userId) => {
+  try {
+    const results = await dbConnection(`SELECT session.*, user_session.role FROM session INNER JOIN user_session ON session.id = user_session.session_id WHERE user_session.user_id = ${userId} AND user_session.role = 'owner' ORDER BY session.dt_created DESC;`)
+    return results
+  } catch(err) {
+    throw err
+  }
+}
+
 exports.getOwnerUserSessionByUserIdAndSessionCode = async (userId, sessionCode) => {
   try {
     const results = await dbConnection(`SELECT * FROM user_session WHERE user_id = ${userId} AND session_id = (SELECT id FROM session WHERE code = '${sessionCode}' LIMIT 1) AND role = 'owner' LIMIT 1;`)

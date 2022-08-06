@@ -19,6 +19,11 @@ $text-accent-red: #B73225;
   // color: $text-dark;
 }
 
+.card-link {
+  width: 100%;
+  height: 100%;
+}
+
 .login-icon {
   width: $oauth-icon-width;
   height: $oauth-icon-height;
@@ -99,13 +104,17 @@ $text-accent-red: #B73225;
 .landingpage-container {
   background: rgb(236,239,240);
   background: linear-gradient(120deg, rgba(236,239,240,1) 14%, rgba(220,225,227,1) 100%);
-  color: #5C5F58;
+  color: $text-dark;
   padding-top: 100px;
 }
 
 .aboutpage-container {
   background: rgb(236,239,240);
   background: linear-gradient(120deg, rgba(236,239,240,1) 14%, rgba(220,225,227,1) 100%);
-  color: #5C5F58;
+  color: $text-dark;
   padding-top: 50px;
+}
+
+.home-container {
+  color: $text-dark;
 }

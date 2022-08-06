@@ -192,29 +192,30 @@ function App() {
                 {loggedIn === true && (
                   <>
                     <Home />
-                    <br />
-                    Logged In: {loggedIn.toString()}
-                    <br />
-                    UserId: {userId}
-                    <br />
-                    displayName: {displayName}
-                    <br />
+
                     {isDev && (
                       <>
+                        <br />
+                        Logged In: {loggedIn.toString()}
+                        <br />
+                        UserId: {userId}
+                        <br />
+                        displayName: {displayName}
+                        <br />
                         Access Token: {accessToken}
                         <br />
                         Refresh Token: {refreshToken}
                         <br />
+                        <button onClick={testRequest}>Test auth stuff</button>
+                        <br />
+                        <button onClick={refreshAccessToken}>
+                          Refresh Access token?
+                        </button>
+                        <br />
+                        <button onClick={testEndpoint}>Test an endpoint</button>
+                        <br />
                       </>
                     )}
-                    <button onClick={testRequest}>Test auth stuff</button>
-                    <br />
-                    <button onClick={refreshAccessToken}>
-                      Refresh Access token?
-                    </button>
-                    <br />
-                    <button onClick={testEndpoint}>Test an endpoint</button>
-                    <br />
                   </>
                 )}
                 {loggedIn === false && loggedIn !== undefined && (
