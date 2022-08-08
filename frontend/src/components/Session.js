@@ -16,15 +16,13 @@ import SessionToast from "./SessionToast";
 import SessionChart from "./SessionChart";
 import SessionAttendence from "./SessionAttendence";
 
-
 import { RequestHandler } from "../js/requestHandler";
 const util = require("../js/util");
 
 const webSocketEndpoint = RequestHandler.webSocketEndpoint;
-const showDtRangeUpdateToast = false;  // Websocket for dtrange add
+const showDtRangeUpdateToast = false; // Websocket for dtrange add
 
 const Session = () => {
-  
   const [params, setParams] = useState(useParams());
   const [session, setSession] = useState(undefined);
   const [timeRanges, setTimeRanges] = useState([]);
@@ -39,10 +37,12 @@ const Session = () => {
   const [otherSessionResViews, setOtherSessionResViews] = useState();
 
   let didCancel = false;
+
+  // Gets session data on load
   useEffect(() => {
     const getSessionData = async () => {
       if (!didCancel) {
-        didCancel = true
+        didCancel = true;
         // Get session data from api
         try {
           const res = await getSession();
@@ -62,82 +62,92 @@ const Session = () => {
       }
     };
 
-    console.log("useEffect once?")
+    console.log("useEffect once?");
     getSessionData();
   }, []);
 
+  /**
+   * Sets up Web Socket Connection
+   * @param {string} code - Session Code
+   */
   const setUpWebSocketConnection = async (code) => {
     // Connect to web socket if session.code not undefined
     if (code !== undefined) {
       let socket;
       try {
-        socket = io(webSocketEndpoint)
-        console.log("WebSocket connection successful")
+        socket = io(webSocketEndpoint);
+        console.log("WebSocket connection successful");
       } catch (err) {
-        console.log("WebSocket connection error:", err)
+        console.log("WebSocket connection error:", err);
       }
 
-      socket.on('connect', function() {
-        socket.emit('room', code);
+      socket.on("connect", function () {
+        socket.emit("room", code);
       });
-  
-      socket.on('connect_error', ()=>{
-        setTimeout(()=>socket.connect(), 5000)
+
+      socket.on("connect_error", () => {
+        setTimeout(() => socket.connect(), 5000);
       });
-  
-      socket.on('connect', function() {
+
+      socket.on("connect", function () {
         // Connected, let's sign-up for to receive messages for this room
-        socket.emit('room', code);
+        socket.emit("room", code);
       });
-      
-      socket.on('message', function(data) {
-        console.log('Incoming message:', data);
+
+      socket.on("message", function (data) {
+        console.log("Incoming message:", data);
       });
-      
-      socket.on('joinSession', function(data) {
-          console.log('New user joined!:', data);
-          setUserSessions((prev) => {
-            return [...prev, data]
-          });
-          setToastTitle(`Someone joined!`)
-          setToastMessage(`${data.display_name} joined the session!`)
-          setShowToast(true)
+
+      socket.on("joinSession", function (data) {
+        console.log("New user joined!:", data);
+        setUserSessions((prev) => {
+          return [...prev, data];
+        });
+        setToastTitle(`Someone joined!`);
+        setToastMessage(`${data.display_name} joined the session!`);
+        setShowToast(true);
       });
-      
-      socket.on('postSessionTimeRange', async function(data) {
+
+      socket.on("postSessionTimeRange", async function (data) {
         // Convert UTC date strings to dates
         data.dt_end = util.convertUTCStringToDate(data.dt_end);
         data.dt_start = util.convertUTCStringToDate(data.dt_start);
         data.dt_created = util.convertUTCStringToDate(data.dt_created);
 
         // Adds new range to timeRanges state.
-          setTimeRanges((prev) => {
-            return [...prev, data]
-          });
-          if (showDtRangeUpdateToast) {
-            if (data.user_id === parseInt(localStorage.userId)) {
-              setToastTitle(`Thanks for joining!`)
-              setToastMessage(`We'll let everyone here know`)
-              setShowToast(true)
-            } else {
-              setToastTitle(`Good News!`)
-              setToastMessage(`${data.display_name} is ${(data.status === 'maybe') ? 'maybe ' : ""}coming!`)
-              setShowToast(true)
-            }
-          }
-      });
-      socket.on('deleteSessionTimeRange', function(data) {
-        console.log('Someone deleted timerange!:', data);
         setTimeRanges((prev) => {
-          return prev.filter(range => range.id !== data.sessionTimeRangeId)
+          return [...prev, data];
         });
-    });
+        if (showDtRangeUpdateToast) {
+          if (data.user_id === parseInt(localStorage.userId)) {
+            setToastTitle(`Thanks for joining!`);
+            setToastMessage(`We'll let everyone here know`);
+            setShowToast(true);
+          } else {
+            setToastTitle(`Good News!`);
+            setToastMessage(
+              `${data.display_name} is ${
+                data.status === "maybe" ? "maybe " : ""
+              }coming!`
+            );
+            setShowToast(true);
+          }
+        }
+      });
+      socket.on("deleteSessionTimeRange", function (data) {
+        console.log("Someone deleted timerange!:", data);
+        setTimeRanges((prev) => {
+          return prev.filter((range) => range.id !== data.sessionTimeRangeId);
+        });
+      });
     }
-  }
+  };
 
+  // Handling Dt Range Modal Show/Close
   const handleCloseDt = () => setShowDtModal(false);
   const handleShowDt = () => setShowDtModal(true);
-  
+
+  // Handling Share Modal Show/Close
   const handleCloseShare = () => {
     setShowShareModal(false);
   };
@@ -145,6 +155,10 @@ const Session = () => {
     setShowShareModal(true);
   };
 
+  /**
+   * Gets session data from api
+   * @returns object - Session Data
+   */
   const getSession = async () => {
     try {
       let res;
@@ -155,7 +169,9 @@ const Session = () => {
 
       sessionData.dt_end = util.convertUTCStringToDate(sessionData.dt_end);
       sessionData.dt_start = util.convertUTCStringToDate(sessionData.dt_start);
-      sessionData.dt_created = util.convertUTCStringToDate(sessionData.dt_created);
+      sessionData.dt_created = util.convertUTCStringToDate(
+        sessionData.dt_created
+      );
       await setSession(sessionData);
 
       // Determine if session is expired
@@ -168,7 +184,7 @@ const Session = () => {
 
   /**
    * Change view for non-OK responses.
-   * @param {object} res 
+   * @param {object} res
    */
   const changeOtherSessionViews = (res) => {
     if (res.status == 401) {
@@ -184,7 +200,7 @@ const Session = () => {
 
   /**
    * Gets time ranges from api
-   * @param {int} sessionId 
+   * @param {int} sessionId
    */
   const getTimeRanges = async (sessionId) => {
     try {
@@ -199,11 +215,13 @@ const Session = () => {
 
       // Convert DT strings to dates
       timeRangeData.map((timeRange) => {
-        timeRange.dt_created = util.convertUTCStringToDate(timeRange.dt_created)
-        timeRange.dt_start = util.convertUTCStringToDate(timeRange.dt_start)
-        timeRange.dt_end = util.convertUTCStringToDate(timeRange.dt_end)
-      })
-      
+        timeRange.dt_created = util.convertUTCStringToDate(
+          timeRange.dt_created
+        );
+        timeRange.dt_start = util.convertUTCStringToDate(timeRange.dt_start);
+        timeRange.dt_end = util.convertUTCStringToDate(timeRange.dt_end);
+      });
+
       setTimeRanges(timeRangeData);
     } catch (err) {
       throw err;
@@ -240,11 +258,11 @@ const Session = () => {
             show={showShareModal}
             handleClose={handleCloseShare}
           />
-          <SessionAddRangeModal 
+          <SessionAddRangeModal
             show={showDtModal}
             handleClose={handleCloseDt}
             session={session}
-            />
+          />
 
           <Container fluid>
             <Row className="justify-content-md-center">
@@ -256,7 +274,11 @@ const Session = () => {
                 <Button variant="primary" onClick={handleShowDt}>
                   Add DtRange
                 </Button>
-                <SessionChart timeRanges={timeRanges} setTimeRanges={setTimeRanges} session={session} />
+                <SessionChart
+                  timeRanges={timeRanges}
+                  setTimeRanges={setTimeRanges}
+                  session={session}
+                />
                 <Button variant="primary" onClick={handleShowDt}>
                   Add DtRange
                 </Button>
@@ -276,10 +298,14 @@ const Session = () => {
               </Col>
             </Row>
           </Container>
-          {
-            showToast && 
-            <SessionToast title={toastTitle} message={toastMessage} show={showToast} setShow={setShowToast}/>
-          }
+          {showToast && (
+            <SessionToast
+              title={toastTitle}
+              message={toastMessage}
+              show={showToast}
+              setShow={setShowToast}
+            />
+          )}
 
           <br />
         </>

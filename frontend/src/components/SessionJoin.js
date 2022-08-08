@@ -1,58 +1,57 @@
-import { useEffect, useState } from 'react'
-import { useSearchParams, Navigate } from "react-router-dom"
+import { useEffect, useState } from "react";
+import { useSearchParams, Navigate } from "react-router-dom";
 
-import {RequestHandler} from '../js/requestHandler'
+import { RequestHandler } from "../js/requestHandler";
 
 const SessionJoin = ({ loggedIn }) => {
-
   const [searchParams, setSearchParams] = useSearchParams();
-  const [goToSession, setGoToSession] = useState(false)
-  const [sessionCode, setSessionCode] = useState('')
-  const [inviteCode, setInviteCode] = useState(searchParams.get("code"))
+  const [goToSession, setGoToSession] = useState(false);
+  const [sessionCode, setSessionCode] = useState("");
+  const [inviteCode, setInviteCode] = useState(searchParams.get("code"));
 
-  const [redirectElement, setRedirectElement] = useState(<>Redirect element</>)
+  const [redirectElement, setRedirectElement] = useState(<>Redirect element</>);
 
   let doOnce = true;
-  const redirectUrl = RequestHandler.appRoot + `/sessionjoin?code=${searchParams.get("code")}`;
-  const loginUrl = '/login?redirect=' + redirectUrl;
+  const redirectUrl =
+    RequestHandler.appRoot + `/sessionjoin?code=${searchParams.get("code")}`;
+  const loginUrl = "/login?redirect=" + redirectUrl;
 
   useEffect(() => {
+    // Redirects to login if not logged in.
     if (!loggedIn) {
-      console.log("LOggedIN:", loggedIn)
-      console.log(loginUrl)
       setRedirectElement(
         <>
-        <Navigate to={loginUrl}  />
-        {/* <a href={loginUrl}>Log in to join session</a> */}
+          <Navigate to={loginUrl} />
         </>
       );
-      return
+      return;
     }
     let didCancel = false;
+
+    /**
+     * Joins session using POST request
+     * @returns undefined
+     */
     const joinSession = async () => {
       if (!didCancel) {
         const inviteCode = searchParams.get("code");
         if (inviteCode) {
           let data, res;
           try {
-             res = await RequestHandler.req("/joinsession", "POST", {
+            res = await RequestHandler.req("/joinsession", "POST", {
               inviteCode: { inviteCode },
             });
-            console.log("res", res)
+            console.log("res", res);
             if (res.status === 404) {
-              setRedirectElement(
-                <>
-                404 Session Invite not found
-                </>
-              );
-              return
+              setRedirectElement(<>404 Session Invite not found</>);
+              return;
             } else if (res.status !== 200) {
-              console.log(res.status)
-              return
+              console.log(res.status);
+              return;
             }
-            data = res.data
-            setSessionCode(data.sessionCode)
-            setGoToSession(true)
+            data = res.data;
+            setSessionCode(data.sessionCode);
+            setGoToSession(true);
           } catch (err) {
             console.log("Error:", err);
           }
@@ -60,25 +59,24 @@ const SessionJoin = ({ loggedIn }) => {
           console.log("Invalid invite url");
         }
       }
-    }
-    
+    };
+
     if (doOnce) {
-      doOnce = false
+      doOnce = false;
       joinSession();
     }
-  }, [loggedIn])
+  }, [loggedIn]);
   return (
     <div>
-      {
-        goToSession &&
+      {goToSession && (
         <>
-        <Navigate to={`/session/${sessionCode}`}  />
+          <Navigate to={`/session/${sessionCode}`} />
         </>
-      }
+      )}
       SessionJoin
       {redirectElement}
     </div>
-  )
-}
+  );
+};
 
-export default SessionJoin
+export default SessionJoin;

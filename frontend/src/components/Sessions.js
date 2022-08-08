@@ -12,7 +12,7 @@ const Sessions = () => {
   const [sessions, setSessions] = useState(undefined)
   
   useEffect(() => {
-    // Get sessions
+    // Gets sessions
     let didCancel = false;
     const getSessions = async () => {
       if (!didCancel) {
@@ -34,9 +34,14 @@ const Sessions = () => {
       }
     }
     getSessions();
-
-    
   }, [])
+
+  /**
+   * Calculates Session Status
+   * @param {string} dtStartString 
+   * @param {string} dtEndString 
+   * @returns string
+   */
   const calculateSessionStatus = (dtStartString, dtEndString) => {
     const now = new Date();
     if (util.convertUTCStringToDate(dtEndString) < now) {

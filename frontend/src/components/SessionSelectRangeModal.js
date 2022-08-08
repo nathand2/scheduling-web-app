@@ -18,12 +18,15 @@ const SessionSelectRangeModal = ({ handleClose, show, range, session }) => {
     }
   }, [range]);
 
+  /**
+   * Deletes range with DELETE request
+   */
   const deleteRange = async () => {
     try {
       const res = await RequestHandler.req("/sessiontimerange", "DELETE", {
         sessionTimeRangeId: range.id,
         userSessionId: range.user_session_id,
-        sessionCode: session.code
+        sessionCode: session.code,
       });
       if (res.status === 204) {
         setShowDelete(false);

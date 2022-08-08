@@ -2,7 +2,6 @@ import { Container } from "react-bootstrap";
 import Card from "react-bootstrap/Card";
 import { IoMdAddCircle } from "react-icons/io";
 
-
 const Home = ({ displayName }) => {
   return (
     <div className="flex home-container" style={{ marginTop: "50px" }}>
@@ -31,7 +30,9 @@ const Home = ({ displayName }) => {
           <a href="/sessions" className="link-plain card-link">
             <Card.Body>
               <br />
-              <Card.Text className="link-plain"><>View Sessions</></Card.Text>
+              <Card.Text className="link-plain">
+                <>View Sessions</>
+              </Card.Text>
             </Card.Body>
           </a>
         </Card>

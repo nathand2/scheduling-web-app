@@ -1,43 +1,50 @@
 import "flatpickr/dist/themes/material_green.css";
 
-import { useState } from 'react'
+import { useState } from "react";
 import Flatpickr from "react-flatpickr";
-import Form from "react-bootstrap/Form"
-import Button from "react-bootstrap/Button"
-import Container from 'react-bootstrap/Container';
-import { Navigate } from 'react-router-dom';
+import Form from "react-bootstrap/Form";
+import Button from "react-bootstrap/Button";
+import Container from "react-bootstrap/Container";
+import { Navigate } from "react-router-dom";
 
-import {RequestHandler} from '../js/requestHandler'
+import { RequestHandler } from "../js/requestHandler";
 
 const SessionCreate = () => {
-  const [title, setTitle] = useState('')
-  const [desc, setDesc] = useState('')
-  const [dtStart, setdtStart] = useState(new Date())
-  const [dtEnd, setdtEnd] = useState(new Date(new Date().getTime() + 60 * 60 * 4 * 1000))
-  const [viewOption, setViewOption] = useState('account-only')
+  const [title, setTitle] = useState("");
+  const [desc, setDesc] = useState("");
+  const [dtStart, setdtStart] = useState(new Date());
+  const [dtEnd, setdtEnd] = useState(
+    new Date(new Date().getTime() + 60 * 60 * 4 * 1000)
+  );
+  const [viewOption, setViewOption] = useState("account-only");
 
-  const [sessionCreated, setSessionCreated] = useState(false)
-  const [sessionId, setSessionId] = useState('')
+  const [sessionCreated, setSessionCreated] = useState(false);
+  const [sessionId, setSessionId] = useState("");
 
   const dtOptionsConfig = {
     minuteIncrement: 1,
     dateFormat: "M d Y h:m K",
-  }
+  };
 
+  /**
+   * Validates and creates session with POST request
+   * @param {object} e - event
+   * @returns
+   */
   const createSession = async (e) => {
     e.preventDefault();
 
-    console.log("Now:", new Date())
+    console.log("Now:", new Date());
 
     if (dtStart > dtEnd) {
-      alert('Invalid time range. Start must before end')
-      return
+      alert("Invalid time range. Start must before end");
+      return;
     }
 
-    const diff = dtEnd.getTime() - dtStart.getTime();   
-    const dayDiff = diff / (1000 * 60);  // Get difference in minutes
+    const diff = dtEnd.getTime() - dtStart.getTime();
+    const dayDiff = diff / (1000 * 60); // Get difference in minutes
     if (dayDiff < 31) {
-      alert('Session must be longer than 30 minutes.')
+      alert("Session must be longer than 30 minutes.");
     }
 
     const session = {
@@ -46,32 +53,29 @@ const SessionCreate = () => {
       dtStart: dtStart,
       dtEnd: dtEnd,
       attendType: viewOption,
-    }
-    console.log("Session:", session)
+    };
+    console.log("Session:", session);
 
     let sessionData;
     let res;
     try {
-      res = await RequestHandler.req('/session', 'POST', session)
-      sessionData = res.data
-      console.log("New session ID:", sessionData.code)
-      setSessionId(sessionData.code)
-      setSessionCreated(true)
-    } catch(err) {
+      res = await RequestHandler.req("/session", "POST", session);
+      sessionData = res.data;
+      console.log("New session ID:", sessionData.code);
+      setSessionId(sessionData.code);
+      setSessionCreated(true);
+    } catch (err) {
       console.log("Unable to create session. Error:", err);
     }
-  }
-
-  
+  };
 
   return (
     <div>
-      {
-        sessionCreated &&
+      {sessionCreated && (
         <>
-        <Navigate to={`/session/${sessionId}`}  />
+          <Navigate to={`/session/${sessionId}`} />
         </>
-      }
+      )}
       <Container className="sessions-preview d-flex flex-wrap bd-highlight"></Container>
       <Form onSubmit={createSession}>
         <Form.Group className="mb-3" controlId="formGroupTitle">
@@ -143,6 +147,6 @@ const SessionCreate = () => {
       <Container />
     </div>
   );
-}
+};
 
-export default SessionCreate
+export default SessionCreate;

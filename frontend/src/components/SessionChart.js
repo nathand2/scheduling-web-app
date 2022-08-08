@@ -10,12 +10,14 @@ const SessionChart = ({ timeRanges, session }) => {
 
   const handleCloseSelect = () => setShowSelectRangeModal(false);
 
-  // Abritrary scale for chart and barTimeRanges
+  // Abritrary scale for chart and barTimeRanges (1 minutes == ~5 px)
   const chartScale = 5;
 
   const showHoverInfo = false; // Shows time stamp hover info. Not working
 
   let doOnce = true;
+
+  // Re-draws chart every time timeRanges changes
   useEffect(() => {
     if (doOnce) {
       const setUpChart = async () => {
@@ -26,6 +28,9 @@ const SessionChart = ({ timeRanges, session }) => {
     }
   }, [timeRanges]); // Will update chart if timeRanges changes
 
+  /**
+   * Generates chart
+   */
   const generateChart = async () => {
     const { ranges, columns } = await processTimeRanges();
     drawBarChart(ranges, columns);
