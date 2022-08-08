@@ -9,7 +9,7 @@ import {RequestHandler} from '../js/requestHandler'
 const util = require("../js/util");
 
 const Sessions = () => {
-  const [sessions, setSessions] = useState([])
+  const [sessions, setSessions] = useState(undefined)
   
   useEffect(() => {
     // Get sessions
@@ -49,7 +49,15 @@ const Sessions = () => {
   }
   return (
     <div className='flex'>
-      Sessions
+      {
+        sessions === undefined ? (
+          <>
+            <br/>Loading Sessions
+          </>
+        ) : (
+          <br/>
+        )
+      }
       <Container className='sessions-preview d-flex justify-content-center flex-wrap bd-highlight'>
         <Card style={{ width: '18rem' }} bg="light" text="primary">
             {/* <Link to='/sessioncreate' className='link-plain'> */}
@@ -66,7 +74,9 @@ const Sessions = () => {
           {/* </Link> */}
         </Card>
         {
-          sessions.map((session) => (<SessionCard key={session.id} code={session.code} title={session.session_title} desc={session.session_desc} dt_created={session.dt_created.toLocaleString()} status={calculateSessionStatus(session.dt_start, session.dt_end)}  />))
+          sessions !== undefined && (
+            sessions.map((session) => (<SessionCard key={session.id} code={session.code} title={session.session_title} desc={session.session_desc} dt_created={session.dt_created.toLocaleString()} status={calculateSessionStatus(session.dt_start, session.dt_end)}  />))
+          )
         }
       </Container>
     </div>

@@ -45,7 +45,11 @@ function App() {
   };
 
   const deleteCookie = (name) => {
-    document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+    if (isDev) {
+      document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+    } else {
+      document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.nathandong.com;`;
+    }
   };
 
   const setSessionStorageJWTTokens = async () => {
@@ -189,7 +193,7 @@ function App() {
               <>
                 {loggedIn === true && (
                   <>
-                    <Home />
+                    <Home displayName={displayName} />
 
                     {isDev && (
                       <>
