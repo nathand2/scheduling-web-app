@@ -1,5 +1,4 @@
 import { Navbar, Container, Nav, NavDropdown } from "react-bootstrap";
-import { Link } from "react-router-dom";
 
 const colAccentBlue = "#004E7C";
 
@@ -8,11 +7,9 @@ const Header = ({ logOut, loggedIn, displayName }) => {
     <div className="header-container">
       <Navbar className="py-0" expand="lg">
         <Container fluid>
-          {/* <Link to='/' className='link-plain'> */}
           <Navbar.Brand href="/" style={{ color: colAccentBlue }}>
             Scheduler
           </Navbar.Brand>
-          {/* </Link> */}
           <Navbar.Toggle aria-controls="navbarScroll" />
           <Navbar.Collapse id="navbarScroll">
             <Nav

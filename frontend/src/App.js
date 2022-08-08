@@ -18,7 +18,6 @@ import UserSettings from "./components/UserSettings";
 
 import { RequestHandler } from "./js/requestHandler";
 
-// const endpointRoot = 'https://api.nathandong.com/scheduler'
 const endpointRoot = RequestHandler.endpointRoot;
 
 function App() {
@@ -34,21 +33,37 @@ function App() {
 
   // When app loaded, manage login state
   useEffect(() => {
-    processJWTTokens();
+    processJWTs();
     getUserData();
   }, []);
 
+  /**
+   * Gets cookie by name
+   * @param {string} name
+   * @returns cookie as string
+   */
   const getCookie = (name) => {
     const value = `; ${document.cookie}`;
     const parts = value.split(`; ${name}=`);
     if (parts.length === 2) return parts.pop().split(";").shift();
   };
 
+  /**
+   * Deletes cookie by name
+   * @param {string} name 
+   */
   const deleteCookie = (name) => {
-    document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+    if (!process.env.NODE_ENV || process.env.NODE_ENV === "development") {
+      document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+    } else {
+      document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.nathandong.com;`;
+    }
   };
 
-  const setSessionStorageJWTTokens = async () => {
+  /**
+   * Sets JWTs into local/session storage taken from cookies
+   */
+  const setStorageJWTs = async () => {
     // Get JWT and refresh token from cookies.
     const accessToken = getCookie("accessToken");
     const refreshToken = getCookie("refreshToken");
@@ -61,6 +76,9 @@ function App() {
     }
   };
 
+  /**
+   * Gets user data from cookies if present
+   */
   const getUserData = async () => {
     console.log("Tried to get user data");
     const userIdFromCookie = getCookie("userId");
@@ -79,8 +97,11 @@ function App() {
     await setDisplayName(localStorage.getItem("displayName"));
   };
 
-  const processJWTTokens = async () => {
-    await setSessionStorageJWTTokens();
+  /**
+   * Processes JWTs taken from Cookies
+   */
+  const processJWTs = async () => {
+    await setStorageJWTs();
     deleteCookie("accessToken");
     deleteCookie("refreshToken");
 
@@ -94,6 +115,9 @@ function App() {
     }
   };
 
+  /**
+   * Logs user out using API request and Deleting JWTs
+   */
   const logOut = async () => {
     console.log("attempt to log out");
     try {
@@ -116,7 +140,10 @@ function App() {
     }
   };
 
-  // Determine if user logged in
+  /**
+   * Determines if user logged in
+   * @returns boolean
+   */
   const isLoggedIn = () => {
     if (localStorage.getItem("refreshToken") === null) {
       console.log("No refreshtoken found");
@@ -126,7 +153,9 @@ function App() {
     }
   };
 
-  // Manually refresh JWT
+  /**
+   * Manually refreshes JWT for dev testing
+   */
   const refreshAccessToken = async () => {
     try {
       const res = await fetch(endpointRoot + "/token", {
@@ -154,6 +183,9 @@ function App() {
     }
   };
 
+  /**
+   * Tests an endpoint for dev
+   */
   const testEndpoint = async () => {
     let res;
     try {
@@ -166,6 +198,9 @@ function App() {
     setAccessToken(await window.sessionStorage.getItem("accessToken"));
   };
 
+  /**
+   * Tests an endpoint for dev
+   */
   const testRequest = async () => {
     let res;
     try {
@@ -189,7 +224,7 @@ function App() {
               <>
                 {loggedIn === true && (
                   <>
-                    <Home />
+                    <Home displayName={displayName} />
 
                     {isDev && (
                       <>

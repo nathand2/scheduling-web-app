@@ -10,6 +10,10 @@ const SessionShareModal = ({ handleClose, show }) => {
   
   const [params, setParams] = useState(useParams());
 
+  /**
+   * Creates a POST request to generate a invite link (for owners)
+   * @returns undefined
+   */
   const shareWithLink = async () => {
     let res;
     try {
@@ -37,6 +41,9 @@ const SessionShareModal = ({ handleClose, show }) => {
     }
   };
 
+  /**
+   * Gets share link with GET request if one already exists (for attendees)
+   */
   const getShareLink = async () => {
     let res;
     try {
