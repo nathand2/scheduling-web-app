@@ -17,8 +17,11 @@ const SessionJoin = ({ loggedIn }) => {
   const loginUrl = "/login?redirect=" + redirectUrl;
 
   useEffect(() => {
+    if (loggedIn === undefined) {
+      return
+    }
     // Redirects to login if not logged in.
-    if (!loggedIn) {
+    if (loggedIn === false) {
       setRedirectElement(
         <>
           <Navigate to={loginUrl} />
