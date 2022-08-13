@@ -1,4 +1,5 @@
 // import React from 'react'
+import { Link } from "react-router-dom";
 import Container from "react-bootstrap/Container";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
@@ -62,20 +63,20 @@ const About = () => {
           <ol className="center-list">
             <li>
               <h6>
-                <a className="text-accent-blue" href="/login">
+                <Link to="/login" className="text-accent-blue">
                   Log In
-                </a>{" "}
+                </Link>{" "}
                 or{" "}
-                <a className="text-accent-blue" href="/signup">
+                <Link to="/signup" className="text-accent-blue">
                   Sign up
-                </a>
+                </Link>
               </h6>
             </li>
             <li>
               <h6>
-                <a className="text-accent-blue" href="/sessioncreate">
+                <Link to="/sessioncreate" className="text-accent-blue">
                   Create a Session
-                </a>
+                </Link>
               </h6>
             </li>
             <li>
@@ -110,11 +111,17 @@ const About = () => {
           </ol>
         </Row>
         <Row style={{ marginBottom: "200px" }}>
-          <h1 className="text-accent-blue">
-            About me
-          </h1>
-          <p>I'm Nathan Dong, an aspiring developer looking to dip my toes into the the world of technology.</p>
-          <p>Find more of my work <a className="text-accent-blue" href="https://nathandong.com/">here</a></p>
+          <h1 className="text-accent-blue">About me</h1>
+          <p>
+            I'm Nathan Dong, an aspiring developer looking to dip my toes into
+            the the world of technology.
+          </p>
+          <p>
+            Find more of my work{" "}
+            <a className="text-accent-blue" href="https://nathandong.com/">
+              here
+            </a>
+          </p>
         </Row>
       </Container>
     </div>

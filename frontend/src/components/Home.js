@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { Container } from "react-bootstrap";
 import Card from "react-bootstrap/Card";
 import { IoMdAddCircle } from "react-icons/io";
@@ -14,27 +15,27 @@ const Home = ({ displayName }) => {
           bg="light"
           text="primary"
         >
-          <a href="/sessioncreate" className="link-plain card-link">
+          <Link to="/sessioncreate" className="link-plain card-link">
             <Card.Body>
               <br />
               <IoMdAddCircle className="large-icon" />
               <Card.Text className="link-plain">Create a Session</Card.Text>
             </Card.Body>
-          </a>
+          </Link>
         </Card>
         <Card
           style={{ width: "18rem", height: "10rem" }}
           bg="light"
           text="primary"
         >
-          <a href="/sessions" className="link-plain card-link">
+          <Link to="/sessions" className="link-plain card-link">
             <Card.Body>
               <br />
               <Card.Text className="link-plain">
                 <>View Sessions</>
               </Card.Text>
             </Card.Body>
-          </a>
+          </Link>
         </Card>
       </Container>
     </div>

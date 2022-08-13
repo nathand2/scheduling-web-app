@@ -1,4 +1,5 @@
 import { Navbar, Container, Nav, NavDropdown } from "react-bootstrap";
+import { Link } from "react-router-dom";
 
 const colAccentBlue = "#004E7C";
 
@@ -7,9 +8,11 @@ const Header = ({ logOut, loggedIn, displayName }) => {
     <div className="header-container">
       <Navbar className="py-0" expand="lg">
         <Container fluid>
-          <Navbar.Brand href="/" style={{ color: colAccentBlue }}>
-            Scheduler
-          </Navbar.Brand>
+          <Link to="/" className="link-plain">
+            <Navbar.Brand style={{ color: colAccentBlue }}>
+              Scheduler
+            </Navbar.Brand>
+          </Link>
           <Navbar.Toggle aria-controls="navbarScroll" />
           <Navbar.Collapse id="navbarScroll">
             <Nav
@@ -17,24 +20,30 @@ const Header = ({ logOut, loggedIn, displayName }) => {
               style={{ maxHeight: "100px" }}
               navbarScroll
             >
-              <Nav.Link href="/">Home</Nav.Link>
+              <Nav.Link as={Link} to="/">
+                Home
+              </Nav.Link>
               {loggedIn && (
                 <>
-                  <Nav.Link href="/sessions">Sessions</Nav.Link>
-                  <Nav.Link href="/groups" disabled>
+                  <Nav.Link as={Link} to="/sessions">
+                    Sessions
+                  </Nav.Link>
+                  <Nav.Link as={Link} to="/groups" disabled>
                     Groups
                   </Nav.Link>
                 </>
               )}
-              <Nav.Link href="/about">About</Nav.Link>
+              <Nav.Link as={Link} to="/about">
+                About
+              </Nav.Link>
             </Nav>
             <div className="d-flex">
               {!loggedIn && (
                 <>
-                  <Nav.Link variant="light" href="/login">
+                  <Nav.Link variant="light" as={Link} to="/login">
                     Login
                   </Nav.Link>
-                  <Nav.Link variant="light" href="/signup">
+                  <Nav.Link variant="light" as={Link} to="/signup">
                     Sign Up
                   </Nav.Link>
                 </>
@@ -48,10 +57,10 @@ const Header = ({ logOut, loggedIn, displayName }) => {
                     id="dropdown-menu-align-end"
                     align="end"
                   >
-                    <NavDropdown.Item href="#profile" disabled>
+                    <NavDropdown.Item as={Link} to="#profile" disabled>
                       Profile
                     </NavDropdown.Item>
-                    <NavDropdown.Item href="/settings">
+                    <NavDropdown.Item as={Link} to="/settings">
                       Settings
                     </NavDropdown.Item>
                     <NavDropdown.Divider />
