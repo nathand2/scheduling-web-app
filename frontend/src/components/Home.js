@@ -15,7 +15,7 @@ const Home = ({ displayName }) => {
           bg="light"
           text="primary"
         >
-          <Link to="/sessioncreate">
+          <Link to="/sessioncreate" className="link-plain card-link">
             <Card.Body>
               <br />
               <IoMdAddCircle className="large-icon" />
