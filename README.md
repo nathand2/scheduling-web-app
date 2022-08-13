@@ -10,10 +10,15 @@ Frontend: React.js, React Bootstrap, D3
 
 # Quickstart:
 
-## Backend
-1. Go into backend directory: cd backend
+## Frontend
+1. Go into frontend directory: cd frontend
 2. Install packages with npm: npm install
-3. include .env file in ./backend directory
+3. Start React dev server: npm start
+4. 
+## Backend (API)
+1. Go into backend directory: cd backend/api
+2. Install packages with npm: npm install
+3. include .env file in ./backend/api directory
    1. Format:
     GOOGLE_CLIENT_ID=
     GOOGLE_CLIENT_SECRET=
@@ -30,10 +35,9 @@ Frontend: React.js, React Bootstrap, D3
    4. Manually add needed tables. Check init.sql for table references. Currently used tables: [user]
    5. (May have to use ">>USE scheduler;" when creating tables and making queries)
 5. Start API server: npm run start:dev
-   
-## Frontend
-1. Go into frontend directory: cd frontend
+
+
+## Backend (SocketApi)
+1. Go into backend directory: cd backend/sockets
 2. Install packages with npm: npm install
-3. Start React dev server: npm start
-
-
+3. Start SocketApi server: npm run start:dev
