@@ -1,11 +1,8 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import Button from "react-bootstrap/Button";
 import Container from "react-bootstrap/Container";
 import Row from "react-bootstrap/Row";
-import Col from "react-bootstrap/Col";
-
-const colAccentBlue = "#004E7C";
-const colAccentRed = "#B73225";
 
 const LandingPage = () => {
   return (
@@ -18,9 +15,7 @@ const LandingPage = () => {
           <p>Well... Kinda</p>
         </Row>
         <Row style={{ marginBottom: "50px" }}>
-          <h1 className="text-accent-red">
-            A Collaborative Scheduling Tool
-          </h1>
+          <h1 className="text-accent-red">A Collaborative Scheduling Tool</h1>
         </Row>
         <Row style={{ marginBottom: "100px" }}>
           <p>
@@ -38,30 +33,30 @@ const LandingPage = () => {
         </Row>
         <Row style={{ marginBottom: "10px" }}>
           <p>
-            <a className="text-accent-blue" href="/about">
+            <Link to="/about" className="text-accent-blue">
               Click Here
-            </a>{" "}
+            </Link>{" "}
             to learn more about the scheduler and how to use it.
           </p>
           <p>
             Or{" "}
-            <a className="text-accent-blue" href="/login">
+            <Link to="/login" className="text-accent-blue">
               Log in
-            </a>{" "}
-            or{" "}
-            <a className="text-accent-blue" href="/signup">
+            </Link>{" "}
+            or {/* <a className="text-accent-blue" href="/signup"> */}
+            <Link to="/signup" className="text-accent-blue">
               Sign up
-            </a>{" "}
-            to get started
+            </Link>
+            {/* </a> */} to get started
           </p>
         </Row>
-        <Button className="text-accent-blue" href="/login">
-          Login
-        </Button>
+        <Link to="/login" className="card-link text-accent-blue">
+          <Button className="text-accent-blue">Login</Button>
+        </Link>
         &nbsp;&nbsp;&nbsp;&nbsp;
-        <Button className="text-accent-blue" href="/signup">
-          Sign Up
-        </Button>
+        <Link to="/signup" className="card-link text-accent-blue">
+          <Button className="text-accent-blue">Sign Up</Button>
+        </Link>
         <Row style={{ marginBottom: "150px" }}></Row>
       </Container>
     </div>

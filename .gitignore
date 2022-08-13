@@ -26,6 +26,8 @@ logs
 **/*.backup.*
 **/*.back.*
 
+*.zip
+
 ### Sass ###
 .sass-cache/
 *.css.map
