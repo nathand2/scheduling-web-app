@@ -63,10 +63,9 @@ const About = () => {
           <ol className="center-list">
             <li>
               <h6>
-              <Link to="/login" className="text-accent-blue">
+                <Link to="/login" className="text-accent-blue">
                   Log In
-              </Link>
-                {" "}
+                </Link>{" "}
                 or{" "}
                 <Link to="/signup" className="text-accent-blue">
                   Sign up
@@ -75,9 +74,9 @@ const About = () => {
             </li>
             <li>
               <h6>
-              <Link to="/sessioncreate" className="text-accent-blue">
+                <Link to="/sessioncreate" className="text-accent-blue">
                   Create a Session
-              </Link>
+                </Link>
               </h6>
             </li>
             <li>
@@ -112,11 +111,17 @@ const About = () => {
           </ol>
         </Row>
         <Row style={{ marginBottom: "200px" }}>
-          <h1 className="text-accent-blue">
-            About me
-          </h1>
-          <p>I'm Nathan Dong, an aspiring developer looking to dip my toes into the the world of technology.</p>
-          <p>Find more of my work <a className="text-accent-blue" href="https://nathandong.com/">here</a></p>
+          <h1 className="text-accent-blue">About me</h1>
+          <p>
+            I'm Nathan Dong, an aspiring developer looking to dip my toes into
+            the the world of technology.
+          </p>
+          <p>
+            Find more of my work{" "}
+            <a className="text-accent-blue" href="https://nathandong.com/">
+              here
+            </a>
+          </p>
         </Row>
       </Container>
     </div>
