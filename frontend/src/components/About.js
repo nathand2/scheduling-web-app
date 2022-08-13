@@ -1,4 +1,5 @@
 // import React from 'react'
+import { Link } from "react-router-dom";
 import Container from "react-bootstrap/Container";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
@@ -62,20 +63,21 @@ const About = () => {
           <ol className="center-list">
             <li>
               <h6>
-                <a className="text-accent-blue" href="/login">
+              <Link to="/login" className="text-accent-blue">
                   Log In
-                </a>{" "}
+              </Link>
+                {" "}
                 or{" "}
-                <a className="text-accent-blue" href="/signup">
+                <Link to="/signup" className="text-accent-blue">
                   Sign up
-                </a>
+                </Link>
               </h6>
             </li>
             <li>
               <h6>
-                <a className="text-accent-blue" href="/sessioncreate">
+              <Link to="/sessioncreate" className="text-accent-blue">
                   Create a Session
-                </a>
+              </Link>
               </h6>
             </li>
             <li>
