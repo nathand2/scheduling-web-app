@@ -418,7 +418,7 @@ module.exports = (app, db, auth, passport, io) => {
       if ((sessionDateStart <= dateStart && sessionDateEnd >= dateEnd)) {
         console.log("Invalid dt range.")
         return res.sendStatus(400)  // Client Error
-      }body
+      }
       
       // Check if user is apart of session
       const userSessions = await db.getUserSessionByUserIdAndSessionId(userId, sessionId)
