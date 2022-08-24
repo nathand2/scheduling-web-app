@@ -204,7 +204,13 @@ module.exports = (app, db, auth, passport, io) => {
    * Creates a session
    */
   app.post(resource + "/session", auth.authenticateToken, async (req, res) => {
-    const {title, desc, dtStart, dtEnd, attendType} = req.body;
+    let title, desc, dtStart, dtEnd, attendType;
+    try {
+      ({title, desc, dtStart, dtEnd, attendType} = req.body);
+    } catch {
+      res.sendStatus(400) // Internal db error.
+    }
+
     try {
       console.log("/session Locals.user:", res.locals.user)
       // const sessionCode = util.generateSessionCode();
@@ -412,7 +418,7 @@ module.exports = (app, db, auth, passport, io) => {
       if ((sessionDateStart <= dateStart && sessionDateEnd >= dateEnd)) {
         console.log("Invalid dt range.")
         return res.sendStatus(400)  // Client Error
-      }
+      }body
       
       // Check if user is apart of session
       const userSessions = await db.getUserSessionByUserIdAndSessionId(userId, sessionId)
