@@ -1,6 +1,6 @@
-import { useSearchParams } from "react-router-dom"
+import { useSearchParams } from "react-router-dom";
 
-import {RequestHandler} from '../js/requestHandler'
+import { RequestHandler } from "../js/requestHandler";
 
 // import { useState } from "react";
 import { FcGoogle } from "react-icons/fc";
@@ -14,7 +14,7 @@ import Card from "react-bootstrap/Card";
 const LogIn = () => {
   const googleAuthEndpoint = RequestHandler.endpointRoot + "/auth/google";
 
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   // const [userName, setUsername] = useState('')
   // const [password, setPassword] = useState('')
   // const [statusText, setStatusText] = useState('State')
@@ -36,7 +36,14 @@ const LogIn = () => {
         <Card className="auth-card">
           <br />
           <h3>Log in using:</h3>
-          <a href={googleAuthEndpoint + (searchParams.get('redirect') ? `?redirect=${searchParams.get('redirect')}` : "")}>
+          <a
+            href={
+              googleAuthEndpoint +
+              (searchParams.get("redirect")
+                ? `?redirect=${searchParams.get("redirect")}`
+                : "")
+            }
+          >
             <FcGoogle className="login-icon"></FcGoogle>
           </a>
           <br />
@@ -74,7 +81,18 @@ const LogIn = () => {
               </Col>
             </Form.Group>
           </Form> */}
-          <a href={`/signup` + `${searchParams.get('redirect') && '?redirect=' + searchParams.get('redirect')}`}>Don't have an account? Sign up here</a>
+          <a
+            href={
+              `/signup` +
+              `${
+                searchParams.get("redirect")
+                  ? "?redirect=" + searchParams.get("redirect")
+                  : ""
+              }`
+            }
+          >
+            Don't have an account? Sign up here
+          </a>
         </Card>
       </div>
     </div>

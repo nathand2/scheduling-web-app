@@ -13,7 +13,7 @@ import Card from "react-bootstrap/Card";
 const SignUp = () => {
   const googleAuthEndpoint = RequestHandler.endpointRoot + "/auth/google";
 
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   // const [email, setEmail] = useState('')
   // const [userName, setUsername] = useState('')
   // const [password, setPassword] = useState('')
@@ -95,12 +95,13 @@ const SignUp = () => {
             href={
               `/login` +
               `${
-                searchParams.get("redirect") &&
-                "?redirect=" + searchParams.get("redirect")
+                searchParams.get("redirect")
+                  ? "?redirect=" + searchParams.get("redirect")
+                  : ""
               }`
             }
           >
-            Don't have an account? Sign up here
+           Have an account? Log in here
           </a>{" "}
         </Card>
       </div>
