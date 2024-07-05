@@ -22,6 +22,18 @@ pool.on('connection', conn => {
 	});
 });
 
+// Check if the pool can connect
+pool.getConnection((err, conn) => {
+  if (err) {
+    console.error('Error connecting to database:', err);
+    return;
+  }
+  console.log('Connected to MySQL database!');
+
+  // Optionally, you can release the connection back to the pool
+  conn.release();
+});
+
 /**
  * TODO: Error checking if MySQL server is down not fully implemented
  */

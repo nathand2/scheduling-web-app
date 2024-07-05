@@ -27,6 +27,13 @@ require('./services/googleStrategy');
 
 require('./version/v1')(app, db, auth, passport);
 
+app.get("/", async (req, res) => {
+  res.json({hello: "world"})
+})
+app.get("/test/1", async (req, res) => {
+  res.json({test: "1"})
+})
+
 app.listen(port, () => {
   console.log(`Listening on http://localhost:${port}/`)
 })

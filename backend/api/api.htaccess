@@ -1,0 +1,17 @@
+# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION BEGIN
+PassengerAppRoot "/home/nathando/api.nathandong.com"
+PassengerBaseURI "/"
+PassengerNodejs "/home/nathando/nodevenv/api.nathandong.com/10/bin/node"
+PassengerAppType node
+PassengerStartupFile server.js
+PassengerAppLogFile "/home/nathando/info.log"
+# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION END
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  RewriteRule ^index\.html$ - [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteCond %{REQUEST_FILENAME} !-l
+  RewriteRule ^server/(.*)?$ http://127.0.0.1:3000/$1 [P,L]
+</IfModule>

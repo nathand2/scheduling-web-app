@@ -143,7 +143,7 @@ exports.checkIfFingerPrintExists = (req, res, next) => {
   try {
     const hash = createHash('sha256');
     hash.update(input);
-    return hash.copy().digest('hex');
+    return hash.digest('hex');
   } catch (err) {
     throw err
   }
