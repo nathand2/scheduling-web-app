@@ -2,7 +2,7 @@ DROP DATABASE IF EXISTS scheduler;
 CREATE DATABASE scheduler;
 USE scheduler;
 DROP TABLE IF EXISTS user;
-DROP TABLE IF EXISTS group;
+DROP TABLE IF EXISTS group_;
 DROP TABLE IF EXISTS session;
 DROP TABLE IF EXISTS user_group;
 DROP TABLE IF EXISTS user_session;
@@ -112,10 +112,11 @@ CREATE TABLE user_group (
 
 CREATE TABLE refresh_token (
   id bigint NOT NULL AUTO_INCREMENT UNIQUE,
-  user_id int NOT NULL,
+  user_id int NULL,
   token varchar(512) NOT NULL UNIQUE
 );
 
-USE scheduler; SELECT * FROM user WHERE google_id = "112150195852534406291";
+USE scheduler;
+-- SELECT * FROM user WHERE google_id = "112150195852534406291";
 
-INSERT INTO user (username, password, nickname) VALUES ("Nathan", "potatoman", "Nate");
+-- INSERT INTO user (username, password, nickname) VALUES ("Nathan", "potatoman", "Nate");

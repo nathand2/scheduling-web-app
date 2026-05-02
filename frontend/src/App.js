@@ -37,6 +37,12 @@ function App() {
     getUserData();
   }, []);
 
+  // When app loaded, manage login state
+  useEffect(() => {
+    processJWTs();
+    getUserData();
+  }, [loggedIn]);
+
   /**
    * Gets cookie by name
    * @param {string} name
@@ -285,7 +291,7 @@ function App() {
             path="/login"
             element={
               <>
-                <LogIn />
+                <LogIn setLoggedIn={setLoggedIn}/>
               </>
             }
           />
@@ -293,7 +299,7 @@ function App() {
             path="/signup"
             element={
               <>
-                <SignUp />
+                <SignUp setLoggedIn={setLoggedIn}/>
               </>
             }
           />

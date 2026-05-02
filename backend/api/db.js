@@ -3,6 +3,7 @@ const mysql = require('mysql')
 
 const config = {
   host: process.env.DB_HOST,
+  port: process.env.DB_PORT,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD ? process.env.DB_PASSWORD : '', // Empty string if undefined
   database: process.env.DB_DATABASE,
@@ -12,6 +13,10 @@ const config = {
 		'DATETIME' // DATETIME's return as strings (otherwise they would interpreted as YYYY-MM-DD HH:mm:ss+00:00)
 	]
 };
+
+const formatDate = (isoString) => {
+  return new Date(isoString).toISOString().slice(0, 19).replace('T', ' ')
+}
 
 const pool = mysql.createPool(config);
 pool.on('connection', conn => {
@@ -101,6 +106,35 @@ exports.googleAuth = async (googleID, displayName) => {
 };
 
 /**
+ * Gets user by username for Username/Password auth
+ * @param {*} username 
+ * @returns user row with matching username
+ */
+exports.getUserByUsername = async (username) => {
+  try {
+    return await dbConnection(`SELECT * FROM user WHERE username = '${username}' LIMIT 1;`)
+  } catch(err) {
+    throw err;
+  }
+}
+
+/**
+ * Create local user that uses Username/Password auth
+ * @param {*} username 
+ * @param {*} passwordHash 
+ * @param {*} displayName 
+ * @returns userID as a int
+ */
+exports.createLocalUser = async (username, passwordHash, displayName) => {
+  try {
+    const result = await dbConnection(`INSERT INTO user (username, password, display_name, external_type) VALUES ('${username}', '${passwordHash}', '${displayName}', 'LOCAL');`)
+    return result.insertId
+  } catch(err) {
+    throw err;
+  }
+}
+
+/**
  * Insert refresh token into db
  * @param {string} token JWT access token
  */
@@ -168,8 +202,8 @@ exports.deleteRefreshToken = async (token) => {
  */
 exports.createSession = async (code, title, dt_start, dt_end, attendType, desc=undefined, groupID=undefined) => {
   try {
-    console.log("Create session query:", `INSERT INTO session (group_id, session_desc, session_title, dt_start, dt_end, attend_type, code) VALUES (${(groupID === undefined ? "NULL" : groupID) + ", "}${(desc === undefined ? "NULL" : "'" + desc + "'") + ', '}'${title}', '${dt_start}', '${dt_end}', '${attendType}', '${code}')`)
-    const results = await dbConnection(`INSERT INTO session (group_id, session_desc, session_title, dt_start, dt_end, attend_type, code) VALUES (${(groupID === undefined ? "NULL" : groupID) + ", "}${(desc === undefined ? "NULL" : "'" + desc + "'") + ', '}'${title}', '${dt_start}', '${dt_end}', '${attendType}', '${code}')`)
+    console.log("Create session query:", `INSERT INTO session (group_id, session_desc, session_title, dt_start, dt_end, attend_type, code) VALUES (${(groupID === undefined ? "NULL" : groupID) + ", "}${(desc === undefined ? "NULL" : "'" + desc + "'") + ', '}'${title}', '${formatDate(dt_start)}', '${formatDate(dt_end)}', '${attendType}', '${code}')`)
+    const results = await dbConnection(`INSERT INTO session (group_id, session_desc, session_title, dt_start, dt_end, attend_type, code) VALUES (${(groupID === undefined ? "NULL" : groupID) + ", "}${(desc === undefined ? "NULL" : "'" + desc + "'") + ', '}'${title}', '${formatDate(dt_start)}', '${formatDate(dt_end)}', '${attendType}', '${code}')`)
     console.log("Inserted ID:", results.insertId)
     console.log("Session Code:", code)
     return results.insertId
@@ -350,7 +384,7 @@ exports.getSessionById = async (sessionId) => {
 
 exports.createSessionTimeRange = async (userId, sessionId, dtStart, dtEnd, status) => {
   try {
-    const results = await dbConnection(`INSERT INTO session_time_range (user_session_id, dt_start, dt_end, status) VALUES ((SELECT id FROM user_session WHERE user_id = ${userId} AND session_id = ${sessionId} LIMIT 1), '${dtStart}', '${dtEnd}', '${status}');`)
+    const results = await dbConnection(`INSERT INTO session_time_range (user_session_id, dt_start, dt_end, status) VALUES ((SELECT id FROM user_session WHERE user_id = ${userId} AND session_id = ${sessionId} LIMIT 1), '${formatDate(dtStart)}', '${formatDate(dtEnd)}', '${status}');`)
     return results.insertId
   } catch(err) {
     throw err
