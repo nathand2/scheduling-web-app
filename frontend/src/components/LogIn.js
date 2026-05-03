@@ -47,7 +47,7 @@ const LogIn = ( { setLoggedIn } ) => {
     <div>
       {isLoginSuccessful && (
         <>
-          <Navigate to={`/`} />
+          <Navigate to={searchParams.get("redirect") || `/`} />
         </>
       )}
       <br />

@@ -21,6 +21,7 @@ const SignUp = ( { setLoggedIn } ) => {
   const [statusText, setStatusText] = useState('')
   const [isSignUpSuccessful, setIsSignUpSuccessful] = useState(false)
   const [statusTextClass, setStatusTextClass] = useState('text-secondary')
+  // const [redirect, setRedirect] = useState("/")
 
   const userNameSignUp = async (event) => {
     event.preventDefault();
@@ -49,9 +50,7 @@ const SignUp = ( { setLoggedIn } ) => {
   return (
     <div>
       {isSignUpSuccessful && (
-        <>
-          <Navigate to={`/`} />
-        </>
+        <Navigate to={searchParams.get("redirect") || "/"} />
       )}
       <br />
       <div className="center-container">

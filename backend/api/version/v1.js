@@ -173,63 +173,66 @@ module.exports = (app, db, auth, passport, io) => {
     res.sendStatus(500); // Internal Error (database error)
   });
 
-  // Register
-  app.post(resource + '/auth/register', async (req, res) => {
-    const { username, password, displayName } = req.body
-    if (!username || !password || !displayName) return res.sendStatus(400)
+// Shared helper
+const loginUser = async (res, user) => {
+  const [randStringAccess, hashAccess] = await auth.getRandomStringAndHash();
+  const [randStringRefresh, hashRefresh] = await auth.getRandomStringAndHash();
 
-    try {
-      // Check if username already exists
-      const existing = await db.getUserByUsername(username)
-      if (existing.length > 0) return res.sendStatus(409) // Conflict
+  const userAccess = { userId: user.id, displayName: user.display_name, hash: hashAccess, type: 'LOCAL' }
+  const userRefresh = { userId: user.id, displayName: user.display_name, hash: hashRefresh, type: 'LOCAL' }
 
-      const passwordHash = await bcrypt.hash(password, 10)
-      const userId = await db.createLocalUser(username, passwordHash, displayName)
-      res.sendStatus(201)
-    } catch(err) {
-      console.log(err)
-      res.sendStatus(500)
-    }
-  })
+  const accessToken = auth.generateAccessToken(userAccess)
+  const refreshToken = auth.generateRefreshToken(userRefresh)
+  await db.insertRefreshToken(refreshToken)
 
-  // Login
-  app.post(resource + '/auth/login', async (req, res) => {
-    const { username, password } = req.body
-    if (!username || !password) return res.sendStatus(400)
+  res.cookie('accessToken', accessToken, semiSecureCookieConfig)
+  res.cookie('refreshToken', refreshToken, semiSecureCookieConfig)
+  res.cookie('userId', user.id, semiSecureCookieConfig)
+  res.cookie('displayName', user.display_name, semiSecureCookieConfig)
+  res.cookie('userContextAccess', randStringAccess, secureCookieConfig)
+  res.cookie('userContextRefresh', randStringRefresh, { ...secureCookieConfig, expires: util.dtRefreshFingerprintCookieExpires() })
+}
 
-    try {
-      const users = await db.getUserByUsername(username)
-      if (users.length === 0) return res.sendStatus(401) // User not found
+// Register
+app.post(resource + '/auth/register', async (req, res) => {
+  const { username, password, displayName } = req.body
+  if (!username || !password || !displayName) return res.sendStatus(400)
 
-      const user = users[0]
-      const validPassword = await bcrypt.compare(password, user.password)
-      if (!validPassword) return res.sendStatus(401)
+  try {
+    const existing = await db.getUserByUsername(username)
+    if (existing.length > 0) return res.sendStatus(409)
 
-      let randStringAccess, hashAccess;
-      let randStringRefresh, hashRefresh;
-      [randStringAccess, hashAccess] = await auth.getRandomStringAndHash();
-      [randStringRefresh, hashRefresh] = await auth.getRandomStringAndHash();
+    const passwordHash = await bcrypt.hash(password, 10)
+    const userId = await db.createLocalUser(username, passwordHash, displayName)
 
-      const userAccess = { userId: user.id, displayName: user.display_name, hash: hashAccess, type: 'LOCAL' }
-      const userRefresh = { userId: user.id, displayName: user.display_name, hash: hashRefresh, type: 'LOCAL' }
+    // Log them in immediately after registering
+    const users = await db.getUserByUsername(username)
+    await loginUser(res, users[0])
+    res.json({})
+  } catch(err) {
+    console.log(err)
+    res.sendStatus(500)
+  }
+})
 
-      const accessToken = auth.generateAccessToken(userAccess)
-      const refreshToken = auth.generateRefreshToken(userRefresh)
-      await db.insertRefreshToken(refreshToken)
+// Login
+app.post(resource + '/auth/login', async (req, res) => {
+  const { username, password } = req.body
+  if (!username || !password) return res.sendStatus(400)
 
-      res.cookie('accessToken', accessToken, semiSecureCookieConfig)
-      res.cookie('refreshToken', refreshToken, semiSecureCookieConfig)
-      res.cookie('userId', user.id, semiSecureCookieConfig)
-      res.cookie('displayName', user.display_name, semiSecureCookieConfig)
-      res.cookie('userContextAccess', randStringAccess, secureCookieConfig)
-      res.cookie('userContextRefresh', randStringRefresh, { ...secureCookieConfig, expires: util.dtRefreshFingerprintCookieExpires() })
+  try {
+    const users = await db.getUserByUsername(username)
+    if (users.length === 0) return res.sendStatus(401)
 
-      res.json({})
+    const validPassword = await bcrypt.compare(password, users[0].password)
+    if (!validPassword) return res.sendStatus(401)
 
-    } catch(err) {
-      res.sendStatus(500)
-    }
-  })
+    await loginUser(res, users[0])
+    res.json({})
+  } catch(err) {
+    res.sendStatus(500)
+  }
+})
 
   /**
    * Deletes Refresh Tokens
