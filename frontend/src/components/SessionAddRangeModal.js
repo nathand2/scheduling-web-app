@@ -47,7 +47,8 @@ const SessionAddRangeModal = ({ handleClose, show, session }) => {
         status: dtStatus,
       });
       if (res.status !== 200) return;
-      const resData = res.data;
+      // const resData = res.data;
+      const resData = await res.json();
       console.log("Res:", res);
       const insertId = resData.insertId;
       console.log("Inserted dtRange with insertId:", insertId);

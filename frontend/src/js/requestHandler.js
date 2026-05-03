@@ -23,21 +23,36 @@ export class RequestHandler {
         },
         ...(reqBody && {body: JSON.stringify(reqBody)})
       });
-      if (res.status === 200) {
-        const data = await res.json();  // JWT token valid, return results.
-        return {status: 200, data: data}
-      } else if (res.status === 204) {
-        return {status: 204}
+      // if (res.status === 200) {
+      //   const data = await res.json();  // JWT token valid, return results.
+      //   return {status: 200, data: data}
+      // } else if (res.status === 204) {
+      //   return {status: 204}
+      // } else if (res.status === 401 ) {
+      //   return await this.refreshJWT(resource, reqMethod, reqBody);  // Expired Access token, attempt to refresh JWT
+      // } else if (res.status === 403 ) {
+      //   return {status: 403}
+      // } else {
+      //   // Bad request config for internal error.
+      //   console.log(`Incorrect RequestHandler.res params or internal error [${res.status}]`)
+      //   return {status: res.status}
+      // }
+      if (
+        res.status >= 200 &&
+        res.status <= 299
+      ) {
+        // JWT token valid, return results.
+        return res;
       } else if (res.status === 401 ) {
         return await this.refreshJWT(resource, reqMethod, reqBody);  // Expired Access token, attempt to refresh JWT
-      } else if (res.status === 403 ) {
-        return {status: 403}
       } else {
         // Bad request config for internal error.
-        console.log("Incorrect RequestHandler.res params or internal error")
-        return {status: res.status}
+        console.log(`Incorrect RequestHandler.res params or internal error [${res.status}]`)
+        return res
       }
     } catch(err) {
+      console.log(`RequestHandler Error:`)
+      console.log(err)
       throw err
     }
   }
@@ -62,20 +77,26 @@ export class RequestHandler {
         ...(reqBody && {body: JSON.stringify(reqBody)})
       });
      
-      if (res.status === 200) {
-        const data = await res.json();  // JWT token valid, return results.
-        return {status: 200, data: data}
-      } else if (res.status === 204) {
-        return {status: 204}
-      } else if (res.status === 401) {
-        console.log("Newly created JWT problem. Forbidden")
-        return {status: 401}
-      } else if (res.status === 403 ) {
-        console.log("Forbidden")
-        return {status: 403}
+      // if (res.status === 200) {
+      //   const data = await res.json();  // JWT token valid, return results.
+      //   return {status: 200, data: data}
+      // } else if (res.status === 204) {
+      //   return {status: 204}
+      if (
+        res.status >= 200 &&
+        res.status <= 299
+      ) {
+        // JWT token valid, return results.
+        return res;
+      } else if (
+        res.status >= 400 &&
+        res.status <= 499
+      ) {
+        console.log(`Error [${res.status}]`)
+        return res
       } else {
-        console.log("Internal Error")
-        return {status: res.status}
+        console.log(`Internal Error [${res.status}]`)
+        return res
       }
     } catch(err) {
       throw err
@@ -89,6 +110,7 @@ export class RequestHandler {
       return {status: 401}
     }
     try {
+      // Get new access token using refresh token
       const res = await fetch(this.endpointRoot + '/token', {
         method: 'POST',
         credentials: 'include', // Include cookies in request
@@ -96,20 +118,31 @@ export class RequestHandler {
           Authorization: `token ${window.localStorage.getItem('refreshToken')}`
         }
       })
-      if (res.status === 200 || res.status === 204) {
+
+      if (
+        res.status >= 200 &&
+        res.status <= 299
+      ) {
+        // Successfully retrieved new access token
         const data = await res.json();
 
         // Set new accessToken in sessionStorage and resend original request
         await window.sessionStorage.setItem('accessToken', data.token);
         return await this.followUpReq(resource, reqMethod, body);
-      } else if (res.status === 401) {
+      } else if (
+        res.status >= 400 &&
+        res.status <= 499
+      ) {
         console.log("Invalid refresh token")
-        return {status: 401}
+        return res
       } else {
-        console.log(res.statusText)
-        return {status: res.status}
+        // console.log(res.statusText)
+        
+        console.log(`Internal Error [${res.status}]`)
+        return res
       }
     } catch(err) {
+      console.log("Refresh Token Error")
       throw err
     }
   }

@@ -24,7 +24,7 @@ const SessionShareModal = ({ handleClose, show }) => {
         console.log("You can't create a share link. You are not an owner.")
         return;
       }
-      const results = res.data
+      const results = await res.json();
       console.log("Created session invite:", results);
       console.log(
         RequestHandler.appRoot + "/sessionjoin?code=" + results.inviteCode
@@ -51,7 +51,7 @@ const SessionShareModal = ({ handleClose, show }) => {
         `/sessioninvite?code=${params.code}`,
         "GET"
       );
-      const results = res.data
+      const results = await res.json();
       console.log("Got invite code:", results);
       console.log(
         RequestHandler.endpointRoot + "/sessionjoin?code=" + results.inviteCode

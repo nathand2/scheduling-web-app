@@ -1,8 +1,13 @@
 import React from "react";
+import { useEffect, useState } from "react";
 import Container from "react-bootstrap/Container";
 import Badge from "react-bootstrap/Badge";
 
 const SessionInfo = ({ session, expiredSession }) => {
+  useEffect(() => {
+    console.log("From SessionInfo");
+    console.log(session)
+  }, [session]);
   return (
     <div>
       <Container fluid className="uncenter-content">
@@ -17,9 +22,10 @@ const SessionInfo = ({ session, expiredSession }) => {
         {session.session_desc && <h5>{session.session_desc}</h5>}
         <div className="flex-row">
           <p style={{ fontSize: 12 }}>
-            Created {session.dt_created.toLocaleString()}
+            Created {session.dt_created && session.dt_created.toLocaleString()}
           </p>
         </div>
+
       </Container>
     </div>
   );

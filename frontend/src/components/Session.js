@@ -22,9 +22,9 @@ const util = require("../js/util");
 const webSocketEndpoint = RequestHandler.webSocketEndpoint;
 const showDtRangeUpdateToast = false; // Websocket for dtrange add
 
-const Session = () => {
+const Session = ({ userId }) => {
   const [params, setParams] = useState(useParams());
-  const [session, setSession] = useState(undefined);
+  const [session, setSession] = useState({});
   const [timeRanges, setTimeRanges] = useState([]);
   const [userSessions, setUserSessions] = useState([]);
   const [showDtModal, setShowDtModal] = useState(false);
@@ -45,17 +45,38 @@ const Session = () => {
         didCancel = true;
         // Get session data from api
         try {
-          const res = await getSession();
-          const sessionData = res.data.session;
+          let res;
+          res = await RequestHandler.req(`/session/${params.code}`, "GET");
+          setSessionResStatus(res.status);
+
+          const data = await res.json();
+          const sessionData = data.session;
+          console.log("Session Data:")
+          console.log(sessionData)
+
+          sessionData.dt_end = util.convertUTCStringToDate(sessionData.dt_end);
+          sessionData.dt_start = util.convertUTCStringToDate(sessionData.dt_start);
+          sessionData.dt_created = util.convertUTCStringToDate(
+            sessionData.dt_created
+          );
+          await setSession(sessionData);
+
+          // Determine if session is expired
+          setExpiredSession(new Date() > sessionData.dt_end);
+          // return res;
+          // ?????
+          // const res = await getSession();
+          // const data = await res.json(); // !Duplicate res.json() call
+          // const sessionData = data.session;
           if (res.status !== 200) {
             changeOtherSessionViews(res);
             return;
           }
           await getTimeRanges(sessionData.id);
           await getUserSessions(sessionData.id);
-          if (!session) {
-            await setUpWebSocketConnection(sessionData.code);
-          }
+
+          // Set up websocket
+          await setUpWebSocketConnection(sessionData.code);
         } catch (err) {
           console.log("Error:", err);
         }
@@ -165,7 +186,10 @@ const Session = () => {
       res = await RequestHandler.req(`/session/${params.code}`, "GET");
       setSessionResStatus(res.status);
 
-      const sessionData = res.data.session;
+      const data = await res.json();
+      const sessionData = data.session;
+      console.log("Session Data:")
+      console.log(sessionData)
 
       sessionData.dt_end = util.convertUTCStringToDate(sessionData.dt_end);
       sessionData.dt_start = util.convertUTCStringToDate(sessionData.dt_start);
@@ -210,7 +234,8 @@ const Session = () => {
         `/timeranges?sessionid=${sessionId}`,
         "GET"
       );
-      const timeRangeData = res.data.results;
+      const data = await res.json();
+      const timeRangeData = data.results;
       console.log("Time Range results:", timeRangeData);
 
       // Convert DT strings to dates
@@ -240,7 +265,8 @@ const Session = () => {
         `/usersessions?sessionid=${sessionId}`,
         "GET"
       );
-      const userSessionsData = res.data.userSessions;
+      const data = await res.json();
+      const userSessionsData = data.userSessions;
       console.log("User session results:", userSessionsData);
       setUserSessions(userSessionsData);
     } catch (err) {
@@ -278,6 +304,7 @@ const Session = () => {
                   timeRanges={timeRanges}
                   setTimeRanges={setTimeRanges}
                   session={session}
+                  userId={userId}
                 />
                 <Button variant="primary" onClick={handleShowDt}>
                   Add DtRange

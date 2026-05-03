@@ -25,7 +25,8 @@ const Sessions = () => {
             console.log("Something went wrong. Res Status:", res.status);
             return;
           }
-          data = res.data;
+          // data = res.data;
+          data = await res.json();
           data.sessions.map(
             (session) =>
               (session.dt_created = util.convertUTCStringToDate(

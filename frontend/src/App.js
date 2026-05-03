@@ -307,7 +307,7 @@ function App() {
             path="/session/:code"
             element={
               <>
-                <Session />
+                <Session userId={userId}/>
               </>
             }
           />

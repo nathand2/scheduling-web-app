@@ -60,7 +60,8 @@ const SessionCreate = () => {
     let res;
     try {
       res = await RequestHandler.req("/session", "POST", session);
-      sessionData = res.data;
+      // sessionData = res.data;
+      sessionData = await res.json();
       console.log("New session ID:", sessionData.code);
       setSessionId(sessionData.code);
       setSessionCreated(true);

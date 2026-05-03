@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import * as d3 from "d3";
 import SessionSelectRangeModal from "./SessionSelectRangeModal";
 
-const SessionChart = ({ timeRanges, session }) => {
+const SessionChart = ({ timeRanges, session, userId }) => {
   const canvas = useRef(null);
   const [barTimeRanges, setBarTimeRanges] = useState([]);
   const [showSelectRangeModal, setShowSelectRangeModal] = useState(false);
@@ -24,8 +24,10 @@ const SessionChart = ({ timeRanges, session }) => {
         doOnce = false;
         await generateChart();
       };
+      if (!session || Object.keys(session).length === 0) return;
       setUpChart();
     }
+    console.log(timeRanges)
   }, [timeRanges]); // Will update chart if timeRanges changes
 
   /**
@@ -46,6 +48,7 @@ const SessionChart = ({ timeRanges, session }) => {
 
     const sessionLengthInMinutes =
       ((session.dt_end - session.dt_start) / (1000 * 60)) * chartScale; // Session length in minutes
+    
     const margin = { top: 20, right: 30, bottom: 30, left: 40 };
     const height = sessionLengthInMinutes + margin.top + margin.bottom;
     const width = 500 + margin.right;
@@ -121,7 +124,7 @@ const SessionChart = ({ timeRanges, session }) => {
             .attr("x", 10 + pointer[0])
             .attr("y", 20 + pointer[1])
             .text(() => {
-              return `${datapoint.display_name}: ${datapoint.status}`;
+              return `${datapoint.user_id == userId ? datapoint.display_name + " [Me]" :datapoint.display_name}: ${datapoint.status}`;
             });
           svgCanvas
             .selectAll("rect.rectinfo")
@@ -135,7 +138,7 @@ const SessionChart = ({ timeRanges, session }) => {
             .attr("x", 10 + pointer[0])
             .attr("y", 20 + pointer[1])
             .text(() => {
-              return `${datapoint.display_name}: ${datapoint.status}`;
+              return `${datapoint.user_id == userId ? datapoint.display_name + " [Me]" :datapoint.display_name}: ${datapoint.status}`;
             });
           svgCanvas
             .selectAll("rect.rectinfo")
@@ -180,7 +183,7 @@ const SessionChart = ({ timeRanges, session }) => {
         .attr("dy", "0.35em")
         .attr("dx", -4)
         .text(function (d, i) {
-          return d.display_name;
+          return d.user_id == userId ? d.display_name + " [Me]" :d.display_name;
         })
         .attr("font-size", 12)
         .attr("text-anchor", "start")

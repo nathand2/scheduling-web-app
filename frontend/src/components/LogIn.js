@@ -30,9 +30,7 @@ const LogIn = ( { setLoggedIn } ) => {
     }
     let res;
     try {
-      console.log("b4")
       res = await RequestHandler.req("/auth/login", "POST", body);
-      console.log("after")
       console.log(res)
 
       // Successful login

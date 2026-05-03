@@ -52,7 +52,7 @@ const SessionJoin = ({ loggedIn }) => {
               console.log(res.status);
               return;
             }
-            data = res.data;
+            data = await res.json();
             setSessionCode(data.sessionCode);
             setGoToSession(true);
           } catch (err) {
