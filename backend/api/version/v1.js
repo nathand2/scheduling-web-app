@@ -362,11 +362,13 @@ module.exports = (app, db, auth, passport, io) => {
       const { sessionCode } = req.body
       const userId = res.locals.user.userId
 
-      // See if user_session of owner exists for user
-      const userSessions = await db.getOwnerUserSessionByUserIdAndSessionCode(userId, sessionCode)
-      console.log("UserSessions:", userSessions)
+      // // See if user_session of owner exists for user
+      // const userSessions = await db.getOwnerUserSessionByUserIdAndSessionCode(userId, sessionCode)
+
+      // Check if user is apart of the session
+      const userSessions = await db.getUserSessionByUserIdAndSessionCode(userId, sessionCode);
       if (!(userSessions.length > 0)) {
-        res.sendStatus(403) // Cannot create invite. Not owner or no user_session
+        res.sendStatus(403) // Cannot create invite. Not appart of session
         return
       }
 
@@ -662,7 +664,7 @@ module.exports = (app, db, auth, passport, io) => {
     await db.deleteRefreshToken(token)
 
     // Add token to db
-    await db.deleteRefreshToken()
+    // await db.deleteRefreshToken()
     await db.insertRefreshToken(refreshToken);
 
     // Unsecure cookies for tokens to be stored in session storage.

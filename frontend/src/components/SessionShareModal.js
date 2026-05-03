@@ -4,11 +4,34 @@ import { useParams } from "react-router-dom";
 import Modal from "react-bootstrap/Modal";
 import Button from "react-bootstrap/Button";
 
+import { IoMdLink } from "react-icons/io";
+
 import { RequestHandler } from "../js/requestHandler";
 
 const SessionShareModal = ({ handleClose, show }) => {
   
   const [params, setParams] = useState(useParams());
+  // const [inviteLink, setInviteLink] = useState(undefined);
+
+  // useEffect(() => {
+  //   let res;
+  //   try {
+  //      res = await RequestHandler.req(
+  //       `/sessioninvite?code=${params.code}`,
+  //       "GET"
+  //     );
+  //     const results = await res.json();
+  //     console.log("Got invite code:", results);
+  //     console.log(
+  //       RequestHandler.endpointRoot + "/sessionjoin?code=" + results.inviteCode
+  //     );
+
+  //     setInviteLink(RequestHandler.appRoot + "/sessionjoin?code=" + results.inviteCode);
+
+  //   } catch (err) {
+  //     console.log("Error:", err);
+  //   }
+  // }, [])
 
   /**
    * Creates a POST request to generate a invite link (for owners)
@@ -51,6 +74,19 @@ const SessionShareModal = ({ handleClose, show }) => {
         `/sessioninvite?code=${params.code}`,
         "GET"
       );
+
+      // If no invite code exists, create one
+      if (res.status === 404) {
+        res = await RequestHandler.req("/sessioninvite", "POST", {
+          sessionCode: params.code,
+        });
+      }
+
+      if (res.status < 200 && res.status > 299) {
+        console.log("Error, could not retrieve invite code ", `[${res.status}]`);
+        return;
+      }
+
       const results = await res.json();
       console.log("Got invite code:", results);
       console.log(
@@ -73,14 +109,18 @@ const SessionShareModal = ({ handleClose, show }) => {
         <Modal.Header closeButton>
           <Modal.Title>Share Session</Modal.Title>
         </Modal.Header>
-        <Modal.Body>
+        {/* <Modal.Body>
           Share with group (coming soon)
-        </Modal.Body>
+        </Modal.Body> */}
         <Modal.Body>
           Share With Link
           <br />
-          <p className="text-underline" onClick={shareWithLink}>Copy Link (Owners Only)</p>
-          <p className="text-underline" onClick={getShareLink}>Get Link</p>
+          {/* <p className="text-underline" onClick={shareWithLink}>Copy Link (Owners Only)</p> */}
+          {/* <p className="text-underline" onClick={getShareLink}>Get Link</p> */}
+          <Button variant="primary" onClick={getShareLink} className="d-flex align-items-center gap-2">
+            <IoMdLink />
+            <span>Get Link</span>
+          </Button>
         </Modal.Body>
         <Modal.Footer>
           <Button variant="primary" onClick={handleClose}>
