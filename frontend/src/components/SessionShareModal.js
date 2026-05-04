@@ -5,48 +5,38 @@ import Modal from "react-bootstrap/Modal";
 import Button from "react-bootstrap/Button";
 
 import { IoMdLink } from "react-icons/io";
+import { AiOutlineLoading3Quarters } from "react-icons/ai";
 
 import { RequestHandler } from "../js/requestHandler";
 
 const SessionShareModal = ({ handleClose, show }) => {
   
   const [params, setParams] = useState(useParams());
-  // const [inviteLink, setInviteLink] = useState(undefined);
-
-  // useEffect(() => {
-  //   let res;
-  //   try {
-  //      res = await RequestHandler.req(
-  //       `/sessioninvite?code=${params.code}`,
-  //       "GET"
-  //     );
-  //     const results = await res.json();
-  //     console.log("Got invite code:", results);
-  //     console.log(
-  //       RequestHandler.endpointRoot + "/sessionjoin?code=" + results.inviteCode
-  //     );
-
-  //     setInviteLink(RequestHandler.appRoot + "/sessionjoin?code=" + results.inviteCode);
-
-  //   } catch (err) {
-  //     console.log("Error:", err);
-  //   }
-  // }, [])
+  const [isGetInviteLinkLoading, setIsGetInviteLinkLoading] = useState(false);
+  const [statusText, setStatusText] = useState('');
+  const [statusTextClassName, setStatusTextClassName] = useState('text-success');
 
   /**
    * Creates a POST request to generate a invite link (for owners)
    * @returns undefined
    */
   const shareWithLink = async () => {
+    setIsGetInviteLinkLoading(true);
     let res;
     try {
        res = await RequestHandler.req("/sessioninvite", "POST", {
         sessionCode: params.code,
       });
+      setIsGetInviteLinkLoading(false);
+
       if (res.status != 200) {
+        setStatusTextClassName("text-danger");
+        setStatusText(`Error: Unable to get share link [${res.status}]`);
         console.log("You can't create a share link. You are not an owner.")
         return;
       }
+      setStatusTextClassName("text-success");
+      setStatusText(`Share link copied to clipboard!`);
       const results = await res.json();
       console.log("Created session invite:", results);
       console.log(
@@ -64,16 +54,23 @@ const SessionShareModal = ({ handleClose, show }) => {
     }
   };
 
+  const dismissModal = () => {
+    setStatusText("");
+    handleClose();
+  }
+
   /**
    * Gets share link with GET request if one already exists (for attendees)
    */
   const getShareLink = async () => {
+    setIsGetInviteLinkLoading(true);
     let res;
     try {
        res = await RequestHandler.req(
         `/sessioninvite?code=${params.code}`,
         "GET"
       );
+      setIsGetInviteLinkLoading(false);
 
       // If no invite code exists, create one
       if (res.status === 404) {
@@ -83,9 +80,12 @@ const SessionShareModal = ({ handleClose, show }) => {
       }
 
       if (res.status < 200 && res.status > 299) {
-        console.log("Error, could not retrieve invite code ", `[${res.status}]`);
+        setStatusTextClassName("text-danger");
+        setStatusText(`Error: Unable to get share link [${res.status}]`);
         return;
       }
+      setStatusTextClassName("text-success");
+      setStatusText(`Share link copied to clipboard!`);
 
       const results = await res.json();
       console.log("Got invite code:", results);
@@ -115,15 +115,19 @@ const SessionShareModal = ({ handleClose, show }) => {
         <Modal.Body>
           Share With Link
           <br />
-          {/* <p className="text-underline" onClick={shareWithLink}>Copy Link (Owners Only)</p> */}
-          {/* <p className="text-underline" onClick={getShareLink}>Get Link</p> */}
-          <Button variant="primary" onClick={getShareLink} className="d-flex align-items-center gap-2">
-            <IoMdLink />
-            <span>Get Link</span>
-          </Button>
+          <div className="d-flex align-items-center gap-2">
+            <Button variant="primary" onClick={getShareLink} className="d-flex align-items-center gap-2">
+              <IoMdLink />
+              <span>Get Link</span>
+            </Button>
+            {
+              isGetInviteLinkLoading && <AiOutlineLoading3Quarters className="spin" />
+            }
+            <span className={statusTextClassName}>{statusText}</span>
+          </div>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="primary" onClick={handleClose}>
+          <Button variant="primary" onClick={dismissModal}>
             Done
           </Button>
         </Modal.Footer>

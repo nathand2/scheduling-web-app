@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 
 import { io } from "socket.io-client";
@@ -35,56 +35,60 @@ const Session = ({ userId }) => {
   const [expiredSession, setExpiredSession] = useState(undefined);
   const [sessionResStatus, setSessionResStatus] = useState();
   const [otherSessionResViews, setOtherSessionResViews] = useState();
-
-  let didCancel = false;
+  const socketRef = useRef(null);
 
   // Gets session data on load
   useEffect(() => {
+    let isMounted = true;
     const getSessionData = async () => {
-      if (!didCancel) {
-        didCancel = true;
-        // Get session data from api
-        try {
-          let res;
-          res = await RequestHandler.req(`/session/${params.code}`, "GET");
-          setSessionResStatus(res.status);
+      // Get session data from api
+      try {
+        let res;
+        res = await RequestHandler.req(`/session/${params.code}`, "GET");
+        if (!isMounted) return; // bail if unmounted during async call
 
-          const data = await res.json();
-          const sessionData = data.session;
-          console.log("Session Data:")
-          console.log(sessionData)
+        setSessionResStatus(res.status);
 
-          sessionData.dt_end = util.convertUTCStringToDate(sessionData.dt_end);
-          sessionData.dt_start = util.convertUTCStringToDate(sessionData.dt_start);
-          sessionData.dt_created = util.convertUTCStringToDate(
-            sessionData.dt_created
-          );
-          await setSession(sessionData);
+        const data = await res.json();
+        const sessionData = data.session;
+        console.log("Session Data:", sessionData)
 
-          // Determine if session is expired
-          setExpiredSession(new Date() > sessionData.dt_end);
-          // return res;
-          // ?????
-          // const res = await getSession();
-          // const data = await res.json(); // !Duplicate res.json() call
-          // const sessionData = data.session;
-          if (res.status !== 200) {
-            changeOtherSessionViews(res);
-            return;
-          }
-          await getTimeRanges(sessionData.id);
-          await getUserSessions(sessionData.id);
+        sessionData.dt_end = util.convertUTCStringToDate(sessionData.dt_end);
+        sessionData.dt_start = util.convertUTCStringToDate(sessionData.dt_start);
+        sessionData.dt_created = util.convertUTCStringToDate(
+          sessionData.dt_created
+        );
+        await setSession(sessionData);
 
-          // Set up websocket
-          await setUpWebSocketConnection(sessionData.code);
-        } catch (err) {
-          console.log("Error:", err);
+        // Determine if session is expired
+        setExpiredSession(new Date() > sessionData.dt_end);
+        if (res.status !== 200) {
+          changeOtherSessionViews(res);
+          return;
         }
+        await getTimeRanges(sessionData.id);
+        await getUserSessions(sessionData.id);
+
+        // Set up websocket
+        // !In development mode, there was a bug where the Websocket connection was set up twice.
+        // !From the POV of other in the room, you join it 2 times
+        // !isMounted flag used essentially establishes web socket connection on second mount
+        // !Shouldn't affect prod build anyways
+        if (!isMounted) return;
+        socketRef.current = await setUpWebSocketConnection(sessionData.code);  // set socket
+      } catch (err) {
+        console.log("Error:", err);
       }
     };
 
-    console.log("useEffect once?");
     getSessionData();
+    return () => {
+      isMounted = false;
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
+    };
   }, []);
 
   /**
@@ -161,6 +165,7 @@ const Session = ({ userId }) => {
           return prev.filter((range) => range.id !== data.sessionTimeRangeId);
         });
       });
+      return socket;
     }
   };
 
@@ -176,35 +181,35 @@ const Session = ({ userId }) => {
     setShowShareModal(true);
   };
 
-  /**
-   * Gets session data from api
-   * @returns object - Session Data
-   */
-  const getSession = async () => {
-    try {
-      let res;
-      res = await RequestHandler.req(`/session/${params.code}`, "GET");
-      setSessionResStatus(res.status);
+  // /**
+  //  * Gets session data from api
+  //  * @returns object - Session Data
+  //  */
+  // const getSession = async () => {
+  //   try {
+  //     let res;
+  //     res = await RequestHandler.req(`/session/${params.code}`, "GET");
+  //     setSessionResStatus(res.status);
 
-      const data = await res.json();
-      const sessionData = data.session;
-      console.log("Session Data:")
-      console.log(sessionData)
+  //     const data = await res.json();
+  //     const sessionData = data.session;
+  //     console.log("Session Data:")
+  //     console.log(sessionData)
 
-      sessionData.dt_end = util.convertUTCStringToDate(sessionData.dt_end);
-      sessionData.dt_start = util.convertUTCStringToDate(sessionData.dt_start);
-      sessionData.dt_created = util.convertUTCStringToDate(
-        sessionData.dt_created
-      );
-      await setSession(sessionData);
+  //     sessionData.dt_end = util.convertUTCStringToDate(sessionData.dt_end);
+  //     sessionData.dt_start = util.convertUTCStringToDate(sessionData.dt_start);
+  //     sessionData.dt_created = util.convertUTCStringToDate(
+  //       sessionData.dt_created
+  //     );
+  //     await setSession(sessionData);
 
-      // Determine if session is expired
-      setExpiredSession(new Date() > sessionData.dt_end);
-      return res;
-    } catch (err) {
-      throw err;
-    }
-  };
+  //     // Determine if session is expired
+  //     setExpiredSession(new Date() > sessionData.dt_end);
+  //     return res;
+  //   } catch (err) {
+  //     throw err;
+  //   }
+  // };
 
   /**
    * Change view for non-OK responses.
@@ -276,8 +281,12 @@ const Session = ({ userId }) => {
 
   return (
     <div>
-      {sessionResStatus === undefined && <>loading session</>}
-      {sessionResStatus === 200 && (
+      {sessionResStatus === undefined && (
+        <Container className="d-flex flex-column align-items-center justify-content-center" style={{ minHeight: "80vh" }}>
+          <h1 className="text-accent-blue text-center">Please wait, loading your session...</h1>
+        </Container> 
+      )}
+      {(sessionResStatus >= 200 && sessionResStatus <= 200) && (
         <>
           <SessionHeader showShareModal={handleShowShare} />
           <SessionShareModal
@@ -309,16 +318,6 @@ const Session = ({ userId }) => {
                 <Button variant="primary" onClick={handleShowDt}>
                   Add DtRange
                 </Button>
-                <Container className="d-flex flex-column dev-info uncenter-content">
-                  Session Status: {expiredSession ? <>Expired</> : <>Ongoing</>}
-                  <br />
-                  {JSON.stringify(session)}
-                  <br />
-                  showShareModal:{showShareModal ? "true" : "false"}
-                  <br />
-                  Session
-                  <br />
-                </Container>
               </Col>
               <Col sm={4}>
                 <SessionAttendence userSessions={userSessions} />
@@ -336,6 +335,12 @@ const Session = ({ userId }) => {
 
           <br />
         </>
+      )}
+      {(sessionResStatus < 200 || sessionResStatus > 200) && (
+        <Container className="d-flex flex-column align-items-center justify-content-center" style={{ minHeight: "80vh" }}>
+          <h1 className="text-accent-red text-center">Sorry, unable to load your session at this time</h1>
+          <p>Error: {sessionResStatus}</p>
+        </Container>
       )}
       {otherSessionResViews}
     </div>

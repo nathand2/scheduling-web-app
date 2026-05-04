@@ -10,20 +10,20 @@ const SessionHeader = ({ showShareModal }) => {
         collapseOnSelect
         className="py-0"
         expand="lg"
-        bg="dark"
-        variant="dark"
+        // bg="light"
+        // variant="dark"
       >
         <Container fluid>
-          <Navbar.Toggle aria-controls="responsive-navbar-nav" />
-          <Navbar.Collapse id="responsive-navbar-nav">
+          {/* <Navbar.Toggle aria-controls="responsive-navbar-nav" /> */}
+          {/* <Navbar.Collapse id="responsive-navbar-nav">
             <Nav className="me-auto">
               <Nav.Link href="#Session">Session</Nav.Link>
               <Nav.Link href="#Insights">Insights</Nav.Link>
               <Nav.Link href="#Settings">Settings</Nav.Link>
             </Nav>
-          </Navbar.Collapse>
-          <Navbar.Text>
-            <Button className="py-1" onClick={showShareModal}>
+          </Navbar.Collapse> */}
+          <Navbar.Text className="ms-auto">
+            <Button className="py-1" onClick={showShareModal} style={{ minWidth: "120px" }}>
               <AiOutlineUserAdd />
               &nbsp;Share&nbsp;
             </Button>

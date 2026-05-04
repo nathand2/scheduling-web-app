@@ -28,11 +28,13 @@ const Home = ({ displayName }) => {
           bg="light"
           text="primary"
         >
-          <Link to="/sessions" className="link-plain card-link">
-            <Card.Body>
-              <br />
-              <Card.Text className="link-plain">
-                <>View Sessions</>
+          <Link 
+            to="/sessions" 
+            className="link-plain card-link h-100"
+          >
+            <Card.Body className="d-flex align-items-center justify-content-center h-100">
+              <Card.Text className="link-plain mb-0">
+                View Sessions
               </Card.Text>
             </Card.Body>
           </Link>

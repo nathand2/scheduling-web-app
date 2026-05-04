@@ -41,3 +41,8 @@ Frontend: React.js, React Bootstrap, D3
 1. Go into backend directory: cd backend/sockets
 2. Install packages with npm: npm install
 3. Start SocketApi server: npm run start:dev
+
+## Quickstart Commands from root
+cd backend/api | npm start
+cd backend/sockets | npm start
+cd frontend | npm starnpm st

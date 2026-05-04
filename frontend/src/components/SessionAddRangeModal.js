@@ -4,19 +4,23 @@ import Button from "react-bootstrap/Button";
 import Flatpickr from "react-flatpickr";
 import Form from "react-bootstrap/Form";
 
+import { AiOutlineLoading3Quarters } from "react-icons/ai";
+
 import { RequestHandler } from "../js/requestHandler";
 
 const SessionAddRangeModal = ({ handleClose, show, session }) => {
-  const dtOptionsConfig = {
-    minuteIncrement: 1,
-    dateFormat: "M d Y h:m K",
-  };
 
   const [dtStatus, setDtStatus] = useState("going");
   const [dtStart, setdtStart] = useState(new Date());
   const [dtEnd, setdtEnd] = useState(
     new Date(new Date().getTime() + 60 * 60 * 2 * 1000)
   );
+  const [isCreateRangeLoading, setIsCreateRangeLoading] = useState(false);
+  
+  const dtOptionsConfig = {
+    minuteIncrement: 1,
+    dateFormat: "M d Y h:m K",
+  };
 
   /**
    * Adds datetime range with POST request
@@ -38,6 +42,7 @@ const SessionAddRangeModal = ({ handleClose, show, session }) => {
         dtEnd: dtEnd,
         status: dtStatus,
       });
+      setIsCreateRangeLoading(true);
       let res;
       res = await RequestHandler.req("/sessiontimerange", "POST", {
         sessionId: session.id,
@@ -46,8 +51,12 @@ const SessionAddRangeModal = ({ handleClose, show, session }) => {
         dtEnd: dtEnd,
         status: dtStatus,
       });
+      setIsCreateRangeLoading(false);
+
       if (res.status !== 200) return;
-      // const resData = res.data;
+      
+      handleClose();
+      
       const resData = await res.json();
       console.log("Res:", res);
       const insertId = resData.insertId;
@@ -62,7 +71,6 @@ const SessionAddRangeModal = ({ handleClose, show, session }) => {
    * Handle Submit
    */
   const submitDtRange = () => {
-    handleClose();
     addDtRange();
   };
 
@@ -111,11 +119,13 @@ const SessionAddRangeModal = ({ handleClose, show, session }) => {
           </Form.Group>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={handleClose}>
+          <Button variant="secondary" style={{ minWidth: "80px" }} onClick={handleClose}>
             Close
           </Button>
-          <Button variant="primary" onClick={submitDtRange}>
-            Submit
+          <Button variant="primary" type="submit" style={{ minWidth: "80px" }} onClick={submitDtRange}>
+            {
+              !isCreateRangeLoading ? <>Submit</> : <AiOutlineLoading3Quarters className="spin" />
+            }
           </Button>
         </Modal.Footer>
       </Modal>

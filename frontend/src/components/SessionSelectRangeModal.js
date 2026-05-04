@@ -2,12 +2,15 @@ import { useState, useEffect } from "react";
 import Modal from "react-bootstrap/Modal";
 import Button from "react-bootstrap/Button";
 
+import { AiOutlineLoading3Quarters } from "react-icons/ai";
+
 import { RequestHandler } from "../js/requestHandler";
 
 const SessionSelectRangeModal = ({ handleClose, show, range, session }) => {
   const [warning, setWarning] = useState("");
   const [warningClass, setWarningClass] = useState("text-warning");
   const [showDelete, setShowDelete] = useState(false);
+  const [isDeleteLoading, setIsDeleteLoading] = useState(false);
 
   useEffect(() => {
     try {
@@ -23,11 +26,13 @@ const SessionSelectRangeModal = ({ handleClose, show, range, session }) => {
    */
   const deleteRange = async () => {
     try {
+      setIsDeleteLoading(true);
       const res = await RequestHandler.req("/sessiontimerange", "DELETE", {
         sessionTimeRangeId: range.id,
         userSessionId: range.user_session_id,
         sessionCode: session.code,
       });
+      setIsDeleteLoading(false);
       if (res.status === 204) {
         setShowDelete(false);
         setWarningClass("text-success");
@@ -44,6 +49,15 @@ const SessionSelectRangeModal = ({ handleClose, show, range, session }) => {
     }
   };
 
+  const dismissModal = () => {
+    try {
+      setWarning("");
+      handleClose();
+    } catch (err) {
+      console.log(err);
+    }
+  }
+
   return (
     <div>
       <Modal show={show} onHide={handleClose}>
@@ -58,16 +72,21 @@ const SessionSelectRangeModal = ({ handleClose, show, range, session }) => {
               <p size="sm">
                 {`${range.dt_start.toLocaleTimeString()} - ${range.dt_end.toLocaleTimeString()}`}
               </p>
-              {JSON.stringify(range)}
+              {/* {JSON.stringify(range)} */}
             </Modal.Body>
             <Modal.Footer>
               <p className={warningClass}>{warning}</p>
               {showDelete && (
-                <Button variant="danger" onClick={deleteRange}>
-                  Delete
-                </Button>
+                // <Button variant="danger" onClick={deleteRange}>
+                //   Delete
+                // </Button>
+                <Button variant="danger" onClick={deleteRange} style={{ minWidth: "80px" }}>
+                {
+                  !isDeleteLoading ? <>Delete</> : <AiOutlineLoading3Quarters className="spin" />
+                }
+            </Button>
               )}
-              <Button variant="primary" onClick={handleClose}>
+              <Button variant="primary" onClick={dismissModal} style={{ minWidth: "80px" }}>
                 Done
               </Button>
             </Modal.Footer>

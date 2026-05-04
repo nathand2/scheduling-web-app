@@ -25,7 +25,6 @@ const Sessions = () => {
             console.log("Something went wrong. Res Status:", res.status);
             return;
           }
-          // data = res.data;
           data = await res.json();
           data.sessions.map(
             (session) =>
@@ -61,6 +60,7 @@ const Sessions = () => {
   };
   return (
     <div className="flex">
+      <h1 className="text-accent-blue">Sessions</h1>
       {sessions === undefined ? (
         <>
           <br />

@@ -1,22 +1,27 @@
 import { useState } from "react";
+
 import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
+import Row from "react-bootstrap/Row";
+
+import { AiOutlineLoading3Quarters } from "react-icons/ai";
 
 import { RequestHandler } from "../js/requestHandler";
 
 const UserSettings = ({ setAppDisplayName }) => {
   const [displayName, setDisplayName] = useState(
-    localStorage.getItem("displayName")
+    decodeURIComponent(localStorage.getItem("displayName"))
   );
   const [status, setStatus] = useState("");
   const [statusColor, setStatusColor] = useState("text-danger");
+  const [isChangeDisplayNameLoading, setIsChangeDisplayNameLoading] = useState(false);
 
   // Validates new display name and makes PUT request to api
   const changeDisplayName = async (e) => {
     setStatus("");
     setStatusColor("text-secondary");
     e.preventDefault();
-    if (displayName === localStorage.getItem("displayName")) {
+    if (displayName === decodeURIComponent(localStorage.getItem("displayName"))) {
       setStatusColor("text-danger");
       setStatus(`Cannot set same display name`);
       return;
@@ -29,6 +34,7 @@ const UserSettings = ({ setAppDisplayName }) => {
       setStatus(`Display names cannot be shorter than 3 characters`);
       return;
     }
+    setIsChangeDisplayNameLoading(true);
     setStatus(`Trying to submit`);
     console.log("Simulate display name change");
     let res;
@@ -50,6 +56,7 @@ const UserSettings = ({ setAppDisplayName }) => {
         setStatus("Failed to change display name");
         setStatusColor("text-danger");
       }
+      setIsChangeDisplayNameLoading(false);
     } catch (err) {
       setStatus("Error");
       setStatusColor("text-danger");
@@ -114,21 +121,28 @@ const UserSettings = ({ setAppDisplayName }) => {
 
   return (
     <div>
-      UserSettings
+      <h1 className="text-accent-blue">Settings</h1>
       <Form onSubmit={changeDisplayName}>
-        <Form.Group className="flex-col small-form-group">
+        <Form.Group className="flex-col small-form-group text-start">
           <Form.Label>Change Display Name</Form.Label>
-          <Form.Control
-            className="small-form-input"
-            // value={localStorage.getItem('displayName')}
-            placeholder={localStorage.getItem("displayName")}
-            onChange={(e) => setDisplayName(e.target.value)}
-            required
-          />
-          <Form.Text className={statusColor}>{status}</Form.Text>
-          <Button variant="primary" type="submit">
-            Submit
-          </Button>
+          <Row className="align-items-center gap-2">
+            <div className="d-flex gap-2">
+              <Form.Control
+                className="flex-grow-1"
+                placeholder={decodeURIComponent(localStorage.getItem("displayName"))}
+                onChange={(e) => setDisplayName(e.target.value)}
+                required
+              />
+              <Button variant="primary" type="submit" style={{ minWidth: "80px" }}>
+                {
+                  !isChangeDisplayNameLoading ? <>Submit</> : <AiOutlineLoading3Quarters className="spin" />
+                }
+              </Button>
+            </div>
+          </Row>
+          <Row className="align-items-center gap-2" fluid>
+            <Form.Text className={statusColor}>{status}</Form.Text>
+          </Row>
         </Form.Group>
       </Form>
     </div>

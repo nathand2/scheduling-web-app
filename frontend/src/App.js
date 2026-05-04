@@ -100,7 +100,7 @@ function App() {
     deleteCookie("displayName");
 
     await setUserId(localStorage.getItem("userId"));
-    await setDisplayName(localStorage.getItem("displayName"));
+    await setDisplayName(decodeURIComponent(localStorage.getItem("displayName")));
   };
 
   /**

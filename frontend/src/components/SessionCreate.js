@@ -7,6 +7,8 @@ import Button from "react-bootstrap/Button";
 import Container from "react-bootstrap/Container";
 import { Navigate } from "react-router-dom";
 
+import { AiOutlineLoading3Quarters } from "react-icons/ai";
+
 import { RequestHandler } from "../js/requestHandler";
 
 const SessionCreate = () => {
@@ -20,6 +22,9 @@ const SessionCreate = () => {
 
   const [sessionCreated, setSessionCreated] = useState(false);
   const [sessionId, setSessionId] = useState("");
+  const [isCreateSessionLoading, setIsCreateSessionLoading] = useState(false);
+  const [statusText, setStatusText] = useState('')
+
 
   const dtOptionsConfig = {
     minuteIncrement: 1,
@@ -56,15 +61,23 @@ const SessionCreate = () => {
     };
     console.log("Session:", session);
 
+    setIsCreateSessionLoading(true);
+
     let sessionData;
     let res;
     try {
       res = await RequestHandler.req("/session", "POST", session);
-      // sessionData = res.data;
+      setIsCreateSessionLoading(false);
+
+      if (res.status < 200 || res.status > 299) {
+        // Unable to create session
+        setStatusText(`Error: Unable to create session ${res.status}`)
+      }
       sessionData = await res.json();
       console.log("New session ID:", sessionData.code);
       setSessionId(sessionData.code);
       setSessionCreated(true);
+
     } catch (err) {
       console.log("Unable to create session. Error:", err);
     }
@@ -77,9 +90,10 @@ const SessionCreate = () => {
           <Navigate to={`/session/${sessionId}`} />
         </>
       )}
+      <h1 className="text-accent-blue">Create Session</h1>
       <Container className="sessions-preview d-flex flex-wrap bd-highlight"></Container>
       <Form onSubmit={createSession}>
-        <Form.Group className="mb-3" controlId="formGroupTitle">
+        <Form.Group className="mb-3 flex-col small-form-group text-start" controlId="formGroupTitle">
           <Form.Label>Session Title</Form.Label>
           <Form.Control
             placeholder="Title"
@@ -87,14 +101,14 @@ const SessionCreate = () => {
             required
           />
         </Form.Group>
-        <Form.Group className="mb-3" controlId="formGroupDesc">
+        <Form.Group className="mb-3 flex-col small-form-group text-start" controlId="formGroupDesc">
           <Form.Label>Session Desciption</Form.Label>
           <Form.Control
             placeholder="Description"
             onChange={(e) => setDesc(e.target.value)}
           />
         </Form.Group>
-        <Form.Group className="mb-3">
+        <Form.Group className="mb-3 flex-col small-form-group text-start">
           <Form.Label>Session Start &nbsp;</Form.Label>
           <Flatpickr
             data-enable-time
@@ -108,7 +122,7 @@ const SessionCreate = () => {
             }}
           />
         </Form.Group>
-        <Form.Group className="mb-3">
+        <Form.Group className="mb-3 flex-col small-form-group text-start">
           <Form.Label>Session End &nbsp;</Form.Label>
           <Flatpickr
             data-enable-time
@@ -123,7 +137,7 @@ const SessionCreate = () => {
           />
         </Form.Group>
 
-        <Form.Group className="mb-3">
+        <Form.Group className="mb-3 flex-col small-form-group text-start">
           <Form.Label>Who can attend my Session? &nbsp;</Form.Label>
           <Form.Select
             aria-label="Default select example"
@@ -139,9 +153,16 @@ const SessionCreate = () => {
         </Form.Group>
 
         <Form.Group className="mb-3">
-          <Button variant="primary" type="submit">
-            Create the session
-          </Button>
+            <Button variant="primary" type="submit" style={{ minWidth: "160px" }}>
+                {
+                  !isCreateSessionLoading ? <>Create Session</> : <AiOutlineLoading3Quarters className="spin" />
+                }
+            </Button>
+        </Form.Group>
+        <Form.Group className="mb-3">
+          <p className="statusTextClass">
+            {statusText}
+          </p>
         </Form.Group>
       </Form>
 

@@ -118,7 +118,7 @@ const About = () => {
           </p>
           <p>
             Find more of my work{" "}
-            <a className="text-accent-blue" href="https://nathandong.com/">
+            <a className="text-accent-blue" href="https://nathandong.dev/">
               here
             </a>
           </p>
