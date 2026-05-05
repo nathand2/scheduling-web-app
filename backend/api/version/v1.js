@@ -476,12 +476,12 @@ app.post(resource + '/auth/login', async (req, res) => {
       const sessionDtStart = session.dt_start
       const sessionDtEnd = session.dt_end
       
-      const sessionDateStart = new Date(sessionDtStart)
-      const sessionDateEnd = new Date(sessionDtEnd)
+      const sessionDateStart = new Date(sessionDtStart + 'Z')
+      const sessionDateEnd = new Date(sessionDtEnd + 'Z')
       
-      if ((sessionDateStart <= dateStart && sessionDateEnd >= dateEnd)) {
-        console.log("Invalid dt range.")
-        return res.sendStatus(400)  // Client Error
+      if (dateStart < sessionDateStart || dateEnd > sessionDateEnd) {
+          console.log(`Invalid dt range.\n Range Datetimes---\nStart: ${dateStart}\nEnd: ${dateEnd}\n\nSession Datetimes---\nStart: ${sessionDateStart}\nEnd: ${sessionDateEnd}`)
+          return res.sendStatus(400)
       }
       
       // Check if user is apart of session
