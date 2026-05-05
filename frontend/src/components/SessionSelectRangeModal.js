@@ -60,7 +60,7 @@ const SessionSelectRangeModal = ({ handleClose, show, range, session }) => {
 
   return (
     <div>
-      <Modal show={show} onHide={handleClose}>
+      <Modal show={show} onHide={dismissModal}>
         {range !== undefined ? (
           <>
             <Modal.Header closeButton>

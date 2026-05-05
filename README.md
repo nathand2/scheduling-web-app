@@ -45,4 +45,4 @@ Frontend: React.js, React Bootstrap, D3
 ## Quickstart Commands from root
 cd backend/api | npm start
 cd backend/sockets | npm start
-cd frontend | npm starnpm st
+cd frontend | npm start
