@@ -5,7 +5,7 @@ const db = require('../db');
 // Passport Google OAuth environment variables
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
-const appURL = process.env.NODE_ENV === 'development' ? "http://localhost:6500" : "https://api.nathandong.com/scheduler"
+const appURL = process.env.NODE_ENV === 'development' ? "http://localhost:6500" : "https://api.nathandong.dev/scheduler"
 
 // Google Auth. Creates new user account if necessary. Authenticates user.
 const authUser = async (request, accessToken, refreshToken, profile, done) => {
