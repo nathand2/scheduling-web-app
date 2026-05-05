@@ -9,7 +9,7 @@ const util = require('../services/util');
 
 const versionEndpoint = "/v1";
 const resource = process.env.NODE_ENV === 'development' ? "" : "/scheduler";
-const socketEndpointRoot = process.env.NODE_ENV === 'development' ? "http://localhost:7500" : "http://socket.nathandong.dev/";
+const socketEndpointRoot = process.env.NODE_ENV === 'development' ? "http://localhost:7500" : "https://socket.nathandong.dev/";
 const rootURL = process.env.NODE_ENV === 'development' ? "http://localhost:3000" : "https://scheduler.nathandong.dev";
 const cookieDomain = process.env.NODE_ENV === 'development' ? ".localhost" : '.nathandong.dev';
 
