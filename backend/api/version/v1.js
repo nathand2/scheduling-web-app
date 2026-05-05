@@ -20,12 +20,12 @@ const secureCookieConfig = {
   secure: true,
   httpOnly: true,
   ...(!(process.env.NODE_ENV === 'development') && { domain: cookieDomain })  // Exclude domain option if localhost
-  // sameSite: 'strict' // Won't work if api and auth on different domains. Helps against CSRF attacks.
+  ,sameSite: 'strict' // Won't work if api and auth on different domains. Helps against CSRF attacks.
 }
 const semiSecureCookieConfig = {
   secure: true,
   ...(!(process.env.NODE_ENV === 'development') && { domain: cookieDomain })  // Exclude domain option if localhost
-  // sameSite: 'strict' // Won't work if api and auth on different domains. Helps against CSRF attacks.
+  ,sameSite: 'strict' // Won't work if api and auth on different domains. Helps against CSRF attacks.
 }
 
 
@@ -274,9 +274,6 @@ app.post(resource + '/auth/login', async (req, res) => {
     }
 
     try {
-      console.log("/session Locals.user:", res.locals.user)
-      // const sessionCode = util.generateSessionCode();
-
       // Generate valid session code
       let sessionCode;
       let count = 0;
@@ -364,9 +361,6 @@ app.post(resource + '/auth/login', async (req, res) => {
     try {
       const { sessionCode } = req.body
       const userId = res.locals.user.userId
-
-      // // See if user_session of owner exists for user
-      // const userSessions = await db.getOwnerUserSessionByUserIdAndSessionCode(userId, sessionCode)
 
       // Check if user is apart of the session
       const userSessions = await db.getUserSessionByUserIdAndSessionCode(userId, sessionCode);
@@ -459,6 +453,11 @@ app.post(resource + '/auth/login', async (req, res) => {
     }
   })
 
+  /**
+   * Creates a DT Range for a session
+   * 
+   * Upon successful completion, notifies socket api of new session time range
+   */
   app.post(resource + '/sessiontimerange', auth.authenticateToken, async (req, res) => {
     try {
       const userId = res.locals.user.userId  // User Id from JWT token
@@ -505,7 +504,7 @@ app.post(resource + '/auth/login', async (req, res) => {
       // Send post request to websocket api
       try {
         const response = await axios.post(socketEndpointRoot + '/sessiontimerange', postBody);
-        console.log(response);
+        console.log("Socket Response: ", response.status);
       } catch (error) {
         console.error(error);
       }
