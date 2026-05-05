@@ -17,7 +17,7 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : 'https://scheduler.nathandong.com',
+  origin: process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : 'https://scheduler.nathandong.dev',
   credentials: true
 }));
 app.use(express.json());
