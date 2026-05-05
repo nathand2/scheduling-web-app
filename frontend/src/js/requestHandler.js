@@ -5,10 +5,9 @@
  */
 
 export class RequestHandler {
-  // static webSocketEndpoint = process.env.NODE_ENV === 'development' ? "http://localhost:7500" : "https://api.nathandong.com/scheduler";
-  static webSocketEndpoint = process.env.NODE_ENV === 'development' ? "http://localhost:7500" : "https://socket.nathandong.com";
-  static endpointRoot = process.env.NODE_ENV === 'development' ? "http://localhost:6500" : "https://api.nathandong.com/scheduler";
-  static appRoot = process.env.NODE_ENV === 'development' ? "http://localhost:3000" : "https://scheduler.nathandong.com";  // Frontend url
+  static webSocketEndpoint = process.env.NODE_ENV === 'development' ? "http://localhost:7500" : "https://socket.nathandong.dev";
+  static endpointRoot = process.env.NODE_ENV === 'development' ? "http://localhost:6500" : "https://api.nathandong.dev/scheduler";
+  static appRoot = process.env.NODE_ENV === 'development' ? "http://localhost:3000" : "https://scheduler.nathandong.dev";  // Frontend url
 
   // First API request and silent JWT refresh if needed.
   static async req(resource, reqMethod, reqBody=undefined) {
@@ -23,20 +22,6 @@ export class RequestHandler {
         },
         ...(reqBody && {body: JSON.stringify(reqBody)})
       });
-      // if (res.status === 200) {
-      //   const data = await res.json();  // JWT token valid, return results.
-      //   return {status: 200, data: data}
-      // } else if (res.status === 204) {
-      //   return {status: 204}
-      // } else if (res.status === 401 ) {
-      //   return await this.refreshJWT(resource, reqMethod, reqBody);  // Expired Access token, attempt to refresh JWT
-      // } else if (res.status === 403 ) {
-      //   return {status: 403}
-      // } else {
-      //   // Bad request config for internal error.
-      //   console.log(`Incorrect RequestHandler.res params or internal error [${res.status}]`)
-      //   return {status: res.status}
-      // }
       if (
         res.status >= 200 &&
         res.status <= 299
@@ -76,12 +61,6 @@ export class RequestHandler {
         },
         ...(reqBody && {body: JSON.stringify(reqBody)})
       });
-     
-      // if (res.status === 200) {
-      //   const data = await res.json();  // JWT token valid, return results.
-      //   return {status: 200, data: data}
-      // } else if (res.status === 204) {
-      //   return {status: 204}
       if (
         res.status >= 200 &&
         res.status <= 299
