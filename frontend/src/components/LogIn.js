@@ -12,8 +12,8 @@ import Row from "react-bootstrap/Row";
 import Card from "react-bootstrap/Card";
 import { Navigate } from "react-router-dom";
 
-const LogIn = ( { setLoggedIn } ) => {
-  const googleAuthEndpoint = RequestHandler.endpointRoot + "/auth/google";
+const LogIn = ( { setLoggedIn, setDisplayName, setUserId, setAccessToken } ) => {
+  const googleAuthEndpoint = RequestHandler.endpointRoot + "/v2/auth/google";
 
   const [searchParams] = useSearchParams();
   const [userName, setUsername] = useState('')
@@ -30,11 +30,18 @@ const LogIn = ( { setLoggedIn } ) => {
     }
     let res;
     try {
-      res = await RequestHandler.req("/auth/login", "POST", body);
+      // res = await RequestHandler.req("/v1/auth/login", "POST", body);
+      res = await RequestHandler.req("/v2/auth/login", "POST", body);
       console.log(res)
 
       // Successful login
       if (res.status === 200) {
+        const data = await res.json();
+        if (data) {
+          setDisplayName(data.displayName);
+          setUserId(data.userId);
+          setAccessToken(data.accessToken);
+        }
         setLoggedIn(true);
         setIsLoginSuccessful(true);  // Redirect to home
       }

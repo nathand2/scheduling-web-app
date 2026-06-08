@@ -24,7 +24,7 @@ const SessionShareModal = ({ handleClose, show }) => {
     setIsGetInviteLinkLoading(true);
     let res;
     try {
-       res = await RequestHandler.req("/sessioninvite", "POST", {
+       res = await RequestHandler.req("/v1/sessioninvite", "POST", {
         sessionCode: params.code,
       });
       setIsGetInviteLinkLoading(false);
@@ -67,14 +67,14 @@ const SessionShareModal = ({ handleClose, show }) => {
     let res;
     try {
        res = await RequestHandler.req(
-        `/sessioninvite?code=${params.code}`,
+        `/v1/sessioninvite?code=${params.code}`,
         "GET"
       );
       setIsGetInviteLinkLoading(false);
 
       // If no invite code exists, create one
       if (res.status === 404) {
-        res = await RequestHandler.req("/sessioninvite", "POST", {
+        res = await RequestHandler.req("/v1/sessioninvite", "POST", {
           sessionCode: params.code,
         });
       }

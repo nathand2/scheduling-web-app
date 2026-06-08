@@ -11,8 +11,8 @@ import Row from "react-bootstrap/Row";
 import Card from "react-bootstrap/Card";
 import { Navigate } from "react-router-dom";
 
-const SignUp = ( { setLoggedIn } ) => {
-  const googleAuthEndpoint = RequestHandler.endpointRoot + "/auth/google";
+const SignUp = ( { setLoggedIn, setDisplayName, setUserId, setAccessToken  } ) => {
+  const googleAuthEndpoint = RequestHandler.endpointRoot + "/v2/auth/google";
 
   const [searchParams] = useSearchParams();
   // const [email, setEmail] = useState('')
@@ -32,10 +32,19 @@ const SignUp = ( { setLoggedIn } ) => {
     }
     let res;
     try {
-      res = await RequestHandler.req("/auth/register", "POST", body);
+      res = await RequestHandler.req("/v2/auth/register", "POST", body);
 
       // Successful Signup
-      if (res.status === 200 || res.status === 201) {
+      if (res.status >= 200 && res.status <= 299) {
+        const data = await res.json();
+        if (data) {
+          console.log("b4")
+          setDisplayName(data.displayName);
+          setUserId(data.userId);
+          setAccessToken(data.accessToken);
+          console.log("after")
+
+        }
         setLoggedIn(true);
         setIsSignUpSuccessful(true);  // Redirect to home
       } else if (res.status === 409) {
@@ -43,6 +52,7 @@ const SignUp = ( { setLoggedIn } ) => {
         setStatusText(`Username already taken. [${res.status}]`);
       }
     } catch (err) {
+      console.log(err)
       setStatusText(`Unable to sign up at this time. [${res.status}]`);
     }
   }

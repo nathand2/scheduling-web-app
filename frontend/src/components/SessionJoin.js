@@ -41,7 +41,7 @@ const SessionJoin = ({ loggedIn }) => {
         if (inviteCode) {
           let data, res;
           try {
-            res = await RequestHandler.req("/joinsession", "POST", {
+            res = await RequestHandler.req("/v1/joinsession", "POST", {
               inviteCode: { inviteCode },
             });
             console.log("res", res);

@@ -27,7 +27,7 @@ const SessionSelectRangeModal = ({ handleClose, show, range, session }) => {
   const deleteRange = async () => {
     try {
       setIsDeleteLoading(true);
-      const res = await RequestHandler.req("/sessiontimerange", "DELETE", {
+      const res = await RequestHandler.req("/v1/sessiontimerange", "DELETE", {
         sessionTimeRangeId: range.id,
         userSessionId: range.user_session_id,
         sessionCode: session.code,

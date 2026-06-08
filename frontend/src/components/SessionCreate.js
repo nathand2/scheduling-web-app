@@ -66,7 +66,7 @@ const SessionCreate = () => {
     let sessionData;
     let res;
     try {
-      res = await RequestHandler.req("/session", "POST", session);
+      res = await RequestHandler.req("/v1/session", "POST", session);
       setIsCreateSessionLoading(false);
 
       if (res.status < 200 || res.status > 299) {

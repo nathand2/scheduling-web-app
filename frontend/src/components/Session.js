@@ -44,7 +44,7 @@ const Session = ({ userId }) => {
       // Get session data from api
       try {
         let res;
-        res = await RequestHandler.req(`/session/${params.code}`, "GET");
+        res = await RequestHandler.req(`/v1/session/${params.code}`, "GET");
         if (!isMounted) return; // bail if unmounted during async call
 
         setSessionResStatus(res.status);
@@ -236,7 +236,7 @@ const Session = ({ userId }) => {
       let res;
       // Get session time range data.
       res = await RequestHandler.req(
-        `/timeranges?sessionid=${sessionId}`,
+        `/v1/timeranges?sessionid=${sessionId}`,
         "GET"
       );
       const data = await res.json();
@@ -267,7 +267,7 @@ const Session = ({ userId }) => {
       let res;
       // Get user sessions
       res = await RequestHandler.req(
-        `/usersessions?sessionid=${sessionId}`,
+        `/v1/usersessions?sessionid=${sessionId}`,
         "GET"
       );
       const data = await res.json();

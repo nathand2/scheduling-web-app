@@ -24,7 +24,7 @@ function App() {
   const [accessToken, setAccessToken] = useState("");
   const [refreshToken, setRefreshToken] = useState("");
   const [loggedIn, setLoggedIn] = useState(undefined);
-  const [userId, setUserId] = useState(undefined);
+  const [userId, setUserId] = useState(undefined);    // Identify who user is for rendering frontend elements
   const [displayName, setDisplayName] = useState("");
 
   const [isDev, setIsDev] = useState(
@@ -33,15 +33,38 @@ function App() {
 
   // When app loaded, manage login state
   useEffect(() => {
-    processJWTs();
+    setStorageJWTs();
     getUserData();
+    initializeAuth();
   }, []);
 
-  // When app loaded, manage login state
-  useEffect(() => {
-    processJWTs();
-    getUserData();
-  }, [loggedIn]);
+  const initializeAuth = async () => {
+  try {
+    const res = await fetch(endpointRoot + "/v2/token", {
+      method: "POST",
+      credentials: "include",
+    });
+
+    if (res.status !== 200) {
+      setLoggedIn(false);
+      setAccessToken("");
+      setUserId(undefined);
+      setDisplayName("");
+      return;
+    }
+
+    const data = await res.json();
+    window.sessionStorage.setItem('accessToken', data.token);
+
+    setAccessToken(data.accessToken);
+    setUserId(data.userId);
+    setDisplayName(data.displayName);
+    setLoggedIn(true);
+  } catch (err) {
+    console.log(err);
+    setLoggedIn(false);
+  }
+};
 
   /**
    * Gets cookie by name
@@ -72,13 +95,9 @@ function App() {
   const setStorageJWTs = async () => {
     // Get JWT and refresh token from cookies.
     const accessToken = getCookie("accessToken");
-    const refreshToken = getCookie("refreshToken");
 
-    if (accessToken !== undefined) {
+    if (accessToken !== undefined && accessToken !== null) {
       await window.sessionStorage.setItem("accessToken", accessToken);
-    }
-    if (refreshToken !== undefined) {
-      await window.localStorage.setItem("refreshToken", refreshToken);
     }
   };
 
@@ -96,29 +115,9 @@ function App() {
     if (displayNameFromCookie !== undefined) {
       await window.localStorage.setItem("displayName", displayNameFromCookie);
     }
-    deleteCookie("userId");
-    deleteCookie("displayName");
 
     await setUserId(localStorage.getItem("userId"));
     await setDisplayName(decodeURIComponent(localStorage.getItem("displayName")));
-  };
-
-  /**
-   * Processes JWTs taken from Cookies
-   */
-  const processJWTs = async () => {
-    await setStorageJWTs();
-    deleteCookie("accessToken");
-    deleteCookie("refreshToken");
-
-    setAccessToken(window.sessionStorage.getItem("accessToken"));
-    setRefreshToken(window.localStorage.getItem("refreshToken"));
-
-    if (isLoggedIn()) {
-      setLoggedIn(true);
-    } else {
-      setLoggedIn(false);
-    }
   };
 
   /**
@@ -127,35 +126,23 @@ function App() {
   const logOut = async () => {
     console.log("attempt to log out");
     try {
-      await fetch(endpointRoot + "/logout", {
+      await fetch(endpointRoot + "/v2/logout", {
         method: "DELETE",
-        headers: {
-          Authorization: `token ${window.localStorage.getItem("refreshToken")}`,
-        },
+        credentials: 'include'
       });
       localStorage.removeItem("userId");
       localStorage.removeItem("displayName");
-      localStorage.removeItem("refreshToken");
       sessionStorage.removeItem("accessToken");
+
+      deleteCookie("accessToken");
+      // deleteCookie("refreshToken");  //! http only, api deletes the cookie
+      deleteCookie("displayName");
+      deleteCookie("userId");
       setLoggedIn(false);
       setAccessToken("");
       setRefreshToken("");
-      window.location.href = "/"; // Redirect to home
     } catch (err) {
       console.log("Error when logging out");
-    }
-  };
-
-  /**
-   * Determines if user logged in
-   * @returns boolean
-   */
-  const isLoggedIn = () => {
-    if (localStorage.getItem("refreshToken") === null) {
-      console.log("No refreshtoken found");
-      return false;
-    } else {
-      return true;
     }
   };
 
@@ -164,7 +151,7 @@ function App() {
    */
   const refreshAccessToken = async () => {
     try {
-      const res = await fetch(endpointRoot + "/token", {
+      const res = await fetch(endpointRoot + "/v1/token", {
         method: "POST",
         credentials: "include", // Include cookies in request
         headers: {
@@ -195,7 +182,7 @@ function App() {
   const testEndpoint = async () => {
     let res;
     try {
-      res = await RequestHandler.req("/sessions", "GET");
+      res = await RequestHandler.req("/v1/sessions", "GET");
     } catch (err) {
       console.log("Error:", err);
     }
@@ -210,7 +197,7 @@ function App() {
   const testRequest = async () => {
     let res;
     try {
-      res = await RequestHandler.req("/testauth", "POST");
+      res = await RequestHandler.req("/v1/testauth", "POST");
     } catch (err) {
       console.log("Error:", err);
     }
@@ -291,7 +278,7 @@ function App() {
             path="/login"
             element={
               <>
-                <LogIn setLoggedIn={setLoggedIn}/>
+                <LogIn setLoggedIn={setLoggedIn} setDisplayName={setDisplayName} setUserId={setUserId} setAccessToken={setAccessToken}/>
               </>
             }
           />
@@ -299,7 +286,7 @@ function App() {
             path="/signup"
             element={
               <>
-                <SignUp setLoggedIn={setLoggedIn}/>
+                <SignUp setLoggedIn={setLoggedIn} setDisplayName={setDisplayName} setUserId={setUserId} setAccessToken={setAccessToken}/>
               </>
             }
           />

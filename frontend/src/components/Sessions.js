@@ -20,7 +20,7 @@ const Sessions = () => {
         // Get session data from api
         let data, res;
         try {
-          res = await RequestHandler.req(`/sessions`, "GET");
+          res = await RequestHandler.req(`/v1/sessions`, "GET");
           if (res.status !== 200) {
             console.log("Something went wrong. Res Status:", res.status);
             return;

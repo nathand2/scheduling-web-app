@@ -26,6 +26,7 @@ app.use(passport.initialize());
 require('./services/googleStrategy');
 
 require('./version/v1')(app, db, auth, passport);
+require('./version/v2')(app, db, auth, passport);
 
 app.get("/", async (req, res) => {
   res.json({hello: "world"})

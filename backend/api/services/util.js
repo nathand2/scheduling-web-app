@@ -14,39 +14,11 @@ exports.generateSessionCode = () => {
 
 exports.dtRefreshFingerprintCookieExpires = () => {
   return new Date(Date.now() + 3600000 * 24 * 30) // 30 days
+//   return new Date(Date.now() + 1000 * 60 * 3) // 3 minutes
 }
 
-
-
-// exports.addLeadingZeros = (num, totalLength) => {
-//   return String(num).padStart(totalLength, '0');
+// exports.dtRefreshFingerprintCookieExpires = () => {
+//   return new Date(Date.now() + 3600000 * 24 * 30) // 30 days
+// //   return new Date(Date.now() + 1000 * 60 * 3) // 3 minutes
 // }
 
-// exports.generateTag = () => {
-//   const randNum = Math.floor(Math.random() * 10000)
-//   const tag = this.addLeadingZeros(randNum, 4)
-//   return tag
-// }
-
-// exports.checkUsernameTagExists = async (username, tag) => {
-//   try {
-//     const results = await dbConnection(`SELECT * FROM user where username = ${username} and tag = ${tag};`)
-
-//     return results.length > 0 // Returns true if exists, else false
-//   } catch(err) {
-//     throw err
-//   }
-// }
-
-// exports.findValidUsernameTag = async (username) => {
-//   let count = 0;
-//   while(count < tagGenRounds) {
-//     const newTag = this.generateTag()
-//     if(!this.checkUsernameTagExists(username, newTag)) {
-//       return {username: username, tag: newTag}
-//     }
-//   }
-
-//   // If can't find valid username/tag
-//   throw new Error('Unable to find unique Username and Tag')
-// }

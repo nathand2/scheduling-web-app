@@ -40,7 +40,7 @@ const UserSettings = ({ setAppDisplayName }) => {
     let res;
     try {
       const reqDisplayName = displayName; // If they fiddle with form
-      res = await RequestHandler.req(`/displayname`, "PUT", {
+      res = await RequestHandler.req(`/v1/displayname`, "PUT", {
         displayName: displayName,
       });
       if (res.status === 204) {

@@ -11,10 +11,26 @@ const crypto = require('crypto')
 const createHash = crypto.createHash;
 const accessTokenSecret = process.env.ACCESS_TOKEN_SECRET;
 const refreshTokenSecret = process.env.REFRESH_TOKEN_SECRET;
-const jwtExpiresIn = '10m';
+// const jwtExpiresIn = '10m';
+
+// All lifetimes in milliseconds — single source of truth
+const jwtAccessTokenLifetimeMs = 1 * 60 * 1000        // 1 min
+// const jwtRefreshTokenLifetimeMs = 7 * 24 * 60 * 60 * 1000  // 7 days
+const jwtRefreshTokenLifetimeMs = 3 * 60 * 1000  // 3 min
+
+// Cookie maxAge uses ms directly
+exports.jwtAccessTokenCookieMaxAge = jwtAccessTokenLifetimeMs
+exports.jwtRefreshTokenCookieMaxAge = jwtRefreshTokenLifetimeMs
+
+// JWT expiresIn accepts seconds as a number
+const jwtAccessTokenExpiresIn = jwtAccessTokenLifetimeMs / 1000
+const jwtRefreshTokenExpiresIn = jwtRefreshTokenLifetimeMs / 1000
+// Exports if needed externally
+exports.jwtAccessTokenExpiresIn = jwtAccessTokenExpiresIn
+exports.jwtRefreshTokenExpiresIn = jwtRefreshTokenExpiresIn
 
 /**
- * Authenticates token in authorization header
+ * Authenticates ACCESS token in authorization header
  * @param {*} req a request
  * @param {*} res a response
  */
@@ -28,6 +44,7 @@ exports.authenticateToken = (req, res, next) => {
 
   const authHeader = req.headers.authorization;
   if (!authHeader) {
+    console.log("401: Auth Header")
     res.sendStatus(401); // No authorization header
     return;
   }
@@ -38,8 +55,12 @@ exports.authenticateToken = (req, res, next) => {
   const userContext = req.cookies.userContextAccess;
 
   jwt.verify(token, accessTokenSecret, (err, user) => {
-    if (err) return res.sendStatus(401);
-
+    if (err) {
+      console.log("401: Could not verify JWT")
+      console.log("Token: ", token)
+      console.log(err)
+      return res.sendStatus(401);
+    }
     const userContextHashed = user.hash; // User context for access token
 
     // Verify user context.
@@ -49,6 +70,7 @@ exports.authenticateToken = (req, res, next) => {
         res.locals.user = user
         next() // Serve content using next callback
       } else {
+        console.log("401: Could not verify user context (fingerprint)")
         return res.sendStatus(401)
       }
     } catch (err) {
@@ -64,7 +86,7 @@ exports.authenticateToken = (req, res, next) => {
  */
 exports.generateAccessToken = (user) => {
   console.log("Generating access token for user:", user)
-  const accessToken = jwt.sign(user, accessTokenSecret, { expiresIn: jwtExpiresIn });
+  const accessToken = jwt.sign(user, accessTokenSecret, { expiresIn: jwtAccessTokenExpiresIn });
   return accessToken;
 }
 
@@ -75,7 +97,8 @@ exports.generateAccessToken = (user) => {
  */
 exports.generateRefreshToken = (user) => {
   console.log("Generating refresh token for user:", user)
-  const accessToken = jwt.sign(user, refreshTokenSecret);
+  // const accessToken = jwt.sign(user, jwtRefreshTokenExpiresIn);
+  const accessToken = jwt.sign(user, refreshTokenSecret, { expiresIn: jwtRefreshTokenExpiresIn });
   return accessToken;
 }
 

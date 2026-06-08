@@ -44,7 +44,7 @@ const SessionAddRangeModal = ({ handleClose, show, session }) => {
       });
       setIsCreateRangeLoading(true);
       let res;
-      res = await RequestHandler.req("/sessiontimerange", "POST", {
+      res = await RequestHandler.req("/v1/sessiontimerange", "POST", {
         sessionId: session.id,
         sessionCode: session.code,
         dtStart: dtStart,
