@@ -207,6 +207,11 @@ module.exports = (app, db, auth, passport, io) => {
 
     res.cookie('userId', user.id, semiSecureCookieConfig)
     res.cookie('displayName', user.display_name, semiSecureCookieConfig)
+    return {
+      accessToken,
+      userId: user.id,
+      displayName: user.display_name
+    }
   }
 
   // Register
@@ -223,8 +228,8 @@ module.exports = (app, db, auth, passport, io) => {
 
       // Log them in immediately after registering
       const users = await db.getUserByUsername(username)
-      await loginUser(res, users[0])
-      res.json({})
+      const result = await loginUser(res, users[0])
+      res.json(result)
     } catch(err) {
       console.log(err)
       res.sendStatus(500)
@@ -244,8 +249,8 @@ module.exports = (app, db, auth, passport, io) => {
       const validPassword = await bcrypt.compare(password, users[0].password)
       if (!validPassword) return res.sendStatus(401)
 
-      await loginUser(res, users[0])
-      res.json({})
+      const result = await loginUser(res, users[0])
+      res.json(result)
     } catch(err) {
 			console.log(err);
       res.sendStatus(500)

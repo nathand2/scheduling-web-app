@@ -24,52 +24,58 @@ function App() {
   const [accessToken, setAccessToken] = useState("");
   const [refreshToken, setRefreshToken] = useState("");
   const [loggedIn, setLoggedIn] = useState(undefined);
-  const [userId, setUserId] = useState(undefined);    // Identify who user is for rendering frontend elements
+  const [userId, setUserId] = useState(undefined);
   const [displayName, setDisplayName] = useState("");
 
   const [isDev, setIsDev] = useState(
     !process.env.NODE_ENV || process.env.NODE_ENV === "development"
   );
 
-  // When app loaded, manage login state
   useEffect(() => {
-    setStorageJWTs();
-    getUserData();
-    initializeAuth();
+    const init = async () => {
+      await setStorageJWTs();   // Pick up accessToken cookie from Google OAuth redirect if present
+      await getUserData();      // Pick up userId/displayName cookies from Google OAuth redirect if present
+      await initializeAuth();   // Get fresh accessToken via refresh token — runs last and wins
+    };
+    init();
   }, []);
 
+  /**
+   * Calls /token endpoint to get a fresh access token using the refresh token cookie.
+   * Sets loggedIn state and populates user data.
+   */
   const initializeAuth = async () => {
-  try {
-    const res = await fetch(endpointRoot + "/v2/token", {
-      method: "POST",
-      credentials: "include",
-    });
+    try {
+      const res = await fetch(endpointRoot + "/v2/token", {
+        method: "POST",
+        credentials: "include",
+      });
 
-    if (res.status !== 200) {
+      if (res.status !== 200) {
+        setLoggedIn(false);
+        setAccessToken("");
+        setUserId(undefined);
+        setDisplayName("");
+        return;
+      }
+
+      const data = await res.json();
+
+      // Write to sessionStorage so RequestHandler can use it immediately
+      window.sessionStorage.setItem("accessToken", data.token);
+
+      setAccessToken(data.token);
+      setUserId(data.userId);
+      setDisplayName(data.displayName);
+      setLoggedIn(true);
+    } catch (err) {
+      console.log(err);
       setLoggedIn(false);
-      setAccessToken("");
-      setUserId(undefined);
-      setDisplayName("");
-      return;
     }
-
-    const data = await res.json();
-    window.sessionStorage.setItem('accessToken', data.token);
-
-    setAccessToken(data.accessToken);
-    setUserId(data.userId);
-    setDisplayName(data.displayName);
-    setLoggedIn(true);
-  } catch (err) {
-    console.log(err);
-    setLoggedIn(false);
-  }
-};
+  };
 
   /**
    * Gets cookie by name
-   * @param {string} name
-   * @returns cookie as string
    */
   const getCookie = (name) => {
     const value = `; ${document.cookie}`;
@@ -79,33 +85,30 @@ function App() {
 
   /**
    * Deletes cookie by name
-   * @param {string} name 
    */
   const deleteCookie = (name) => {
     if (!process.env.NODE_ENV || process.env.NODE_ENV === "development") {
       document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
     } else {
-      document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.nathandong.com;`;
+      document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.nathandong.dev;`;
     }
   };
 
   /**
-   * Sets JWTs into local/session storage taken from cookies
+   * Picks up accessToken cookie set after Google OAuth redirect.
+   * Only runs on initial mount — initializeAuth overwrites this with a fresh token.
    */
   const setStorageJWTs = async () => {
-    // Get JWT and refresh token from cookies.
     const accessToken = getCookie("accessToken");
-
     if (accessToken !== undefined && accessToken !== null) {
       await window.sessionStorage.setItem("accessToken", accessToken);
     }
   };
 
   /**
-   * Gets user data from cookies if present
+   * Picks up userId/displayName cookies set after Google OAuth redirect.
    */
   const getUserData = async () => {
-    console.log("Tried to get user data");
     const userIdFromCookie = getCookie("userId");
     const displayNameFromCookie = getCookie("displayName");
 
@@ -121,54 +124,59 @@ function App() {
   };
 
   /**
-   * Logs user out using API request and Deleting JWTs
+   * Called by LogIn/SignUp components after successful local auth.
+   * Sets state directly from API response — no need to re-fetch /token.
+   */
+  const onLoginSuccess = (data) => {
+    window.sessionStorage.setItem("accessToken", data.accessToken);
+    setAccessToken(data.accessToken);
+    setUserId(data.userId);
+    setDisplayName(data.displayName);
+    setLoggedIn(true);
+  };
+
+  /**
+   * Logs user out — calls API to clear HttpOnly cookies, clears local storage.
    */
   const logOut = async () => {
     console.log("attempt to log out");
     try {
       await fetch(endpointRoot + "/v2/logout", {
         method: "DELETE",
-        credentials: 'include'
+        credentials: "include",
       });
-      localStorage.removeItem("userId");
-      localStorage.removeItem("displayName");
-      sessionStorage.removeItem("accessToken");
-
-      deleteCookie("accessToken");
-      // deleteCookie("refreshToken");  //! http only, api deletes the cookie
-      deleteCookie("displayName");
-      deleteCookie("userId");
-      setLoggedIn(false);
-      setAccessToken("");
-      setRefreshToken("");
     } catch (err) {
-      console.log("Error when logging out");
+      console.log("Error calling logout endpoint:", err);
     }
+    localStorage.removeItem("userId");
+    localStorage.removeItem("displayName");
+    sessionStorage.removeItem("accessToken");
+    deleteCookie("accessToken");
+    deleteCookie("displayName");
+    deleteCookie("userId");
+    setLoggedIn(false);
+    setAccessToken("");
+    setRefreshToken("");
+    setUserId(undefined);
+    setDisplayName("");
+    window.location.href = "/";
   };
 
   /**
-   * Manually refreshes JWT for dev testing
+   * Manually refreshes JWT — dev testing only
    */
   const refreshAccessToken = async () => {
     try {
-      const res = await fetch(endpointRoot + "/v1/token", {
+      const res = await fetch(endpointRoot + "/v2/token", {
         method: "POST",
-        credentials: "include", // Include cookies in request
-        headers: {
-          Authorization: `token ${window.localStorage.getItem("refreshToken")}`,
-        },
+        credentials: "include",
       });
-      if (res.status === 200 || res.status === 204) {
+      if (res.status === 200) {
         const data = await res.json();
-
-        // Set new accessToken in sessionStorage and resend original request
-        await window.sessionStorage.setItem("accessToken", data.token);
+        window.sessionStorage.setItem("accessToken", data.token);
         setAccessToken(data.token);
-      } else if (res.status === 401 || res.status === 403) {
-        // Invalid refresh token
-        throw new Error("Invalid refresh token");
       } else {
-        throw new Error("Internal error");
+        throw new Error("Failed to refresh token");
       }
     } catch (err) {
       console.log(err);
@@ -176,32 +184,24 @@ function App() {
     }
   };
 
-  /**
-   * Tests an endpoint for dev
-   */
   const testEndpoint = async () => {
     let res;
     try {
-      res = await RequestHandler.req("/v1/sessions", "GET");
+      res = await RequestHandler.req("/v2/sessions", "GET");
     } catch (err) {
       console.log("Error:", err);
     }
-
     console.log("Testing endpoint res:", res);
     setAccessToken(await window.sessionStorage.getItem("accessToken"));
   };
 
-  /**
-   * Tests an endpoint for dev
-   */
   const testRequest = async () => {
     let res;
     try {
-      res = await RequestHandler.req("/v1/testauth", "POST");
+      res = await RequestHandler.req("/v2/testauth", "POST");
     } catch (err) {
       console.log("Error:", err);
     }
-
     console.log("Testing Auth res:", res);
     setAccessToken(await window.sessionStorage.getItem("accessToken"));
   };
@@ -218,7 +218,6 @@ function App() {
                 {loggedIn === true && (
                   <>
                     <Home displayName={displayName} />
-
                     {isDev && (
                       <>
                         <br />
@@ -234,9 +233,7 @@ function App() {
                         <br />
                         <button onClick={testRequest}>Test auth stuff</button>
                         <br />
-                        <button onClick={refreshAccessToken}>
-                          Refresh Access token?
-                        </button>
+                        <button onClick={refreshAccessToken}>Refresh Access token?</button>
                         <br />
                         <button onClick={testEndpoint}>Test an endpoint</button>
                         <br />
@@ -244,84 +241,25 @@ function App() {
                     )}
                   </>
                 )}
-                {loggedIn === false && loggedIn !== undefined && (
-                  <LandingPage />
-                )}
+                {loggedIn === false && loggedIn !== undefined && <LandingPage />}
               </>
             }
           />
-          <Route
-            path="/sessioncreate"
-            element={
-              <>
-                <SessionCreate />
-              </>
-            }
-          />
-          <Route
-            path="/sessions"
-            element={
-              <>
-                <Sessions />
-              </>
-            }
-          />
-          <Route
-            path="/groups"
-            element={
-              <>
-                <Groups />
-              </>
-            }
-          />
+          <Route path="/sessioncreate" element={<SessionCreate />} />
+          <Route path="/sessions" element={<Sessions />} />
+          <Route path="/groups" element={<Groups />} />
           <Route
             path="/login"
-            element={
-              <>
-                <LogIn setLoggedIn={setLoggedIn} setDisplayName={setDisplayName} setUserId={setUserId} setAccessToken={setAccessToken}/>
-              </>
-            }
+            element={<LogIn onLoginSuccess={onLoginSuccess} />}
           />
           <Route
             path="/signup"
-            element={
-              <>
-                <SignUp setLoggedIn={setLoggedIn} setDisplayName={setDisplayName} setUserId={setUserId} setAccessToken={setAccessToken}/>
-              </>
-            }
+            element={<SignUp onLoginSuccess={onLoginSuccess} />}
           />
-          <Route
-            path="/session/:code"
-            element={
-              <>
-                <Session userId={userId}/>
-              </>
-            }
-          />
-          <Route
-            path="/sessionjoin"
-            element={
-              <>
-                <SessionJoin loggedIn={loggedIn} />
-              </>
-            }
-          />
-          <Route
-            path="/about"
-            element={
-              <>
-                <About />
-              </>
-            }
-          />
-          <Route
-            path="/settings"
-            element={
-              <>
-                <UserSettings setAppDisplayName={setDisplayName} />
-              </>
-            }
-          />
+          <Route path="/session/:code" element={<Session userId={userId} />} />
+          <Route path="/sessionjoin" element={<SessionJoin loggedIn={loggedIn} />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/settings" element={<UserSettings setAppDisplayName={setDisplayName} />} />
         </Routes>
         <CookieToast />
       </div>

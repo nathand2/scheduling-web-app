@@ -11,7 +11,7 @@ import Row from "react-bootstrap/Row";
 import Card from "react-bootstrap/Card";
 import { Navigate } from "react-router-dom";
 
-const SignUp = ( { setLoggedIn, setDisplayName, setUserId, setAccessToken  } ) => {
+const SignUp = ({ onLoginSuccess }) => {
   const googleAuthEndpoint = RequestHandler.endpointRoot + "/v2/auth/google";
 
   const [searchParams] = useSearchParams();
@@ -37,16 +37,11 @@ const SignUp = ( { setLoggedIn, setDisplayName, setUserId, setAccessToken  } ) =
       // Successful Signup
       if (res.status >= 200 && res.status <= 299) {
         const data = await res.json();
-        if (data) {
-          console.log("b4")
-          setDisplayName(data.displayName);
-          setUserId(data.userId);
-          setAccessToken(data.accessToken);
-          console.log("after")
-
-        }
-        setLoggedIn(true);
-        setIsSignUpSuccessful(true);  // Redirect to home
+        // Set sessionStorage so RequestHandler can use token immediately
+        window.sessionStorage.setItem("accessToken", data.accessToken);
+        // Lift state up to App
+        onLoginSuccess(data);
+        // setIsSignUpSuccessful(true);  // Redirect to home
       } else if (res.status === 409) {
         // Username in use
         setStatusText(`Username already taken. [${res.status}]`);

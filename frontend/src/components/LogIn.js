@@ -1,7 +1,5 @@
-import { useSearchParams } from "react-router-dom";
-
+import { useSearchParams, Navigate } from "react-router-dom";
 import { RequestHandler } from "../js/requestHandler";
-
 import { useState } from "react";
 import { FcGoogle } from "react-icons/fc";
 
@@ -10,87 +8,89 @@ import Col from "react-bootstrap/Col";
 import Form from "react-bootstrap/Form";
 import Row from "react-bootstrap/Row";
 import Card from "react-bootstrap/Card";
-import { Navigate } from "react-router-dom";
 
-const LogIn = ( { setLoggedIn, setDisplayName, setUserId, setAccessToken } ) => {
+const LogIn = ({ onLoginSuccess }) => {
   const googleAuthEndpoint = RequestHandler.endpointRoot + "/v2/auth/google";
 
   const [searchParams] = useSearchParams();
-  const [userName, setUsername] = useState('')
-  const [password, setPassword] = useState('')
-  const [statusText, setStatusText] = useState('')
-  const [isLoginSuccessful, setIsLoginSuccessful] = useState(false)
-  const [statusTextClass, setStatusTextClass] = useState('text-secondary')
+  const [userName, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [statusText, setStatusText] = useState("");
+  const [isLoginSuccessful, setIsLoginSuccessful] = useState(false);
 
   const userNameLogIn = async (event) => {
     event.preventDefault();
-    const body = {
-      username: userName,
-      password: password
-    }
-    let res;
-    try {
-      // res = await RequestHandler.req("/v1/auth/login", "POST", body);
-      res = await RequestHandler.req("/v2/auth/login", "POST", body);
-      console.log(res)
+    setStatusText("");
 
-      // Successful login
+    const body = { username: userName, password: password };
+
+    try {
+      const res = await RequestHandler.req("/v2/auth/login", "POST", body);
+
       if (res.status === 200) {
         const data = await res.json();
-        if (data) {
-          setDisplayName(data.displayName);
-          setUserId(data.userId);
-          setAccessToken(data.accessToken);
-        }
-        setLoggedIn(true);
-        setIsLoginSuccessful(true);  // Redirect to home
+        // Set sessionStorage so RequestHandler can use token immediately
+        window.sessionStorage.setItem("accessToken", data.accessToken);
+        // Lift state up to App
+        onLoginSuccess(data);
+        setIsLoginSuccessful(true);
+      } else if (res.status === 401) {
+        setStatusText("Invalid username or password.");
+      } else if (res.status === 400) {
+        setStatusText("Please enter a username and password.");
+      } else {
+        setStatusText("Something went wrong. Please try again.");
       }
     } catch (err) {
-      setStatusText(`Unable to sign up at this time. [${err}]`);
+      console.log(err);
+      setStatusText(`Unable to log in at this time. [${err}]`);
     }
-  }
+  };
 
   return (
     <div>
       {isLoginSuccessful && (
-        <>
-          <Navigate to={searchParams.get("redirect") || `/`} />
-        </>
+        <Navigate to={searchParams.get("redirect") || "/"} />
       )}
       <br />
       <div className="center-container">
         <Card className="auth-card">
           <br />
           <Form onSubmit={userNameLogIn}>
-            <Form.Group as={Row} className="mb-3" controlId="formHorizontalEmail">
+            <Form.Group as={Row} className="mb-3" controlId="formHorizontalUsername">
               <Form.Label column sm={2}>
                 Username
               </Form.Label>
               <Col sm={10}>
-                <Form.Control type="username" placeholder="Email" onChange={(e) => setUsername(e.target.value)} />
+                <Form.Control
+                  type="text"
+                  placeholder="Username"
+                  onChange={(e) => setUsername(e.target.value)}
+                />
               </Col>
             </Form.Group>
 
-            <Form.Group
-              as={Row}
-              className="mb-3"
-              controlId="formHorizontalPassword"
-            >
+            <Form.Group as={Row} className="mb-3" controlId="formHorizontalPassword">
               <Form.Label column sm={2}>
                 Password
               </Form.Label>
               <Col sm={10}>
-                <Form.Control type="password" placeholder="Password" onChange={(e) => setPassword(e.target.value)} />
+                <Form.Control
+                  type="password"
+                  placeholder="Password"
+                  onChange={(e) => setPassword(e.target.value)}
+                />
               </Col>
             </Form.Group>
-            <Form.Group className="mb-3">
-              <p className="statusTextClass">
-                {statusText}
-              </p>
-            </Form.Group>
+
+            {statusText && (
+              <Form.Group className="mb-3">
+                <p className="text-danger">{statusText}</p>
+              </Form.Group>
+            )}
 
             <Form.Group as={Row} className="mb-3">
-              <Col >
+              <Col>
                 <Button type="submit">Sign in</Button>
               </Col>
             </Form.Group>
@@ -105,16 +105,14 @@ const LogIn = ( { setLoggedIn, setDisplayName, setUserId, setAccessToken } ) => 
                 : "")
             }
           >
-            <FcGoogle className="login-icon"></FcGoogle>
+            <FcGoogle className="login-icon" />
           </a>
           <a
             href={
               `/signup` +
-              `${
-                searchParams.get("redirect")
-                  ? "?redirect=" + searchParams.get("redirect")
-                  : ""
-              }`
+              (searchParams.get("redirect")
+                ? `?redirect=${searchParams.get("redirect")}`
+                : "")
             }
           >
             Don't have an account? Sign up here
