@@ -29,7 +29,7 @@ const authUser = async (request, accessToken, refreshToken, profile, done) => {
 passport.use(new GoogleStrategy({
   clientID:     GOOGLE_CLIENT_ID,
   clientSecret: GOOGLE_CLIENT_SECRET,
-  callbackURL: appURL + "/auth/google/callback",
+  callbackURL: appURL + "/v2/auth/google/callback",
   passReqToCallback   : true,
   scope: ['profile', 'email']
 }, authUser));

@@ -11,12 +11,14 @@ const crypto = require('crypto')
 const createHash = crypto.createHash;
 const accessTokenSecret = process.env.ACCESS_TOKEN_SECRET;
 const refreshTokenSecret = process.env.REFRESH_TOKEN_SECRET;
-// const jwtExpiresIn = '10m';
 
-// All lifetimes in milliseconds — single source of truth
-const jwtAccessTokenLifetimeMs = 1 * 60 * 1000        // 1 min
-// const jwtRefreshTokenLifetimeMs = 7 * 24 * 60 * 60 * 1000  // 7 days
-const jwtRefreshTokenLifetimeMs = 3 * 60 * 1000  // 3 min
+// All lifetimes in milliseconds
+const jwtAccessTokenLifetimeMs = process.env.NODE_ENV === "development" ?
+                                  1 * 60 * 1000 :      // 1 min for dev env
+                                  20 * 60 * 1000;      // 20 min for prod env
+const jwtRefreshTokenLifetimeMs = process.env.NODE_ENV === "development" ?
+                                  3 * 60 * 1000 :           // 3 min for dev env
+                                  7 * 24 * 60 * 60 * 1000;   // 7 days for prod env
 
 // Cookie maxAge uses ms directly
 exports.jwtAccessTokenCookieMaxAge = jwtAccessTokenLifetimeMs
