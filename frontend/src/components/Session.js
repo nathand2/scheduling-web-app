@@ -297,6 +297,7 @@ const Session = ({ userId }) => {
             show={showDtModal}
             handleClose={handleCloseDt}
             session={session}
+            setTimeRanges={setTimeRanges}
           />
 
           <Container fluid>

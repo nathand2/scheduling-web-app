@@ -43,6 +43,6 @@ Frontend: React.js, React Bootstrap, D3
 3. Start SocketApi server: npm run start:dev
 
 ## Quickstart Commands from root
-cd backend/api | npm start
+cd backend/api | npm run start:dev
 cd backend/sockets | npm start
 cd frontend | npm start
