@@ -36,14 +36,14 @@ module.exports = (app, db, auth, passport, io) => {
   
   const router = express.Router();
 
-  router.get(resource + '/test', async (req, res) => {
+  router.get('/test', async (req, res) => {
     res.json({stuff: "potato"})
   })
-  router.get(resource + '/version', async (req, res) => {
+  router.get('/version', async (req, res) => {
     res.json({version: 2})
   })
 
-  router.post(resource + "/testauth", auth.authenticateToken, (req, res) => {
+  router.post("/testauth", auth.authenticateToken, (req, res) => {
     res.json({status: "Authentication Successful"})
   });
 
@@ -54,7 +54,7 @@ module.exports = (app, db, auth, passport, io) => {
    * Requests need valid fingerprint(user context) in hardened http-only cookie.
    * 
    */
-  router.post(resource + '/token', 
+  router.post('/token', 
 		async (req, res, next) => {
 			const refreshToken = req.cookies.refreshToken;
 			if (!refreshToken) {
@@ -111,14 +111,14 @@ module.exports = (app, db, auth, passport, io) => {
 			}
   )
 
-  router.get(resource + '/auth/google',
+  router.get('/auth/google',
     (req, res, next) => {
       console.log("uhhh")
       passport.authenticate('google', { scope: [ 'email', 'profile' ], state: req.query.redirect})(req,res,next)
     }
   );
 
-  router.get(resource + '/auth/google/callback', passport.authenticate( 'google', {
+  router.get('/auth/google/callback', passport.authenticate( 'google', {
     failureRedirect: rootURL + '/login',
     failWithError: true,
     session: false
@@ -215,7 +215,7 @@ module.exports = (app, db, auth, passport, io) => {
   }
 
   // Register
-  router.post(resource + '/auth/register', async (req, res) => {
+  router.post('/auth/register', async (req, res) => {
     const { username, password, displayName } = req.body
     if (!username || !password || !displayName) return res.sendStatus(400)
 
@@ -237,7 +237,7 @@ module.exports = (app, db, auth, passport, io) => {
   })
 
   // Login
-  router.post(resource + '/auth/login', async (req, res) => {
+  router.post('/auth/login', async (req, res) => {
 		console.log("/auth/login");
     const { username, password } = req.body
     if (!username || !password) return res.sendStatus(400)
@@ -260,7 +260,7 @@ module.exports = (app, db, auth, passport, io) => {
   /**
    * Deletes Refresh Tokens
    */
-  router.delete(resource + "/logout", (req, res) => {
+  router.delete("/logout", (req, res) => {
 		// Fetch refresh token from cookies
     const refreshToken = req.cookies.refreshToken;
     if (!refreshToken) {

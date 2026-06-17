@@ -34,11 +34,11 @@ module.exports = (app, db, auth, passport, io) => {
   
   const apiV1 = express.Router();
 
-  apiV1.get(resource + '/test', async (req, res) => {
+  apiV1.get('/test', async (req, res) => {
     res.json({stuff: "potato"})
   })
 
-  apiV1.post(resource + "/testauth", auth.authenticateToken, (req, res) => {
+  apiV1.post("/testauth", auth.authenticateToken, (req, res) => {
     res.json({status: "Authentication Successful"})
   });
 
@@ -49,7 +49,7 @@ module.exports = (app, db, auth, passport, io) => {
    * Requests need valid fingerprint(user context) in hardened http-only cookie.
    * 
    */
-  apiV1.post(resource + '/token', auth.checkIfFingerPrintExists, async (req, res, next) => {
+  apiV1.post('/token', auth.checkIfFingerPrintExists, async (req, res, next) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) {
       console.log("401: No auth header")
@@ -98,7 +98,7 @@ module.exports = (app, db, auth, passport, io) => {
   }
   )
 
-  apiV1.get(resource + '/auth/google',
+  apiV1.get('/auth/google',
     (req, res, next) => {
       console.log("uhhh")
       // req._toParam = "Hello there";
@@ -106,7 +106,7 @@ module.exports = (app, db, auth, passport, io) => {
     }
   );
 
-  apiV1.get(resource + '/auth/google/callback', passport.authenticate( 'google', {
+  apiV1.get('/auth/google/callback', passport.authenticate( 'google', {
     failureRedirect: rootURL + '/login',
     failWithError: true,
     session: false
@@ -197,7 +197,7 @@ module.exports = (app, db, auth, passport, io) => {
   }
 
   // Register
-  apiV1.post(resource + '/auth/register', async (req, res) => {
+  apiV1.post('/auth/register', async (req, res) => {
     const { username, password, displayName } = req.body
     if (!username || !password || !displayName) return res.sendStatus(400)
 
@@ -219,7 +219,7 @@ module.exports = (app, db, auth, passport, io) => {
   })
 
   // Login
-  apiV1.post(resource + '/auth/login', async (req, res) => {
+  apiV1.post('/auth/login', async (req, res) => {
     const { username, password } = req.body
     if (!username || !password) return res.sendStatus(400)
 
@@ -240,7 +240,7 @@ module.exports = (app, db, auth, passport, io) => {
   /**
    * Deletes Refresh Tokens
    */
-  apiV1.delete(resource + "/logout", (req, res) => {
+  apiV1.delete("/logout", (req, res) => {
     // Get refresh token from authorization headers
     const authHeader = req.headers.authorization;
     if (!authHeader) {
@@ -268,7 +268,7 @@ module.exports = (app, db, auth, passport, io) => {
   /**
    * Creates a session
    */
-  apiV1.post(resource + "/session", auth.authenticateToken, async (req, res) => {
+  apiV1.post("/session", auth.authenticateToken, async (req, res) => {
     let title, desc, dtStart, dtEnd, attendType;
     try {
       ({title, desc, dtStart, dtEnd, attendType} = req.body);
@@ -312,7 +312,7 @@ module.exports = (app, db, auth, passport, io) => {
   /**
    * Gets a session by session code
    */
-  apiV1.get(resource + "/session/:code", auth.authenticateToken, async (req, res) => {
+  apiV1.get("/session/:code", auth.authenticateToken, async (req, res) => {
   try {
     const sessionCode = req.params.code;
     // const userId = await db.getUserIdByExternalID(res.locals.user.name, res.locals.user.type)
@@ -334,7 +334,7 @@ module.exports = (app, db, auth, passport, io) => {
   /**
    * Get all sessions associated with user
    */
-  apiV1.get(resource + "/sessions", auth.authenticateToken, async (req, res) => {
+  apiV1.get("/sessions", auth.authenticateToken, async (req, res) => {
     const user = res.locals.user
     const userId = user.userId
     try {
@@ -347,7 +347,7 @@ module.exports = (app, db, auth, passport, io) => {
     }
   })
 
-  apiV1.get(resource + "/mysessions", auth.authenticateToken, async (req, res) => {
+  apiV1.get("/mysessions", auth.authenticateToken, async (req, res) => {
     const user = res.locals.user
     const userId = user.userId
     try {
@@ -360,7 +360,7 @@ module.exports = (app, db, auth, passport, io) => {
     }
   })
 
-  apiV1.post(resource + "/sessioninvite", auth.authenticateToken, async (req, res) => {
+  apiV1.post("/sessioninvite", auth.authenticateToken, async (req, res) => {
     try {
       const { sessionCode } = req.body
       const userId = res.locals.user.userId
@@ -383,7 +383,7 @@ module.exports = (app, db, auth, passport, io) => {
 
   })
 
-  apiV1.get(resource + "/sessioninvite", auth.authenticateToken, async (req, res) => {
+  apiV1.get("/sessioninvite", auth.authenticateToken, async (req, res) => {
     try {
       const sessionCode = req.query.code
       if (!sessionCode) {
@@ -417,7 +417,7 @@ module.exports = (app, db, auth, passport, io) => {
     }
   })
 
-  apiV1.post(resource + "/joinsession", auth.authenticateToken, async (req, res) => {
+  apiV1.post("/joinsession", auth.authenticateToken, async (req, res) => {
     try {
       const inviteCode = req.body.inviteCode.inviteCode
       const userId = res.locals.user.userId
@@ -461,7 +461,7 @@ module.exports = (app, db, auth, passport, io) => {
    * 
    * Upon successful completion, notifies socket api of new session time range
    */
-  apiV1.post(resource + '/sessiontimerange', auth.authenticateToken, async (req, res) => {
+  apiV1.post('/sessiontimerange', auth.authenticateToken, async (req, res) => {
     try {
       const userId = res.locals.user.userId  // User Id from JWT token
       const { sessionId, sessionCode, dtStart, dtEnd, status } = req.body  // Post body
@@ -521,7 +521,7 @@ module.exports = (app, db, auth, passport, io) => {
     }
   })
 
-  apiV1.delete(resource + '/sessiontimerange', auth.authenticateToken, async (req, res) => {
+  apiV1.delete('/sessiontimerange', auth.authenticateToken, async (req, res) => {
     try {
       const userId = res.locals.user.userId  // User Id from JWT token
       const {sessionTimeRangeId, userSessionId, sessionCode} = req.body;
@@ -556,7 +556,7 @@ module.exports = (app, db, auth, passport, io) => {
     }
   })
 
-  apiV1.get(resource + '/timeranges', auth.authenticateToken, async (req, res) => {
+  apiV1.get('/timeranges', auth.authenticateToken, async (req, res) => {
       
     try {
       const sessionId = req.query.sessionid
@@ -586,7 +586,7 @@ module.exports = (app, db, auth, passport, io) => {
     }
   })
 
-  apiV1.get(resource + "/usersessions", auth.authenticateToken, async (req, res) => {
+  apiV1.get("/usersessions", auth.authenticateToken, async (req, res) => {
     // Get user sessions for specific session
     const sessionId = req.query.sessionid
     const userId = res.locals.user.userId  // User Id from JWT token
@@ -616,7 +616,7 @@ module.exports = (app, db, auth, passport, io) => {
     }
   })
 
-  apiV1.put(resource + '/displayname', auth.authenticateToken, async (req, res) => {
+  apiV1.put('/displayname', auth.authenticateToken, async (req, res) => {
     try {
       const userId = res.locals.user.userId  // User Id from JWT token
       const {displayName} = req.body;
