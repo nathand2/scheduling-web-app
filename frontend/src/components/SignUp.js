@@ -41,7 +41,7 @@ const SignUp = ({ onLoginSuccess }) => {
         window.sessionStorage.setItem("accessToken", data.accessToken);
         // Lift state up to App
         onLoginSuccess(data);
-        // setIsSignUpSuccessful(true);  // Redirect to home
+        setIsSignUpSuccessful(true);  // Redirect to home
       } else if (res.status === 409) {
         // Username in use
         setStatusText(`Username already taken. [${res.status}]`);
