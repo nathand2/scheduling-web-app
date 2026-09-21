@@ -91,7 +91,7 @@ const LogIn = ({ onLoginSuccess }) => {
 
             <Form.Group as={Row} className="mb-3">
               <Col>
-                <Button type="submit">Sign in</Button>
+                <Button type="submit">Log in</Button>
               </Col>
             </Form.Group>
           </Form>

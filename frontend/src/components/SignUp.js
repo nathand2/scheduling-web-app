@@ -62,15 +62,6 @@ const SignUp = ({ onLoginSuccess }) => {
         <Card className="auth-card">
           <br />
           <Form onSubmit={userNameSignUp}>
-          {/* <Form.Group as={Row} className="mb-3" controlId="formHorizontalEmail">
-            <Form.Label column sm={2}>
-              Email
-            </Form.Label>
-            <Col sm={10}>
-              <Form.Control type="email" placeholder="Email" onChange={(e) => setEmail(e.target.value)} />
-            </Col>
-          </Form.Group> */}
-
           <Form.Group as={Row} className="mb-3" controlId="formHorizontalUsername">
             <Form.Label column sm={2}>
               Username
@@ -100,10 +91,10 @@ const SignUp = ({ onLoginSuccess }) => {
 
           <Form.Group as={Row} className="mb-3">
             <Col >
-              <Button type="submit">Sign in</Button>
+              <Button type="submit">Sign Up</Button>
             </Col>
           </Form.Group>
-        
+        <br/>
         <h3>Sign Up using:</h3>
         <a
           href={
