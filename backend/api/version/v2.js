@@ -18,133 +18,158 @@ console.log("NODE_ENV:", process.env.NODE_ENV)
 
 
 module.exports = (app, db, auth, passport, io) => {
-    
-	// For Cookie security
-	const secureCookieConfig = {
-	secure: true,
-	httpOnly: true,	// Disallow JS from reading secure cookie
-	maxAge: auth.jwtRefreshTokenCookieMaxAge,
-	...(!(process.env.NODE_ENV === 'development') && { domain: cookieDomain })  // Exclude domain option if localhost
-	,sameSite: 'strict' // Won't work if api and auth on different domains. Helps against CSRF attacks.
-	}
-	const semiSecureCookieConfig = {
-	secure: true,
-	maxAge: auth.jwtAccessTokenCookieMaxAge,
-	...(!(process.env.NODE_ENV === 'development') && { domain: cookieDomain })  // Exclude domain option if localhost
-	,sameSite: 'strict' // Won't work if api and auth on different domains. Helps against CSRF attacks.
-	}
-  
+
+  // Refresh token + its fingerprint. httpOnly, long-lived. Never touched by JS.
+  const secureCookieConfig = {
+    secure: true,
+    httpOnly: true,
+    maxAge: auth.jwtRefreshTokenCookieMaxAge,
+    ...(!(process.env.NODE_ENV === 'development') && { domain: cookieDomain })
+    , sameSite: 'strict'
+  }
+
+  // Access token's fingerprint. httpOnly and short-lived, matching the
+  // access token it's paired with.
+  const secureAccessCookieConfig = {
+    secure: true,
+    httpOnly: true,
+    maxAge: auth.jwtAccessTokenCookieMaxAge,
+    ...(!(process.env.NODE_ENV === 'development') && { domain: cookieDomain })
+    , sameSite: 'strict'
+  }
+
+  // Non-sensitive, JS-readable UI convenience values only (userId, displayName).
+  // The access token itself lives only in the JSON response body / memory.
+  const semiSecureCookieConfig = {
+    secure: true,
+    maxAge: auth.jwtAccessTokenCookieMaxAge,
+    ...(!(process.env.NODE_ENV === 'development') && { domain: cookieDomain })
+    , sameSite: 'strict'
+  }
+
   const router = express.Router();
 
   router.get('/test', async (req, res) => {
-    res.json({stuff: "potato"})
+    res.json({ stuff: "potato" })
   })
   router.get('/version', async (req, res) => {
-    res.json({version: 2})
+    res.json({ version: 2 })
   })
 
   router.post("/testauth", auth.authenticateToken, (req, res) => {
-    res.json({status: "Authentication Successful"})
+    res.json({ status: "Authentication Successful" })
   });
 
   /**
-   * Route to refresh access token using refresh token
-   * 
-   * Requests needs refresh token included in authorization header.
-   * Requests need valid fingerprint(user context) in hardened http-only cookie.
-   * 
+   * Mints a fresh access token from a valid refresh token.
+   *
+   * Requires refresh token + valid fingerprint (userContextRefresh) cookies.
+   * Called by the frontend on app load / after OAuth redirect to bootstrap
+   * the in-memory access token, since no token is ever passed via redirect.
    */
-  router.post('/token', 
-		async (req, res, next) => {
-			const refreshToken = req.cookies.refreshToken;
-			if (!refreshToken) {
-				console.log("401: No refresh token")
-				res.sendStatus(401) // No refresh token in auth header
-				return
-			}
-			next();
-		},
-		auth.checkIfFingerPrintExists, async (req, res, next) => {
-		// Fetch refresh token from cookies
-    const refreshToken = req.cookies.refreshToken;
-    if (!refreshToken) {
-      console.log("401: No refresh token")
-      res.sendStatus(401) // No refresh token in auth header
-      return
-    }
-    try {
-      // Check if refresh token exists in db of valid refresh tokens.
-      if (!await db.refreshTokenExists(refreshToken)) {
-        res.sendStatus(401) //
+  router.post('/token',
+    async (req, res, next) => {
+      const refreshToken = req.cookies.refreshToken;
+      if (!refreshToken) {
+        console.log("401: No refresh token")
+        res.sendStatus(401)
         return
-      } 
-    } catch(err) {
-      res.sendStatus(500) // Internal db error.
-      return
-    }
-    // Res.locals to pass variable to middleware.
-    res.locals.refreshToken = refreshToken;
-    next()
-  },
-  auth.refreshAccessToken
-  ,
-  async (req, res, next) => {
-    let randStringAccess, hashAccess;
-    // Gets random string and it's hash for fingerprint
-    [randStringAccess, hashAccess] = await auth.getRandomStringAndHash();
-    console.log("Refresh token... user:", res.locals.user)
-    const newUser = {
-      userId: res.locals.user.userId,
-      displayName: res.locals.user.displayName,
-      hash: hashAccess,
-      type: res.locals.user.type
-    }
-    const newAccessToken = auth.generateAccessToken(newUser);
-    
-    // Secure, hardened cookies
-    res.cookie('userContextAccess', randStringAccess, secureCookieConfig);
-    res.json({ 
-			token: newAccessToken,
-			userId: res.locals.user.userId,
-			displayName: res.locals.user.displayName
-		});
-			}
-  )
+      }
+      next();
+    },
+    auth.checkIfFingerPrintExists, async (req, res, next) => {
+      const refreshToken = req.cookies.refreshToken;
+      if (!refreshToken) {
+        console.log("401: No refresh token")
+        res.sendStatus(401)
+        return
+      }
+      try {
+        if (!await db.refreshTokenExists(refreshToken)) {
+          res.sendStatus(401)
+          return
+        }
+      } catch (err) {
+        console.log(err)
+        res.sendStatus(500)
+        return
+      }
+      res.locals.refreshToken = refreshToken;
+      next()
+    },
+    auth.refreshAccessToken
+    ,
+    async (req, res, next) => {
+      const oldRefreshToken = res.locals.refreshToken;
 
-  router.get('/auth/google',
-    (req, res, next) => {
-      console.log("uhhh")
-      passport.authenticate('google', { scope: [ 'email', 'profile' ], state: req.query.redirect})(req,res,next)
+      const [randStringAccess, hashAccess] = await auth.getRandomStringAndHash();
+      const newUser = {
+        userId: res.locals.user.userId,
+        displayName: res.locals.user.displayName,
+        hash: hashAccess,
+        type: res.locals.user.type
+      }
+      const newAccessToken = auth.generateAccessToken(newUser);
+
+      const [randStringRefresh, hashRefresh] = await auth.getRandomStringAndHash();
+      const newRefreshUser = {
+        userId: res.locals.user.userId,
+        displayName: res.locals.user.displayName,
+        hash: hashRefresh,
+        type: res.locals.user.type
+      }
+      const newRefreshToken = auth.generateRefreshToken(newRefreshUser);
+
+      try {
+        // Invalidate the old token first. If the insert below fails, the
+        // user just has to log in again — safer than a window where both
+        // old and new tokens are simultaneously valid.
+        await db.deleteRefreshToken(oldRefreshToken);
+        await db.insertRefreshToken(newRefreshToken);
+        console.log("New refresh token minted");
+      } catch (err) {
+        console.log(err)
+        res.sendStatus(500)
+        return
+      }
+
+      res.cookie('userContextAccess', randStringAccess, secureAccessCookieConfig);
+      res.cookie('refreshToken', newRefreshToken, secureCookieConfig);
+      res.cookie('userContextRefresh', randStringRefresh, secureCookieConfig);
+
+      res.json({
+        token: newAccessToken,
+        userId: res.locals.user.userId,
+        displayName: res.locals.user.displayName
+      });
     }
   );
 
-  router.get('/auth/google/callback', passport.authenticate( 'google', {
+  router.get('/auth/google',
+    (req, res, next) => {
+      passport.authenticate('google', { scope: ['email', 'profile'], state: req.query.redirect })(req, res, next)
+    }
+  );
+
+  router.get('/auth/google/callback', passport.authenticate('google', {
     failureRedirect: rootURL + '/login',
     failWithError: true,
     session: false
   }), async (req, res, next) => {
 
-    // Generate random string and hash for user context verification.
-    let randStringAccess, hashAccess;
+    // This callback only establishes the refresh session — no access token
+    // is generated here, so nothing can leak via the redirect URL, browser
+    // history, or Referer header. The frontend calls POST /token right
+    // after landing to get its access token using the refresh cookie below.
     let randStringRefresh, hashRefresh;
     try {
-      [randStringAccess, hashAccess] = await auth.getRandomStringAndHash();
       [randStringRefresh, hashRefresh] = await auth.getRandomStringAndHash();
-    } catch(err) {
+    } catch (err) {
       console.log(err)
       res.sendStatus(500);
       return
     }
-    console.log("User (googleauth!):", req.user)
-    console.log("User (googleauth!) displayname:", req.user.displayName)
 
-    // On successful authentication, respond with JWT token.
-    const userAccess = {
-      userId: req.user.userId,
-      displayName: req.user.displayName,
-      hash: hashAccess,
-      type: 'GOOGLE',
-    }
     const userRefresh = {
       userId: req.user.userId,
       displayName: req.user.displayName,
@@ -152,66 +177,66 @@ module.exports = (app, db, auth, passport, io) => {
       type: 'GOOGLE',
     }
 
-    const accessToken = auth.generateAccessToken(userAccess);
     const refreshToken = auth.generateRefreshToken(userRefresh);
 
-    console.log("Generated Access Tokens")
-    // Add token to db
     try {
       db.insertRefreshToken(refreshToken);
-
-      res.cookie('accessToken', accessToken, semiSecureCookieConfig)
-      res.cookie('userContextAccess', randStringAccess, secureCookieConfig);
 
       res.cookie('refreshToken', refreshToken, secureCookieConfig)
       res.cookie('userContextRefresh', randStringRefresh, secureCookieConfig);
 
-			// ! Refactor this in /me
       res.cookie('userId', req.user.userId, semiSecureCookieConfig)
       res.cookie('displayName', req.user.displayName, semiSecureCookieConfig)
 
-      // If no special redirect given to passport, go to router home
       if (req.user.redirect !== undefined) {
         res.redirect(req.user.redirect)
       } else {
         res.redirect(rootURL)
       }
 
-    } catch(err) {
+    } catch (err) {
       console.log(err)
-      res.sendStatus(500); // Internal Error (database error)
+      res.sendStatus(500);
     }
   }, (err, req, res, next) => {
-    // Handle auth error.
     console.log(err)
-    res.sendStatus(500); // Internal Error (database error)
+    res.sendStatus(500);
   });
 
-  // Shared helper
-  const loginUser = async (res, user) => {
+  // Local login/register can return the access token directly in the body
+  // since there's no redirect involved, so the /token round trip isn't needed.
+  const loginUser = async (res, user, type) => {
     const [randStringAccess, hashAccess] = await auth.getRandomStringAndHash();
     const [randStringRefresh, hashRefresh] = await auth.getRandomStringAndHash();
 
-    const userAccess = { userId: user.id, displayName: user.display_name, hash: hashAccess, type: 'LOCAL' }
-    const userRefresh = { userId: user.id, displayName: user.display_name, hash: hashRefresh, type: 'LOCAL' }
+    const userAccess = { userId: user.id, displayName: user.display_name, hash: hashAccess, type }
+    const userRefresh = { userId: user.id, displayName: user.display_name, hash: hashRefresh, type }
 
     const accessToken = auth.generateAccessToken(userAccess)
     const refreshToken = auth.generateRefreshToken(userRefresh)
     await db.insertRefreshToken(refreshToken)
 
-    res.cookie('accessToken', accessToken, semiSecureCookieConfig)  
-    res.cookie('userContextAccess', randStringAccess, semiSecureCookieConfig)
+    res.cookie('userContextAccess', randStringAccess, secureAccessCookieConfig)
 
     res.cookie('refreshToken', refreshToken, secureCookieConfig)
     res.cookie('userContextRefresh', randStringRefresh, secureCookieConfig)
 
     res.cookie('userId', user.id, semiSecureCookieConfig)
     res.cookie('displayName', user.display_name, semiSecureCookieConfig)
+
     return {
       accessToken,
       userId: user.id,
       displayName: user.display_name
     }
+  }
+
+  const loginLocalUser = async (res, user) => {
+    return loginUser(res, user, "LOCAL");
+  }
+
+  const loginGoogleUser = async (res, user) => {
+    return loginUser(res, user, "GOOGLE");
   }
 
   // Register
@@ -226,11 +251,10 @@ module.exports = (app, db, auth, passport, io) => {
       const passwordHash = await bcrypt.hash(password, 10)
       const userId = await db.createLocalUser(username, passwordHash, displayName)
 
-      // Log them in immediately after registering
       const users = await db.getUserByUsername(username)
-      const result = await loginUser(res, users[0])
+      const result = await loginLocalUser(res, users[0])
       res.json(result)
-    } catch(err) {
+    } catch (err) {
       console.log(err)
       res.sendStatus(500)
     }
@@ -238,7 +262,6 @@ module.exports = (app, db, auth, passport, io) => {
 
   // Login
   router.post('/auth/login', async (req, res) => {
-		console.log("/auth/login");
     const { username, password } = req.body
     if (!username || !password) return res.sendStatus(400)
 
@@ -249,10 +272,10 @@ module.exports = (app, db, auth, passport, io) => {
       const validPassword = await bcrypt.compare(password, users[0].password)
       if (!validPassword) return res.sendStatus(401)
 
-      const result = await loginUser(res, users[0])
+      const result = await loginLocalUser(res, users[0])
       res.json(result)
-    } catch(err) {
-			console.log(err);
+    } catch (err) {
+      console.log(err);
       res.sendStatus(500)
     }
   })
@@ -261,28 +284,23 @@ module.exports = (app, db, auth, passport, io) => {
    * Deletes Refresh Tokens
    */
   router.delete("/logout", (req, res) => {
-		// Fetch refresh token from cookies
     const refreshToken = req.cookies.refreshToken;
     if (!refreshToken) {
       console.log("401: No refresh token")
-      res.sendStatus(401) // No refresh token in auth header
+      res.sendStatus(401)
       return
     }
     try {
-			// Remove refresh token from db
       db.deleteRefreshToken(refreshToken)
-			// Clear cookies
-			res.clearCookie('refreshToken', {path: '/'})
-			res.clearCookie('userContextRefresh', {path: '/'})
-			res.clearCookie('userContextAccess', {path: '/'})
-			// res.clearCookie('userContextRefresh', { ...secureCookieConfig })
-			// res.clearCookie('userContextAccess', { ...secureCookieConfig })
+      res.clearCookie('refreshToken', { path: '/' })
+      res.clearCookie('userContextRefresh', { path: '/' })
+      res.clearCookie('userContextAccess', { path: '/' })
 
       res.sendStatus(200)
       return
-    } catch(err) {
+    } catch (err) {
       console.log(err)
-      res.sendStatus(500) // Internal db error.
+      res.sendStatus(500)
       return
     }
   })

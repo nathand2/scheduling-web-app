@@ -14,7 +14,7 @@ const refreshTokenSecret = process.env.REFRESH_TOKEN_SECRET;
 
 // All lifetimes in milliseconds
 const jwtAccessTokenLifetimeMs = process.env.NODE_ENV === "development" ?
-                                  1 * 60 * 1000 :      // 1 min for dev env
+                                  30 * 1000 :      // 30 sec for dev env
                                   20 * 60 * 1000;      // 20 min for prod env
 const jwtRefreshTokenLifetimeMs = process.env.NODE_ENV === "development" ?
                                   3 * 60 * 1000 :           // 3 min for dev env
@@ -39,7 +39,7 @@ exports.jwtRefreshTokenExpiresIn = jwtRefreshTokenExpiresIn
 exports.authenticateToken = (req, res, next) => {
   // Check fingerprint (user context)
   if(!req.cookies.userContextAccess) {
-    console.log("401: No fingerprint")
+    console.log("401: No userContextAccess fingerprint")
     res.sendStatus(401); // No fingerprint
     return;
   }
@@ -106,6 +106,8 @@ exports.generateRefreshToken = (user) => {
 
 /**
  * Refreshes access token
+ * ! Does not refresh access token. It only checks fingerprint/user context and extracts user information
+ * ! from JWT and saves it as local variable
  * @param {*} refreshToken JWT refresh token
  * @returns JWT access token
  */
@@ -136,8 +138,8 @@ exports.refreshAccessToken = (req, res, next) => {
 }
 
 exports.checkIfFingerPrintExists = (req, res, next) => {
-  if(!req.cookies.userContextAccess && !req.cookies.userContextRefresh) {
-    console.log("401: No fingerprint")
+  if(!req.cookies.userContextRefresh) {
+    console.log("401: No userContextRefresh fingerprint")
     res.sendStatus(401); // No fingerprint
     return;
   }
