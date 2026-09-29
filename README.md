@@ -28,12 +28,7 @@ Frontend: React.js, React Bootstrap, D3
     DB_USER=
     DB_HOST=
     NODE_ENV=development
-4. Start XAMPP software.
-   1. Start Apache and MySQL modules.
-   2. Open MySQL Admin (opens up browser to PHPMyAdmin)
-   3. Create database with name "scheduler": CREATE DATABASE scheduler;
-   4. Manually add needed tables. Check init.sql for table references. Currently used tables: [user]
-   5. (May have to use ">>USE scheduler;" when creating tables and making queries)
+4. Connect to Database (ssh)
 5. Start API server: npm run start:dev
 
 
