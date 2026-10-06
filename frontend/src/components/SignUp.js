@@ -61,7 +61,9 @@ const SignUp = ({ onLoginSuccess }) => {
       <div className="center-container">
         <Card className="auth-card">
           <br />
-          <Form onSubmit={userNameSignUp}>
+          <Form onSubmit={userNameSignUp}>          
+          <h3>Create an Account</h3>
+          <br />
           <Form.Group as={Row} className="mb-3" controlId="formHorizontalUsername">
             <Form.Label column sm={2}>
               Username
@@ -95,7 +97,7 @@ const SignUp = ({ onLoginSuccess }) => {
             </Col>
           </Form.Group>
         <br/>
-        <h3>Sign Up using:</h3>
+        <h3>Create an account using:</h3>
         <a
           href={
             googleAuthEndpoint +

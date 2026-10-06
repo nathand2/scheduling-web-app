@@ -106,7 +106,7 @@ export class RequestHandler {
         const data = await res.json();
 
         // Set new accessToken in sessionStorage and resend original request
-        await window.sessionStorage.setItem('accessToken', data.token);
+        await window.sessionStorage.setItem('accessToken', data.accessToken);
         return await this.followUpReq(resource, reqMethod, body);
       } else if (
         res.status >= 400 &&

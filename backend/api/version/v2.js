@@ -138,7 +138,7 @@ module.exports = (app, db, auth, passport, io) => {
       res.cookie('userContextRefresh', randStringRefresh, secureCookieConfig);
 
       res.json({
-        token: newAccessToken,
+        accessToken: newAccessToken,
         userId: res.locals.user.userId,
         displayName: res.locals.user.displayName
       });

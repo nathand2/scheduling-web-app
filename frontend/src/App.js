@@ -34,7 +34,7 @@ function App() {
   useEffect(() => {
     const init = async () => {
       await setStorageJWTs();   // Pick up accessToken cookie from Google OAuth redirect if present
-      await getUserData();      // Pick up userId/displayName cookies from Google OAuth redirect if present
+      // await getUserData();      // Pick up userId/displayName cookies from Google OAuth redirect if present
       await initializeAuth();   // Get fresh accessToken via refresh token — runs last and wins
     };
     init();
@@ -64,15 +64,28 @@ function App() {
       // Write to sessionStorage so RequestHandler can use it immediately
       window.sessionStorage.setItem("accessToken", data.token);
 
-      setAccessToken(data.token);
-      setUserId(data.userId);
-      setDisplayName(data.displayName);
+      // setAccessToken(data.token);
+      // setUserId(data.userId);
+      // setDisplayName(data.displayName);
+      setUserIdentity(data);
       setLoggedIn(true);
     } catch (err) {
       console.log(err);
       setLoggedIn(false);
     }
   };
+
+  const setUserIdentity = async (data) => {
+    try {
+      setAccessToken(data.accessToken);
+      setUserId(data.userId);
+      setDisplayName(data.displayName);
+      // setAccessToken(data.token);
+    } catch (err) {
+      console.log("Unable to set user identify. Error:", err);
+      throw err;
+    }
+  }
 
   /**
    * Gets cookie by name
@@ -129,9 +142,7 @@ function App() {
    */
   const onLoginSuccess = (data) => {
     window.sessionStorage.setItem("accessToken", data.accessToken);
-    setAccessToken(data.accessToken);
-    setUserId(data.userId);
-    setDisplayName(data.displayName);
+    setUserIdentity(data);
     setLoggedIn(true);
   };
 

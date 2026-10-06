@@ -6,7 +6,7 @@ import { AiOutlineLoading3Quarters } from "react-icons/ai";
 
 import { RequestHandler } from "../js/requestHandler";
 
-const SessionSelectRangeModal = ({ handleClose, show, range, session }) => {
+const SessionSelectRangeModal = ({ handleClose, show, range, session, userId }) => {
   const [warning, setWarning] = useState("");
   const [warningClass, setWarningClass] = useState("text-warning");
   const [showDelete, setShowDelete] = useState(false);
@@ -15,7 +15,7 @@ const SessionSelectRangeModal = ({ handleClose, show, range, session }) => {
   useEffect(() => {
     try {
       if (range === undefined) return;
-      setShowDelete(range.user_id === parseInt(localStorage.userId));
+      setShowDelete(range.user_id === userId);
     } catch (err) {
       console.log(err);
     }
