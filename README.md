@@ -14,7 +14,7 @@ Frontend: React.js, React Bootstrap, D3
 1. Go into frontend directory: cd frontend
 2. Install packages with npm: npm install
 3. Start React dev server: npm start
-4. 
+
 ## Backend (API)
 1. Go into backend directory: cd backend/api
 2. Install packages with npm: npm install

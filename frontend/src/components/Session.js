@@ -181,36 +181,6 @@ const Session = ({ userId }) => {
     setShowShareModal(true);
   };
 
-  // /**
-  //  * Gets session data from api
-  //  * @returns object - Session Data
-  //  */
-  // const getSession = async () => {
-  //   try {
-  //     let res;
-  //     res = await RequestHandler.req(`/session/${params.code}`, "GET");
-  //     setSessionResStatus(res.status);
-
-  //     const data = await res.json();
-  //     const sessionData = data.session;
-  //     console.log("Session Data:")
-  //     console.log(sessionData)
-
-  //     sessionData.dt_end = util.convertUTCStringToDate(sessionData.dt_end);
-  //     sessionData.dt_start = util.convertUTCStringToDate(sessionData.dt_start);
-  //     sessionData.dt_created = util.convertUTCStringToDate(
-  //       sessionData.dt_created
-  //     );
-  //     await setSession(sessionData);
-
-  //     // Determine if session is expired
-  //     setExpiredSession(new Date() > sessionData.dt_end);
-  //     return res;
-  //   } catch (err) {
-  //     throw err;
-  //   }
-  // };
-
   /**
    * Change view for non-OK responses.
    * @param {object} res

@@ -429,6 +429,7 @@ const SessionChart = ({ timeRanges, session, userId }) => {
         handleClose={handleCloseSelect}
         range={focusRange}
         session={session}
+        userId={userId}
       />
       <div className="canvas-container" ref={canvas}></div>
     </div>

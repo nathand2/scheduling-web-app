@@ -32,6 +32,7 @@ const LogIn = ({ onLoginSuccess }) => {
         // Set sessionStorage so RequestHandler can use token immediately
         window.sessionStorage.setItem("accessToken", data.accessToken);
         // Lift state up to App
+        console.log("auth/login body:", data);
         onLoginSuccess(data);
         setIsLoginSuccessful(true);
       } else if (res.status === 401) {
@@ -57,6 +58,8 @@ const LogIn = ({ onLoginSuccess }) => {
         <Card className="auth-card">
           <br />
           <Form onSubmit={userNameLogIn}>
+            <h3>Log In</h3>
+            <br />
             <Form.Group as={Row} className="mb-3" controlId="formHorizontalUsername">
               <Form.Label column sm={2}>
                 Username
@@ -115,7 +118,7 @@ const LogIn = ({ onLoginSuccess }) => {
                 : "")
             }
           >
-            Don't have an account? Sign up here
+            Don't have an account? Create an account here!
           </a>
         </Card>
       </div>
