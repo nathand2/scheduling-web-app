@@ -37,12 +37,7 @@ exports.jwtRefreshTokenExpiresIn = jwtRefreshTokenExpiresIn
  * @param {*} res a response
  */
 exports.authenticateToken = (req, res, next) => {
-  // Check fingerprint (user context)
-  if(!req.cookies.userContextAccess) {
-    console.log("401: No userContextAccess fingerprint")
-    res.sendStatus(401); // No fingerprint
-    return;
-  }
+
 
   const authHeader = req.headers.authorization;
   if (!authHeader) {
@@ -53,8 +48,19 @@ exports.authenticateToken = (req, res, next) => {
 
   // Get JWT from Authorization header
   const token = authHeader.split(' ')[1];
+  if(!token) {
+    console.log("401: No access token")
+    res.sendStatus(401); // No access token
+    return;
+  }
 
   const userContext = req.cookies.userContextAccess;
+  // Check fingerprint (user context)
+  if(!userContext) {
+    console.log("401: No userContextAccess fingerprint")
+    res.sendStatus(401); // No fingerprint
+    return;
+  }
 
   jwt.verify(token, accessTokenSecret, (err, user) => {
     if (err) {

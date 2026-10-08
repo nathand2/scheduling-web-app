@@ -19,32 +19,38 @@ console.log("NODE_ENV:", process.env.NODE_ENV)
 
 module.exports = (app, db, auth, passport, io) => {
 
-  // Refresh token + its fingerprint. httpOnly, long-lived. Never touched by JS.
-  const secureCookieConfig = {
+  const baseCookie = {
     secure: true,
+    sameSite: 'strict',
+    ...(process.env.NODE_ENV !== 'development' && { domain: cookieDomain })
+  }
+
+  // Refresh token + its fingerprint. httpOnly, long-lived. Never touched by JS.
+  const secureCookieConfig = { ...baseCookie,
     httpOnly: true,
-    maxAge: auth.jwtRefreshTokenCookieMaxAge,
-    ...(!(process.env.NODE_ENV === 'development') && { domain: cookieDomain })
-    , sameSite: 'strict'
+    maxAge: auth.jwtRefreshTokenCookieMaxAge
   }
 
   // Access token's fingerprint. httpOnly and short-lived, matching the
   // access token it's paired with.
   const secureAccessCookieConfig = {
-    secure: true,
+    ...baseCookie,
     httpOnly: true,
-    maxAge: auth.jwtAccessTokenCookieMaxAge,
-    ...(!(process.env.NODE_ENV === 'development') && { domain: cookieDomain })
-    , sameSite: 'strict'
+    maxAge: auth.jwtAccessTokenCookieMaxAge
   }
 
   // Non-sensitive, JS-readable UI convenience values only (userId, displayName).
   // The access token itself lives only in the JSON response body / memory.
   const semiSecureCookieConfig = {
-    secure: true,
-    maxAge: auth.jwtAccessTokenCookieMaxAge,
-    ...(!(process.env.NODE_ENV === 'development') && { domain: cookieDomain })
-    , sameSite: 'strict'
+    ...baseCookie,
+    maxAge: auth.jwtAccessTokenCookieMaxAge
+  }
+
+  // Clear cookie config for logout route
+  const clearCookieConfig = {
+    ...baseCookie,
+    httpOnly: true,
+    path: '/'
   }
 
   const router = express.Router();
@@ -283,26 +289,24 @@ module.exports = (app, db, auth, passport, io) => {
   /**
    * Deletes Refresh Tokens
    */
-  router.delete("/logout", (req, res) => {
-    const refreshToken = req.cookies.refreshToken;
-    if (!refreshToken) {
-      console.log("401: No refresh token")
-      res.sendStatus(401)
-      return
-    }
-    try {
-      db.deleteRefreshToken(refreshToken)
-      res.clearCookie('refreshToken', { path: '/' })
-      res.clearCookie('userContextRefresh', { path: '/' })
-      res.clearCookie('userContextAccess', { path: '/' })
+  router.delete("/logout", async (req, res) => {
+    const refreshToken = req.cookies.refreshToken
+    let revoked = true
 
-      res.sendStatus(200)
-      return
-    } catch (err) {
-      console.log(err)
-      res.sendStatus(500)
-      return
+    if (refreshToken) {
+      try {
+        await db.deleteRefreshToken(refreshToken)
+      } catch (err) {
+        console.log(err)
+        revoked = false
+      }
     }
+
+    for (const name of ['refreshToken', 'userContextRefresh', 'userContextAccess', 'userId', 'displayName']) {
+      res.clearCookie(name, clearCookieConfig)
+    }
+
+    res.sendStatus(revoked ? 204 : 500)
   })
 
   app.use(`${resource}${versionEndpoint}`, router);
