@@ -62,7 +62,7 @@ function App() {
       const data = await res.json();
 
       // Write to sessionStorage so RequestHandler can use it immediately
-      window.sessionStorage.setItem("accessToken", data.token);
+      window.sessionStorage.setItem("accessToken", data.accessToken);
 
       // setAccessToken(data.token);
       // setUserId(data.userId);

@@ -1,0 +1,328 @@
+.sc-wrap {
+  --sc-line: #e3e7ea;
+  --sc-line-strong: #cfd5d9;
+  --sc-going: #8ecae6;
+  --sc-going-text: #0b3c5d;
+  --sc-maybe: #ffd29a;
+  --sc-maybe-text: #6b3a00;
+  --sc-accent: #004e7c;
+  --sc-out: repeating-linear-gradient(
+    45deg,
+    #f1f3f5,
+    #f1f3f5 6px,
+    #e8ebee 6px,
+    #e8ebee 12px
+  );
+  margin: 12px 0 20px;
+  text-align: left;
+}
+
+.sc-empty,
+.sc-empty-hint {
+  color: #6c757d;
+  font-size: 0.9rem;
+  margin: 12px 0;
+}
+
+/* Toolbar */
+.sc-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-bottom: 8px;
+  font-size: 0.85rem;
+  color: #5c5f58;
+}
+
+.sc-legend,
+.sc-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.sc-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sc-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  display: inline-block;
+}
+
+.sc-swatch.sc-going {
+  background: var(--sc-going);
+}
+.sc-swatch.sc-maybe {
+  background: var(--sc-maybe);
+}
+.sc-swatch.sc-mine {
+  border: 2px solid transparent;
+  background:
+    /* inner fill: light blue / light orange */
+    linear-gradient(135deg, var(--sc-going) 50%, var(--sc-maybe) 50%) padding-box,
+    /* border: dark blue / dark orange, same diagonal */
+    linear-gradient(135deg, var(--sc-accent) 50%, #e08a00 50%) border-box;
+  background-origin: border-box; /* both gradients use the same box, so the split lines up */
+}
+
+.sc-hint {
+  color: #7a7f84;
+}
+
+.sc-draw-toggle {
+  border: 1px solid var(--sc-line-strong);
+  background: #fff;
+  border-radius: 999px;
+  padding: 2px 12px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.sc-draw-toggle.active {
+  background: var(--sc-accent);
+  border-color: var(--sc-accent);
+  color: #fff;
+}
+
+/* Scroll container: single scroller so sticky header/axis both work */
+.sc-scroll {
+  overflow: auto;
+  /* max-height: 75vh; */
+  border: 1px solid var(--sc-line-strong);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.sc-grid {
+  display: grid;
+  min-width: 100%;
+  width: max-content;
+}
+
+/* Header */
+.sc-corner,
+.sc-day-head {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  background: #fafbfc;
+  border-bottom: 1px solid var(--sc-line-strong);
+}
+
+.sc-corner {
+  left: 0;
+  z-index: 6;
+}
+
+.sc-day-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 4px;
+  border-left: 1px solid var(--sc-line);
+  line-height: 1.2;
+}
+
+.sc-day-name {
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.sc-day-date {
+  font-size: 0.75rem;
+  color: #6c757d;
+}
+
+.sc-day-head.is-today .sc-day-name {
+  color: var(--sc-accent);
+}
+
+/* Time axis */
+.sc-axis {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  background: #fafbfc;
+  border-right: 1px solid var(--sc-line-strong);
+}
+
+.sc-axis-label {
+  position: absolute;
+  right: 6px;
+  transform: translateY(-50%);
+  font-size: 0.7rem;
+  color: #7a7f84;
+  white-space: nowrap;
+}
+
+.sc-axis-label:first-child {
+  transform: translateY(2px);
+}
+
+/* Day column */
+.sc-col {
+  position: relative;
+  border-left: 1px solid var(--sc-line);
+  background-image: linear-gradient(to bottom, var(--sc-line) 1px, transparent 1px);
+  user-select: none;
+  -webkit-user-select: none;
+  overflow: hidden;
+}
+
+.sc-col.can-draw {
+  cursor: crosshair;
+}
+
+.sc-draw .sc-col.can-draw {
+  touch-action: none; /* Draw mode: dragging must not scroll the page */
+}
+
+.sc-out {
+  position: absolute;
+  left: 0;
+  right: 0;
+  background: var(--sc-out);
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+/* Availability blocks */
+.sc-block {
+  position: absolute;
+  box-sizing: border-box;
+  border-radius: 6px;
+  padding: 2px 6px;
+  overflow: hidden;
+  font-size: 0.75rem;
+  line-height: 1.25;
+  cursor: pointer;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  transition: filter 0.1s ease;
+  z-index: 1;
+}
+
+.sc-block:hover,
+.sc-block:focus-visible {
+  filter: brightness(0.94);
+  z-index: 2;
+  outline: none;
+}
+
+.sc-block.sc-going {
+  background: var(--sc-going);
+  color: var(--sc-going-text);
+}
+
+.sc-block.sc-maybe {
+  background: var(--sc-maybe);
+  color: var(--sc-maybe-text);
+}
+
+.sc-block.sc-mine {
+  border: 2px solid var(--sc-accent);
+}
+.sc-block.sc-mine.sc-maybe {
+  color: var(--sc-maybe-text);
+  border-color: #e08a00;
+}
+
+.sc-block.cont-before {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  border-top-style: dashed;
+}
+
+.sc-block.cont-after {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  border-bottom-style: dashed;
+}
+
+.sc-block-name {
+  display: block;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sc-block-time {
+  display: block;
+  opacity: 0.8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Drag preview */
+.sc-preview {
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  z-index: 3;
+  border: 2px dashed var(--sc-accent);
+  background: rgba(0, 78, 124, 0.12);
+  border-radius: 6px;
+  pointer-events: none;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--sc-accent);
+  padding-top: 2px;
+  overflow: hidden;
+}
+
+/* Hover guide */
+.sc-hover {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 0;
+  border-top: 1px solid rgba(0, 78, 124, 0.5);
+  z-index: 3;
+  pointer-events: none;
+}
+
+.sc-hover span {
+  position: absolute;
+  right: 2px;
+  top: -18px;
+  background: var(--sc-accent);
+  color: #fff;
+  font-size: 0.68rem;
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+/* Current time */
+.sc-now {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 0;
+  border-top: 2px solid #d62828;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.sc-now::before {
+  content: "";
+  position: absolute;
+  left: -4px;
+  top: -5px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #d62828;
+}

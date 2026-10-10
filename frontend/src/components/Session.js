@@ -23,11 +23,12 @@ const webSocketEndpoint = RequestHandler.webSocketEndpoint;
 const showDtRangeUpdateToast = false; // Websocket for dtrange add
 
 const Session = ({ userId }) => {
-  const [params, setParams] = useState(useParams());
+  const params = useParams();
   const [session, setSession] = useState({});
   const [timeRanges, setTimeRanges] = useState([]);
   const [userSessions, setUserSessions] = useState([]);
   const [showDtModal, setShowDtModal] = useState(false);
+  const [draftRange, setDraftRange] = useState(null); // Range dragged on the chart, prefills the modal
   const [showShareModal, setShowShareModal] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastTitle, setToastTitle] = useState("");
@@ -41,41 +42,38 @@ const Session = ({ userId }) => {
   useEffect(() => {
     let isMounted = true;
     const getSessionData = async () => {
-      // Get session data from api
       try {
-        let res;
-        res = await RequestHandler.req(`/v1/session/${params.code}`, "GET");
+        const res = await RequestHandler.req(`/v1/session/${params.code}`, "GET");
         if (!isMounted) return; // bail if unmounted during async call
 
         setSessionResStatus(res.status);
 
+        // Bail before touching the body: error responses may not include a session,
+        // and the old order (parse, then check status) could throw on a 403/404.
+        if (res.status !== 200) {
+          changeOtherSessionViews(res);
+          return;
+        }
+
         const data = await res.json();
+        if (!isMounted) return;
         const sessionData = data.session;
-        console.log("Session Data:", sessionData)
 
         sessionData.dt_end = util.convertUTCStringToDate(sessionData.dt_end);
         sessionData.dt_start = util.convertUTCStringToDate(sessionData.dt_start);
         sessionData.dt_created = util.convertUTCStringToDate(
           sessionData.dt_created
         );
-        await setSession(sessionData);
-
-        // Determine if session is expired
+        setSession(sessionData);
         setExpiredSession(new Date() > sessionData.dt_end);
-        if (res.status !== 200) {
-          changeOtherSessionViews(res);
-          return;
-        }
+
         await getTimeRanges(sessionData.id);
         await getUserSessions(sessionData.id);
 
-        // Set up websocket
-        // !In development mode, there was a bug where the Websocket connection was set up twice.
-        // !From the POV of other in the room, you join it 2 times
-        // !isMounted flag used essentially establishes web socket connection on second mount
-        // !Shouldn't affect prod build anyways
+        // In dev (StrictMode) this effect runs twice; the isMounted flag makes
+        // only the surviving mount open a socket.
         if (!isMounted) return;
-        socketRef.current = await setUpWebSocketConnection(sessionData.code);  // set socket
+        socketRef.current = setUpWebSocketConnection(sessionData.code);
       } catch (err) {
         console.log("Error:", err);
       }
@@ -89,108 +87,98 @@ const Session = ({ userId }) => {
         socketRef.current = null;
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /**
    * Sets up Web Socket Connection
    * @param {string} code - Session Code
    */
-  const setUpWebSocketConnection = async (code) => {
-    // Connect to web socket if session.code not undefined
-    if (code !== undefined) {
-      let socket;
-      try {
-        socket = io(webSocketEndpoint);
-        console.log("WebSocket connection successful");
-      } catch (err) {
-        console.log("WebSocket connection error:", err);
-      }
+  const setUpWebSocketConnection = (code) => {
+    if (code === undefined) return null;
 
-      socket.on("connect", function () {
-        socket.emit("room", code);
-      });
+    // socket.io reconnects on its own with backoff; no manual connect_error retry needed
+    const socket = io(webSocketEndpoint);
 
-      socket.on("connect_error", () => {
-        setTimeout(() => socket.connect(), 5000);
-      });
+    // Fires on first connect and on every automatic reconnect, so the room is rejoined
+    socket.on("connect", () => {
+      socket.emit("room", code);
+    });
 
-      socket.on("connect", function () {
-        // Connected, let's sign-up for to receive messages for this room
-        socket.emit("room", code);
-      });
+    socket.on("message", (data) => {
+      console.log("Incoming message:", data);
+    });
 
-      socket.on("message", function (data) {
-        console.log("Incoming message:", data);
-      });
+    socket.on("joinSession", (data) => {
+      setUserSessions((prev) => [...prev, data]);
+      setToastTitle(`Someone joined!`);
+      setToastMessage(`${data.display_name} joined the session!`);
+      setShowToast(true);
+    });
 
-      socket.on("joinSession", function (data) {
-        console.log("New user joined!:", data);
-        setUserSessions((prev) => {
-          return [...prev, data];
-        });
-        setToastTitle(`Someone joined!`);
-        setToastMessage(`${data.display_name} joined the session!`);
-        setShowToast(true);
-      });
+    socket.on("postSessionTimeRange", (data) => {
+      // Convert UTC date strings to dates
+      data.dt_end = util.convertUTCStringToDate(data.dt_end);
+      data.dt_start = util.convertUTCStringToDate(data.dt_start);
+      data.dt_created = util.convertUTCStringToDate(data.dt_created);
 
-      socket.on("postSessionTimeRange", async function (data) {
-        // Convert UTC date strings to dates
-        data.dt_end = util.convertUTCStringToDate(data.dt_end);
-        data.dt_start = util.convertUTCStringToDate(data.dt_start);
-        data.dt_created = util.convertUTCStringToDate(data.dt_created);
+      // Skip if we already have it (e.g. we refetched right after creating it)
+      setTimeRanges((prev) =>
+        data.id !== undefined && prev.some((r) => r.id === data.id)
+          ? prev
+          : [...prev, data]
+      );
 
-        // Adds new range to timeRanges state.
-        setTimeRanges((prev) => {
-          return [...prev, data];
-        });
-        if (showDtRangeUpdateToast) {
-          if (data.user_id === parseInt(localStorage.userId)) {
-            setToastTitle(`Thanks for joining!`);
-            setToastMessage(`We'll let everyone here know`);
-            setShowToast(true);
-          } else {
-            setToastTitle(`Good News!`);
-            setToastMessage(
-              `${data.display_name} is ${
-                data.status === "maybe" ? "maybe " : ""
-              }coming!`
-            );
-            setShowToast(true);
-          }
+      if (showDtRangeUpdateToast) {
+        if (String(data.user_id) === String(userId)) {
+          setToastTitle(`Thanks for joining!`);
+          setToastMessage(`We'll let everyone here know`);
+        } else {
+          setToastTitle(`Good News!`);
+          setToastMessage(
+            `${data.display_name} is ${
+              data.status === "maybe" ? "maybe " : ""
+            }coming!`
+          );
         }
-      });
-      socket.on("deleteSessionTimeRange", function (data) {
-        console.log("Someone deleted timerange!:", data);
-        setTimeRanges((prev) => {
-          return prev.filter((range) => range.id !== data.sessionTimeRangeId);
-        });
-      });
-      return socket;
-    }
+        setShowToast(true);
+      }
+    });
+
+    socket.on("deleteSessionTimeRange", (data) => {
+      setTimeRanges((prev) =>
+        prev.filter((range) => range.id !== data.sessionTimeRangeId)
+      );
+    });
+
+    return socket;
   };
 
-  // Handling Dt Range Modal Show/Close
+  // Add-range modal. The button opens it blank; dragging on the chart opens it prefilled.
   const handleCloseDt = () => setShowDtModal(false);
-  const handleShowDt = () => setShowDtModal(true);
+  const handleShowDt = () => {
+    setDraftRange(null);
+    setShowDtModal(true);
+  };
+  const handleDragCreate = (range) => {
+    setDraftRange(range);
+    setShowDtModal(true);
+  };
 
-  // Handling Share Modal Show/Close
-  const handleCloseShare = () => {
-    setShowShareModal(false);
-  };
-  const handleShowShare = () => {
-    setShowShareModal(true);
-  };
+  // Share modal
+  const handleCloseShare = () => setShowShareModal(false);
+  const handleShowShare = () => setShowShareModal(true);
 
   /**
    * Change view for non-OK responses.
    * @param {object} res
    */
   const changeOtherSessionViews = (res) => {
-    if (res.status == 401) {
+    if (res.status === 401) {
       setOtherSessionResViews(<>Please log in</>);
-    } else if (res.status == 403) {
+    } else if (res.status === 403) {
       setOtherSessionResViews(<>Not invited</>);
-    } else if (res.status == 404) {
+    } else if (res.status === 404) {
       setOtherSessionResViews(<>Session Not Found</>);
     } else {
       setOtherSessionResViews(<>Oops, something went wrong</>);
@@ -202,30 +190,18 @@ const Session = ({ userId }) => {
    * @param {int} sessionId
    */
   const getTimeRanges = async (sessionId) => {
-    try {
-      let res;
-      // Get session time range data.
-      res = await RequestHandler.req(
-        `/v1/timeranges?sessionid=${sessionId}`,
-        "GET"
-      );
-      const data = await res.json();
-      const timeRangeData = data.results;
-      console.log("Time Range results:", timeRangeData);
-
-      // Convert DT strings to dates
-      timeRangeData.map((timeRange) => {
-        timeRange.dt_created = util.convertUTCStringToDate(
-          timeRange.dt_created
-        );
-        timeRange.dt_start = util.convertUTCStringToDate(timeRange.dt_start);
-        timeRange.dt_end = util.convertUTCStringToDate(timeRange.dt_end);
-      });
-
-      setTimeRanges(timeRangeData);
-    } catch (err) {
-      throw err;
-    }
+    const res = await RequestHandler.req(
+      `/v1/timeranges?sessionid=${sessionId}`,
+      "GET"
+    );
+    const data = await res.json();
+    const timeRangeData = data.results.map((timeRange) => ({
+      ...timeRange,
+      dt_created: util.convertUTCStringToDate(timeRange.dt_created),
+      dt_start: util.convertUTCStringToDate(timeRange.dt_start),
+      dt_end: util.convertUTCStringToDate(timeRange.dt_end),
+    }));
+    setTimeRanges(timeRangeData);
   };
 
   /**
@@ -233,30 +209,28 @@ const Session = ({ userId }) => {
    * @param {int} sessionId
    */
   const getUserSessions = async (sessionId) => {
-    try {
-      let res;
-      // Get user sessions
-      res = await RequestHandler.req(
-        `/v1/usersessions?sessionid=${sessionId}`,
-        "GET"
-      );
-      const data = await res.json();
-      const userSessionsData = data.userSessions;
-      console.log("User session results:", userSessionsData);
-      setUserSessions(userSessionsData);
-    } catch (err) {
-      throw err;
-    }
+    const res = await RequestHandler.req(
+      `/v1/usersessions?sessionid=${sessionId}`,
+      "GET"
+    );
+    const data = await res.json();
+    setUserSessions(data.userSessions);
   };
 
   return (
     <div>
       {sessionResStatus === undefined && (
-        <Container className="d-flex flex-column align-items-center justify-content-center" style={{ minHeight: "80vh" }}>
-          <h1 className="text-accent-blue text-center">Please wait, loading your session...</h1>
-        </Container> 
+        <Container
+          className="d-flex flex-column align-items-center justify-content-center"
+          style={{ minHeight: "80vh" }}
+        >
+          <h1 className="text-accent-blue text-center">
+            Please wait, loading your session...
+          </h1>
+        </Container>
       )}
-      {(sessionResStatus >= 200 && sessionResStatus <= 200) && (
+
+      {sessionResStatus === 200 && (
         <>
           <SessionHeader showShareModal={handleShowShare} />
           <SessionShareModal
@@ -267,34 +241,41 @@ const Session = ({ userId }) => {
             show={showDtModal}
             handleClose={handleCloseDt}
             session={session}
-            setTimeRanges={setTimeRanges}
+            initialRange={draftRange}
+            // Don't rely on the websocket echo for your own data: refetch on success
+            onCreated={() => getTimeRanges(session.id)}
           />
 
           <Container fluid>
             <Row className="justify-content-md-center">
-              <Col sm={8}>
+              <Col lg={8} md={12}>
                 <SessionInfo
                   session={session}
                   expiredSession={expiredSession}
                 />
-                <Button variant="primary" onClick={handleShowDt}>
-                  Add DtRange
-                </Button>
+                <div className="d-flex justify-content-end mb-2">
+                  <Button
+                    variant="primary"
+                    onClick={handleShowDt}
+                    disabled={expiredSession}
+                  >
+                    Add availability
+                  </Button>
+                </div>
                 <SessionChart
                   timeRanges={timeRanges}
-                  setTimeRanges={setTimeRanges}
                   session={session}
                   userId={userId}
+                  onCreateRange={handleDragCreate}
+                  readOnly={Boolean(expiredSession)}
                 />
-                <Button variant="primary" onClick={handleShowDt}>
-                  Add DtRange
-                </Button>
               </Col>
-              <Col sm={4}>
+              <Col lg={4} md={12}>
                 <SessionAttendence userSessions={userSessions} />
               </Col>
             </Row>
           </Container>
+
           {showToast && (
             <SessionToast
               title={toastTitle}
@@ -307,13 +288,19 @@ const Session = ({ userId }) => {
           <br />
         </>
       )}
-      {(sessionResStatus < 200 || sessionResStatus > 200) && (
-        <Container className="d-flex flex-column align-items-center justify-content-center" style={{ minHeight: "80vh" }}>
-          <h1 className="text-accent-red text-center">Sorry, unable to load your session at this time</h1>
+
+      {sessionResStatus !== undefined && sessionResStatus !== 200 && (
+        <Container
+          className="d-flex flex-column align-items-center justify-content-center"
+          style={{ minHeight: "80vh" }}
+        >
+          <h1 className="text-accent-red text-center">
+            Sorry, unable to load your session at this time
+          </h1>
           <p>Error: {sessionResStatus}</p>
+          {otherSessionResViews}
         </Container>
       )}
-      {otherSessionResViews}
     </div>
   );
 };

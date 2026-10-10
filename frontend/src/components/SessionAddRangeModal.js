@@ -20,7 +20,13 @@ import { RequestHandler } from "../js/requestHandler";
  *   - 2 days: day dropdowns + time pickers
  *   - 3+ days: full date-time pickers
  */
-const SessionAddRangeModal = ({ handleClose, show, session }) => {
+const SessionAddRangeModal = ({
+  handleClose,
+  show,
+  session,
+  initialRange, // Optional { start: Date, end: Date } from dragging on the chart
+  onCreated, // Optional callback after a successful POST
+}) => {
   const [dtStatus, setDtStatus] = useState("going");
   const [dtStart, setdtStart] = useState(new Date());
   const [dtEnd, setdtEnd] = useState(new Date());
@@ -69,17 +75,26 @@ const SessionAddRangeModal = ({ handleClose, show, session }) => {
   useEffect(() => {
     if (!show || !sessionStart || !sessionEnd) return;
 
-    const defaultStart = sessionStart;
-    const proposedEnd = sessionStart.add(2, "hour");
-    const defaultEnd = proposedEnd.isAfter(sessionEnd)
+    let defaultStart = sessionStart;
+    let defaultEnd = sessionStart.add(2, "hour").isAfter(sessionEnd)
       ? sessionEnd
-      : proposedEnd;
+      : sessionStart.add(2, "hour");
+
+    // Prefer the range dragged on the chart, clamped to the session window
+    if (initialRange?.start && initialRange?.end) {
+      const s = dayjs(initialRange.start);
+      const e = dayjs(initialRange.end);
+      if (s.isValid() && e.isValid() && e.isAfter(s)) {
+        defaultStart = s.isBefore(sessionStart) ? sessionStart : s;
+        defaultEnd = e.isAfter(sessionEnd) ? sessionEnd : e;
+      }
+    }
 
     setdtStart(defaultStart.toDate());
     setdtEnd(defaultEnd.toDate());
     setDtStatus("going");
     setWarning("");
-  }, [show, sessionStart, sessionEnd]);
+  }, [show, sessionStart, sessionEnd, initialRange]);
 
   /**
    * Combines a calendar day with a time value to produce a full datetime.
@@ -289,9 +304,7 @@ const SessionAddRangeModal = ({ handleClose, show, session }) => {
       }
 
       handleClose();
-
-      const resData = await res.json();
-      console.log("Inserted dtRange with insertId:", resData.insertId);
+      if (onCreated) onCreated();
     } catch (err) {
       setIsCreateRangeLoading(false);
       setWarning("Something went wrong while adding the range.");
