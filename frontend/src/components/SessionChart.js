@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import dayjs from "dayjs";
 import SessionSelectRangeModal from "./SessionSelectRangeModal";
-import "../styles/SessionChart.css";
+import "../styles//SessionChart.css";
 
 const SNAP_MINUTES = 15; // Drag snaps to this increment
 const DRAG_THRESHOLD_PX = 5; // Movement below this counts as a click, not a drag
