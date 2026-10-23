@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import dayjs from "dayjs";
 import SessionSelectRangeModal from "./SessionSelectRangeModal";
-import "../styles//SessionChart.css";
+import "../styles/SessionChart.css";
+import "../styles/SessionChartHeat.css";
 
 const SNAP_MINUTES = 15; // Drag snaps to this increment
 const DRAG_THRESHOLD_PX = 5; // Movement below this counts as a click, not a drag
@@ -9,16 +10,21 @@ const MIN_BLOCK_PX = 18; // Keeps very short ranges visible/clickable
 const TARGET_BODY_PX = 520; // Aim for roughly this chart height; hour height adapts
 const MIN_HOUR_PX = 44;
 const MAX_HOUR_PX = 80;
+const HEAT_SLOT_MINUTES = 30; // Overlap is computed per slot of this size
+const HEAT_STRIP_PX = 28; // Width of the overlap strip on the left of each day column
+const MAX_BEST_CHIPS = 4; // Best-time windows shown in the bar
 
 const clamp = (v, lo, hi) => Math.min(Math.max(v, lo), hi);
 const snap = (m) => Math.round(m / SNAP_MINUTES) * SNAP_MINUTES;
 const fmtMinute = (day, m) => day.add(m, "minute").format("h:mm A");
+const userKey = (range) => String(range.user_id ?? `range-${range.id}`);
 
 /**
  * Collaborative availability chart.
  *
  * Layout: shared vertical time axis (left), one column per calendar day.
- * Overlapping ranges inside a day are packed into side-by-side lanes.
+ * Each column has a narrow overlap strip (how many people are free per
+ * half hour) and, to its right, the individual ranges packed into lanes.
  * Drag on a column to propose a new range; click an existing block for details.
  *
  * Props:
@@ -26,6 +32,7 @@ const fmtMinute = (day, m) => day.add(m, "minute").format("h:mm A");
  *  - session:    { dt_start, dt_end, ... } (Date objects)
  *  - userId:     current user's id
  *  - onCreateRange({ start: Date, end: Date }): called when a drag completes
+ *                or a best-time chip is clicked
  *  - readOnly:   disables drag-to-create (e.g. expired session)
  */
 const SessionChart = ({ timeRanges, session, userId, onCreateRange, readOnly }) => {
@@ -34,6 +41,7 @@ const SessionChart = ({ timeRanges, session, userId, onCreateRange, readOnly }) 
   const [drag, setDrag] = useState(null); // { dayIdx, anchor, current } (minutes from day start)
   const [hover, setHover] = useState(null); // { dayIdx, minute }
   const [drawMode, setDrawMode] = useState(false); // Touch devices: opt in so scrolling still works
+  const [includeMaybe, setIncludeMaybe] = useState(false); // Do "maybe" responses count toward overlap?
   const [now, setNow] = useState(() => dayjs());
   const downInfo = useRef(null); // { startY, rangeId } for the active pointer
 
@@ -143,6 +151,80 @@ const SessionChart = ({ timeRanges, session, userId, onCreateRange, readOnly }) 
     });
   }, [layout, timeRanges]);
 
+  /**
+   * Overlap: for every half-hour slot, who is free for the WHOLE slot.
+   * A person counts once per slot even if they added several ranges
+   * ("going" wins over "maybe" if both cover the slot).
+   * Best windows = runs of consecutive slots at the peak headcount (peak >= 2).
+   */
+  const heat = useMemo(() => {
+    if (!layout) return { byDay: [], best: [], peak: 0, participants: 0 };
+
+    const participants = new Set((timeRanges || []).map(userKey)).size;
+
+    const byDay = layout.days.map((day, dayIdx) => {
+      const { segs } = segmentsByDay[dayIdx];
+      const slots = [];
+
+      for (let t = day.winStartMin; t < day.winEndMin; t += HEAT_SLOT_MINUTES) {
+        const end = Math.min(t + HEAT_SLOT_MINUTES, day.winEndMin);
+        const people = new Map();
+
+        segs.forEach((seg) => {
+          if (seg.startMin <= t && seg.endMin >= end) {
+            const key = userKey(seg.range);
+            const status = seg.range.status === "maybe" ? "maybe" : "going";
+            const prev = people.get(key);
+            if (!prev || (prev.status === "maybe" && status === "going")) {
+              people.set(key, { name: seg.range.display_name, status });
+            }
+          }
+        });
+
+        const going = [...people.values()].filter((p) => p.status === "going").map((p) => p.name);
+        const maybe = [...people.values()].filter((p) => p.status === "maybe").map((p) => p.name);
+        slots.push({
+          startMin: t,
+          endMin: end,
+          going,
+          maybe,
+          score: going.length + (includeMaybe ? maybe.length : 0),
+        });
+      }
+
+      return { slots };
+    });
+
+    let peak = 0;
+    byDay.forEach((d) => d.slots.forEach((s) => (peak = Math.max(peak, s.score))));
+
+    const best = [];
+    if (peak >= 2) {
+      byDay.forEach((d, dayIdx) => {
+        let run = null;
+        d.slots.forEach((s) => {
+          if (s.score !== peak) {
+            run = null;
+          } else if (run && run.endMin === s.startMin) {
+            run.endMin = s.endMin;
+          } else {
+            run = { dayIdx, startMin: s.startMin, endMin: s.endMin };
+            best.push(run);
+          }
+        });
+      });
+      // Longest windows first, then chronological
+      best.sort(
+        (a, b) =>
+          b.endMin - b.startMin - (a.endMin - a.startMin) ||
+          a.dayIdx - b.dayIdx ||
+          a.startMin - b.startMin
+      );
+    }
+
+    return { byDay, best, peak, participants };
+  }, [layout, segmentsByDay, timeRanges, includeMaybe]);
+
   if (!layout) {
     return <div className="sc-empty">Loading chart…</div>;
   }
@@ -236,6 +318,15 @@ const SessionChart = ({ timeRanges, session, userId, onCreateRange, readOnly }) 
   );
   const nowMinute = nowDayIdx >= 0 ? now.diff(days[nowDayIdx].date, "minute") : null;
 
+  const slotTitle = (day, slot) => {
+    const lines = [`${fmtMinute(day.date, slot.startMin)} – ${fmtMinute(day.date, slot.endMin)}`];
+    lines.push(
+      `${slot.going.length} going${slot.going.length ? ": " + slot.going.join(", ") : ""}`
+    );
+    if (slot.maybe.length) lines.push(`${slot.maybe.length} maybe: ${slot.maybe.join(", ")}`);
+    return lines.join("\n");
+  };
+
   return (
     <div className={`sc-wrap ${drawMode ? "sc-draw" : ""}`}>
       <SessionSelectRangeModal
@@ -257,32 +348,95 @@ const SessionChart = ({ timeRanges, session, userId, onCreateRange, readOnly }) 
           <span className="sc-legend-item">
             <i className="sc-swatch sc-mine" /> You
           </span>
+          <span className="sc-legend-item">
+            <i className="sc-swatch sc-heat" /> Overlap
+          </span>
         </div>
 
-        {canDraw && (
-          <div className="sc-toolbar-right">
-            <span className="sc-hint">
-              {drawMode ? "Draw mode: drag to add" : "Drag on the chart to add your availability"}
-            </span>
-            <button
-              type="button"
-              className={`sc-draw-toggle ${drawMode ? "active" : ""}`}
-              onClick={() => setDrawMode((v) => !v)}
-              aria-pressed={drawMode}
-              title="On touch screens, turn this on to drag without scrolling"
-            >
-              ✎ Draw
-            </button>
-          </div>
-        )}
+        <div className="sc-toolbar-right">
+          <button
+            type="button"
+            className={`sc-draw-toggle ${includeMaybe ? "active" : ""}`}
+            onClick={() => setIncludeMaybe((v) => !v)}
+            aria-pressed={includeMaybe}
+            title="Include “maybe” responses in the overlap counts"
+          >
+            Count maybes
+          </button>
+          {canDraw && (
+            <>
+              <span className="sc-hint">
+                {drawMode ? "Draw mode: drag to add" : "Drag on the chart to add your availability"}
+              </span>
+              <button
+                type="button"
+                className={`sc-draw-toggle ${drawMode ? "active" : ""}`}
+                onClick={() => setDrawMode((v) => !v)}
+                aria-pressed={drawMode}
+                title="On touch screens, turn this on to drag without scrolling"
+              >
+                ✎ Draw
+              </button>
+            </>
+          )}
+        </div>
       </div>
+
+      {hasRanges && (
+        <div className="sc-best">
+          <span className="sc-best-label">Best times</span>
+          {heat.best.length === 0 ? (
+            <span className="sc-best-none">Shows up once two or more people overlap.</span>
+          ) : (
+            <>
+              {heat.best.slice(0, MAX_BEST_CHIPS).map((w) => {
+                const day = days[w.dayIdx].date;
+                const content = (
+                  <>
+                    <span className="sc-chip-time">
+                      {day.format("ddd")} {fmtMinute(day, w.startMin)} – {fmtMinute(day, w.endMin)}
+                    </span>
+                    <span className="sc-chip-sub">
+                      {heat.peak} {includeMaybe ? "going or maybe" : "going"}
+                    </span>
+                  </>
+                );
+                const chipKey = `${w.dayIdx}-${w.startMin}`;
+                return canDraw && onCreateRange ? (
+                  <button
+                    key={chipKey}
+                    type="button"
+                    className="sc-chip"
+                    title="Add your availability for this time"
+                    onClick={() =>
+                      onCreateRange({
+                        start: day.add(w.startMin, "minute").toDate(),
+                        end: day.add(w.endMin, "minute").toDate(),
+                      })
+                    }
+                  >
+                    {content}
+                  </button>
+                ) : (
+                  <span key={chipKey} className="sc-chip">
+                    {content}
+                  </span>
+                );
+              })}
+              {heat.best.length > MAX_BEST_CHIPS && (
+                <span className="sc-best-none">+{heat.best.length - MAX_BEST_CHIPS} more</span>
+              )}
+            </>
+          )}
+        </div>
+      )}
 
       <div className="sc-scroll">
         <div
           className="sc-grid"
           style={{
             gridTemplateColumns: `56px repeat(${days.length}, minmax(${
-              days.length > 3 ? 104 : 140
+              (days.length > 3 ? 104 : 140) + HEAT_STRIP_PX
             }px, 1fr))`,
           }}
         >
@@ -344,53 +498,99 @@ const SessionChart = ({ timeRanges, session, userId, onCreateRange, readOnly }) 
                   />
                 )}
 
-                {/* Availability blocks */}
-                {segs.map((seg) => {
-                  const { range } = seg;
-                  const height = Math.max(
-                    (seg.endMin - seg.startMin) * pxPerMin,
-                    MIN_BLOCK_PX
-                  );
-                  const widthPct = 100 / laneCount;
-                  const label = isMine(range)
-                    ? `${range.display_name} (you)`
-                    : range.display_name;
-                  const timeText = `${fmtMinute(day.date, seg.startMin)} – ${fmtMinute(
-                    day.date,
-                    seg.endMin
-                  )}`;
-                  return (
+                {/* Best-time windows: dashed band across the whole column */}
+                {heat.best
+                  .filter((w) => w.dayIdx === dayIdx)
+                  .map((w) => (
                     <div
-                      key={`${range.id}-${day.key}`}
-                      data-range-id={range.id}
-                      className={[
-                        "sc-block",
-                        range.status === "maybe" ? "sc-maybe" : "sc-going",
-                        isMine(range) ? "sc-mine" : "",
-                        seg.continuesBefore ? "cont-before" : "",
-                        seg.continuesAfter ? "cont-after" : "",
-                      ].join(" ")}
+                      key={`band-${w.startMin}`}
+                      className="sc-best-band"
                       style={{
-                        top: yOf(seg.startMin),
-                        height,
-                        left: `calc(${seg.lane * widthPct}% + 2px)`,
-                        width: `calc(${widthPct}% - 4px)`,
+                        top: yOf(w.startMin),
+                        height: (w.endMin - w.startMin) * pxPerMin,
                       }}
-                      title={`${label}: ${range.status}\n${timeText}`}
-                      tabIndex={0}
-                      role="button"
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          openRangeById(range.id);
-                        }
-                      }}
-                    >
-                      <span className="sc-block-name">{label}</span>
-                      {height >= 40 && <span className="sc-block-time">{timeText}</span>}
-                    </div>
-                  );
-                })}
+                    />
+                  ))}
+
+                {/* Overlap strip: darker = more people free for the whole slot */}
+                <div className="sc-heat" style={{ width: HEAT_STRIP_PX }}>
+                  {heat.byDay[dayIdx].slots.map((slot) => {
+                    if (slot.score === 0 && slot.maybe.length === 0) return null;
+                    const alpha =
+                      heat.participants > 0 ? Math.min(slot.score / heat.participants, 1) : 0;
+                    return (
+                      <div
+                        key={slot.startMin}
+                        className="sc-heat-cell"
+                        style={{
+                          top: yOf(slot.startMin),
+                          height: (slot.endMin - slot.startMin) * pxPerMin,
+                          background:
+                            slot.score > 0
+                              ? `rgba(46, 160, 105, ${(0.14 + 0.66 * alpha).toFixed(2)})`
+                              : "transparent",
+                          color: alpha >= 0.6 ? "#fff" : "#0d3b26",
+                        }}
+                        title={slotTitle(day, slot)}
+                      >
+                        {slot.score > 0 && <span>{slot.score}</span>}
+                        {!includeMaybe && slot.maybe.length > 0 && (
+                          <span className="sc-heat-maybe">+{slot.maybe.length}</span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Availability blocks (to the right of the overlap strip) */}
+                <div className="sc-lanes" style={{ left: HEAT_STRIP_PX }}>
+                  {segs.map((seg) => {
+                    const { range } = seg;
+                    const height = Math.max(
+                      (seg.endMin - seg.startMin) * pxPerMin,
+                      MIN_BLOCK_PX
+                    );
+                    const widthPct = 100 / laneCount;
+                    const label = isMine(range)
+                      ? `${range.display_name} (you)`
+                      : range.display_name;
+                    const timeText = `${fmtMinute(day.date, seg.startMin)} – ${fmtMinute(
+                      day.date,
+                      seg.endMin
+                    )}`;
+                    return (
+                      <div
+                        key={`${range.id}-${day.key}`}
+                        data-range-id={range.id}
+                        className={[
+                          "sc-block",
+                          range.status === "maybe" ? "sc-maybe" : "sc-going",
+                          isMine(range) ? "sc-mine" : "",
+                          seg.continuesBefore ? "cont-before" : "",
+                          seg.continuesAfter ? "cont-after" : "",
+                        ].join(" ")}
+                        style={{
+                          top: yOf(seg.startMin),
+                          height,
+                          left: `calc(${seg.lane * widthPct}% + 2px)`,
+                          width: `calc(${widthPct}% - 4px)`,
+                        }}
+                        title={`${label}: ${range.status}\n${timeText}`}
+                        tabIndex={0}
+                        role="button"
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            openRangeById(range.id);
+                          }
+                        }}
+                      >
+                        <span className="sc-block-name">{label}</span>
+                        {height >= 40 && <span className="sc-block-time">{timeText}</span>}
+                      </div>
+                    );
+                  })}
+                </div>
 
                 {/* Live drag preview */}
                 {dragHere && dragHi > dragLo && (
