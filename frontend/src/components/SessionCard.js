@@ -17,9 +17,8 @@ const SessionCard = ({ id, code, title, desc, dt_created, status }) => {
 
   return (
     <Card
-      style={{ width: "18rem" }}
+      className="hover-cursor h-100"
       onClick={handleOnClick}
-      className="hover-cursor"
     >
       <Card.Img variant="top" />
       <Card.Body>
@@ -27,7 +26,8 @@ const SessionCard = ({ id, code, title, desc, dt_created, status }) => {
         <Card.Text>{desc}</Card.Text>
       </Card.Body>
       <Card.Body>
-        <Badge pill bg={status === "upcoming" ? "primary" : "secondary"}>
+        <Badge pill bg={status === "Active" ? "primary" :
+                        (status === "Upcoming" ? "info" : "secondary")}>
           {status}
         </Badge>
       </Card.Body>

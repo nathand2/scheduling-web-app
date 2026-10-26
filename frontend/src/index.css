@@ -35,6 +35,46 @@
       flex-wrap: wrap;
 }
 
+.sessions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
+  gap: 1.25rem;
+  align-items: stretch;
+}
+
+.sessions-grid > * {
+  min-width: 0;
+}
+
+.session-create-card {
+  min-height: 13rem;
+}
+
+.session-create-card > .card-link {
+  display: flex;
+  flex: 1;
+  align-self: stretch;
+}
+
+.session-create-card .card-body {
+  width: 100%;
+}
+
+.sessions-loading {
+  min-height: 45vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  text-align: left;
+}
+
+.sessions-message {
+  max-width: 42rem;
+  margin: 0 auto 1.5rem;
+  padding: 1.5rem;
+}
+
 .text-underline {
   text-decoration: underline;
 }

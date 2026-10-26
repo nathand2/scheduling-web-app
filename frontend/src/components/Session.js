@@ -98,7 +98,11 @@ const Session = ({ userId }) => {
     if (code === undefined) return null;
 
     // socket.io reconnects on its own with backoff; no manual connect_error retry needed
-    const socket = io(webSocketEndpoint);
+    const socket = io(webSocketEndpoint, {
+      path: RequestHandler.webSocketPath,
+      withCredentials: true,
+      auth: (callback) => callback({ token: window.sessionStorage.getItem('accessToken') })
+    });
 
     // Fires on first connect and on every automatic reconnect, so the room is rejoined
     socket.on("connect", () => {
@@ -255,7 +259,7 @@ const Session = ({ userId }) => {
                 />
                 <div className="d-flex justify-content-end mb-2">
                   <Button
-                    variant="primary"
+                    variant={!expiredSession ? "primary" : "secondary"}
                     onClick={handleShowDt}
                     disabled={expiredSession}
                   >

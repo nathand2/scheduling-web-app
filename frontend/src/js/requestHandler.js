@@ -5,8 +5,9 @@
  */
 
 export class RequestHandler {
-  static webSocketEndpoint = process.env.NODE_ENV === 'development' ? "http://localhost:7500" : "https://socket.nathandong.dev";
   static endpointRoot = process.env.NODE_ENV === 'development' ? "http://localhost:6500" : "https://api.nathandong.dev/scheduler";
+  static webSocketEndpoint = process.env.NODE_ENV === 'development' ? "http://localhost:6500" : "https://api.nathandong.dev";
+  static webSocketPath = process.env.NODE_ENV === 'development' ? "/socket/v1" : "/scheduler/socket/v1";
   static appRoot = process.env.NODE_ENV === 'development' ? "http://localhost:3000" : "https://scheduler.nathandong.dev";  // Frontend url
 
   // First API request and silent JWT refresh if needed.

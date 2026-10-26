@@ -1,7 +1,9 @@
 # Session Scheduling App
 A Collaborative Session Scheduling Web App where users can invite people to sessions via links to collaboratively plan an activity.
 
-Developed using a Microservice Architecture in mind. 
+The frontend and API server run as separate services. The API server also hosts
+the authenticated Socket.IO endpoint at `/socket/v1` in development and
+`/scheduler/socket/v1` in production.
 
 Backend: Node.js, Express.js, Passport.js, JSON Web Tokens, Socket.io
 
@@ -32,12 +34,6 @@ Frontend: React.js, React Bootstrap, D3
 5. Start API server: npm run start:dev
 
 
-## Backend (SocketApi)
-1. Go into backend directory: cd backend/sockets
-2. Install packages with npm: npm install
-3. Start SocketApi server: npm run start:dev
-
 ## Quickstart Commands from root
 cd backend/api | npm run start:dev
-cd backend/sockets | npm start
 cd frontend | npm start

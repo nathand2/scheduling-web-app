@@ -2,7 +2,6 @@
  * Module for API functionality and routes.
  */
 
-const axios = require("axios").default;
 const bcrypt = require('bcrypt');
 const express = require("express");
 // const router = express.Router();
@@ -11,7 +10,6 @@ const util = require('../services/util');
 
 const versionEndpoint = "/v1";
 const resource = process.env.NODE_ENV === 'development' ? "" : "/scheduler";
-const socketEndpointRoot = process.env.NODE_ENV === 'development' ? "http://localhost:7500" : "https://socket.nathandong.dev";
 const rootURL = process.env.NODE_ENV === 'development' ? "http://localhost:3000" : "https://scheduler.nathandong.dev";
 const cookieDomain = process.env.NODE_ENV === 'development' ? ".localhost" : '.nathandong.dev';
 
@@ -436,16 +434,7 @@ module.exports = (app, db, auth, passport, io) => {
 
       // If new userSession created, notify session attendees
       if (userSession !== undefined) {
-        // Send post request to websocket api
-        try {
-          const response = await axios.post(socketEndpointRoot + '/usersession', {
-            userSessionData: userSession[0],
-            sessionCode: sessionCode
-          });
-          console.log(response);
-        } catch (error) {
-          console.error(error);
-        }
+        if (io) io.to(sessionCode).emit('joinSession', userSession[0]);
       }
 
       res.json({sessionCode: sessionCode})
@@ -504,13 +493,7 @@ module.exports = (app, db, auth, passport, io) => {
         },
         sessionCode: sessionCode
       }
-      // Send post request to websocket api
-      try {
-        const response = await axios.post(socketEndpointRoot + '/sessiontimerange', postBody);
-        console.log("Socket Response: ", response.status);
-      } catch (error) {
-        console.error(error);
-      }
+      if (io) io.to(sessionCode).emit('postSessionTimeRange', postBody.sessionTimeRange);
 
       res.json({insertId: insertId})
 
@@ -533,17 +516,7 @@ module.exports = (app, db, auth, passport, io) => {
 
       // If no rows affect, no deletion. Range doesn't belong to user
       if (results.affectedRows > 0) {
-        // Send Delete request to websocket api
-        try {
-          const deleteBody = {
-            sessionTimeRangeId: sessionTimeRangeId,
-            sessionCode: sessionCode
-          }
-          console.log("Delete Body:", deleteBody)
-          await axios.delete(socketEndpointRoot + '/sessiontimerange', {data: deleteBody});
-        } catch (error) {
-          console.error(error);
-        }
+        if (io) io.to(sessionCode).emit('deleteSessionTimeRange', {sessionTimeRangeId});
 
         return res.sendStatus(204)  // No content
       } else {
