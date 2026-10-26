@@ -16,7 +16,9 @@ const SessionJoin = ({ loggedIn }) => {
   const [errorMessage, setErrorMessage] = useState("");
   const [redirectToSession, setRedirectToSession] = useState(false);
   const inviteCode = searchParams.get("code");
-  const redirectUrl = `${RequestHandler.appRoot}/sessionjoin?code=${encodeURIComponent(inviteCode || "")}`;
+  // React Router expects an app-relative destination. Passing the absolute app
+  // URL here makes it resolve under /login (for example /login/http:/...).
+  const redirectUrl = `/sessionjoin?code=${encodeURIComponent(inviteCode || "")}`;
   const loginUrl = `/login?redirect=${encodeURIComponent(redirectUrl)}`;
 
   useEffect(() => {

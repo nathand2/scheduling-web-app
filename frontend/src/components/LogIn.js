@@ -18,6 +18,14 @@ const LogIn = ({ onLoginSuccess }) => {
   const [password, setPassword] = useState("");
   const [statusText, setStatusText] = useState("");
   const [isLoginSuccessful, setIsLoginSuccessful] = useState(false);
+  const redirect = searchParams.get("redirect");
+  // The OAuth callback redirects from the API server, so give it an absolute
+  // frontend URL. Local login uses the app-relative redirect above.
+  const googleRedirect = redirect
+    ? `${RequestHandler.appRoot}${redirect.startsWith("/") ? redirect : `/${redirect}`}`
+    : undefined;
+  const googleAuthUrl = new URL(googleAuthEndpoint);
+  if (googleRedirect) googleAuthUrl.searchParams.set("redirect", googleRedirect);
 
   const userNameLogIn = async (event) => {
     event.preventDefault();
@@ -101,14 +109,7 @@ const LogIn = ({ onLoginSuccess }) => {
           </Form>
           <br />
           <h3>Log in using:</h3>
-          <a
-            href={
-              googleAuthEndpoint +
-              (searchParams.get("redirect")
-                ? `?redirect=${searchParams.get("redirect")}`
-                : "")
-            }
-          >
+          <a href={googleAuthUrl.toString()}>
             <FcGoogle className="login-icon" />
           </a>
           {/* <a
@@ -127,7 +128,7 @@ const LogIn = ({ onLoginSuccess }) => {
                 ? `?redirect=${searchParams.get("redirect")}`
                 : "")
             }>
-              Have an account? Log in here
+              Don't have an account? Create an account here!
             </Link>
         </Card>
       </div>
