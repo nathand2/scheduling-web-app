@@ -127,9 +127,32 @@
           justify-content: center;
 }
 
-.center-list {
+.how-to-use {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   text-align: center;
-  list-style-position: inside;
+  padding: 40px 24px;
+  margin-bottom: 60px;
+}
+
+.center-list {
+  width: 60dvw !important;
+  max-width: 1000px;
+  box-sizing: border-box;
+  margin-inline: auto;
+  padding-left: 1.5rem;
+  text-align: left;
+  list-style-position: outside;
+}
+
+.center-list li {
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
+.center-list li:last-child {
+  margin-bottom: 0;
 }
 
 .auth-card {
@@ -145,6 +168,7 @@
   background: linear-gradient(120deg, #eceff0 14%, #dce1e3 100%);
   color: #5C5F58;
   padding-top: 100px;
+  max-height: 100%;
 }
 
 .aboutpage-container {
@@ -152,6 +176,12 @@
   background: linear-gradient(120deg, #eceff0 14%, #dce1e3 100%);
   color: #5C5F58;
   padding-top: 50px;
+}
+
+.aboutpage-container .desc {
+  width: 80%;
+  padding-top: 30px;
+  margin: auto;
 }
 
 .home-container {

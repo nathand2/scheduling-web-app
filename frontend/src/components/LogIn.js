@@ -1,4 +1,5 @@
 import { useSearchParams, Navigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { RequestHandler } from "../js/requestHandler";
 import { useState } from "react";
 import { FcGoogle } from "react-icons/fc";
@@ -110,7 +111,7 @@ const LogIn = ({ onLoginSuccess }) => {
           >
             <FcGoogle className="login-icon" />
           </a>
-          <a
+          {/* <a
             href={
               `/signup` +
               (searchParams.get("redirect")
@@ -119,7 +120,15 @@ const LogIn = ({ onLoginSuccess }) => {
             }
           >
             Don't have an account? Create an account here!
-          </a>
+          </a> */}
+            <Link to={
+              `/signup` +
+              (searchParams.get("redirect")
+                ? `?redirect=${searchParams.get("redirect")}`
+                : "")
+            }>
+              Have an account? Log in here
+            </Link>
         </Card>
       </div>
     </div>

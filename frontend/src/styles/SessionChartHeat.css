@@ -1,6 +1,9 @@
 /* Overlap strip + best-times bar. Kept separate so it doesn't clobber edits in SessionChart.css */
 
 .sc-swatch.sc-heat {
+  position: static;
+  flex: 0 0 12px;
+  border: 0;
   background: rgba(46, 160, 105, 0.6);
 }
 

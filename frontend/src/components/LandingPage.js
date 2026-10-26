@@ -11,7 +11,7 @@ const LandingPage = () => {
         <Row style={{ marginBottom: "30px" }}>
           <h1 className="text-accent-blue">A new way of scheduling</h1>
         </Row>
-        <Row style={{ marginBottom: "200px" }}>
+        <Row style={{ marginBottom: "50px" }}>
           <p>Well... Kinda</p>
         </Row>
         <Row style={{ marginBottom: "50px" }}>
@@ -19,22 +19,21 @@ const LandingPage = () => {
         </Row>
         <Row style={{ marginBottom: "100px" }}>
           <p>
-            This scheduler was created to help with{" "}
-            <span className="text-accent-blue">preliminary planning</span>
+            This scheduler was created to help with preliminary planning
           </p>
           <p>
-            Create a session and invite people using a{" "}
-            <span className="text-accent-blue">link</span>
+            Create a session and invite people using a link
           </p>
           <p>
-            <span className="text-accent-blue">Visually</span> see if and when
+            Visually see if and when
             your friends can make it
           </p>
         </Row>
         <Row style={{ marginBottom: "10px" }}>
           <p>
+            Check out our{" "}
             <Link to="/about" className="text-accent-blue">
-              Click Here
+              About page
             </Link>{" "}
             to learn more about the scheduler and how to use it.
           </p>

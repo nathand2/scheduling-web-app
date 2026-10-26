@@ -1,4 +1,6 @@
 import { useSearchParams } from "react-router-dom";
+import { Link } from "react-router-dom";
+
 import { RequestHandler } from "../js/requestHandler";
 
 import { useState } from "react";
@@ -110,7 +112,7 @@ const SignUp = ({ onLoginSuccess }) => {
         </a>
         <br />
         </Form>
-          <a
+          {/* <a
             href={
               `/login` +
               `${
@@ -121,7 +123,17 @@ const SignUp = ({ onLoginSuccess }) => {
             }
           >
            Have an account? Log in here
-          </a>{" "}
+          </a>{" "} */}
+          <Link to={
+              `/login` +
+              `${
+                searchParams.get("redirect")
+                  ? "?redirect=" + searchParams.get("redirect")
+                  : ""
+              }`
+            }>
+              Have an account? Log in here
+            </Link>
         </Card>
       </div>
     </div>
