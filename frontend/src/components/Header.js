@@ -2,6 +2,7 @@ import { Navbar, Container, Nav, NavDropdown } from "react-bootstrap";
 import { Link } from "react-router-dom";
 
 const colAccentBlue = "#004E7C";
+const colAccentLink = "#0d6efd";
 
 const Header = ({ logOut, loggedIn, displayName }) => {
   return (
@@ -40,10 +41,10 @@ const Header = ({ logOut, loggedIn, displayName }) => {
             <div className="d-flex">
               {!loggedIn && (
                 <>
-                  <Nav.Link variant="light" as={Link} to="/login">
+                  <Nav.Link variant="light" as={Link} to="/login" style={{color: colAccentLink, padding: ".5rem 1rem"}}>
                     Login
                   </Nav.Link>
-                  <Nav.Link variant="light" as={Link} to="/signup">
+                  <Nav.Link variant="light" as={Link} to="/signup" style={{color: colAccentLink, padding: ".5rem 1rem"}}>
                     Sign Up
                   </Nav.Link>
                 </>
