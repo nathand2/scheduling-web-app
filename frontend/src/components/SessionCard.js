@@ -12,7 +12,7 @@ const SessionCard = ({ id, code, title, desc, dt_created, status }) => {
    */
   const handleOnClick = useCallback(
     () => navigate(`/session/${code}`, { replace: false }),
-    [navigate]
+    [navigate, code]
   );
 
   return (

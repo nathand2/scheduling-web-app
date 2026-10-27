@@ -20,10 +20,13 @@
     "react-dom": "^18.2.0",
     "react-flatpickr": "^3.10.13",
     "react-icons": "^4.4.0",
-    "react-router-dom": "^6.3.0",
-    "react-scripts": "^5.0.1",
+    "react-router-dom": "^7.18.4",
     "socket.io-client": "^4.5.1",
     "web-vitals": "^2.1.4"
+  },
+  
+  "devDependencies": {
+    "react-scripts": "^5.0.1"
   },
   "scripts": {
     "start": "react-scripts start",

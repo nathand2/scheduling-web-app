@@ -17,13 +17,10 @@ const SignUp = ({ onLoginSuccess }) => {
   const googleAuthEndpoint = RequestHandler.endpointRoot + "/v2/auth/google";
 
   const [searchParams] = useSearchParams();
-  // const [email, setEmail] = useState('')
   const [userName, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [statusText, setStatusText] = useState('')
   const [isSignUpSuccessful, setIsSignUpSuccessful] = useState(false)
-  const [statusTextClass, setStatusTextClass] = useState('text-secondary')
-  // const [redirect, setRedirect] = useState("/")
 
   const userNameSignUp = async (event) => {
     event.preventDefault();

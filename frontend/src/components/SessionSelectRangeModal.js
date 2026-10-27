@@ -19,7 +19,7 @@ const SessionSelectRangeModal = ({ handleClose, show, range, session, userId }) 
     } catch (err) {
       console.log(err);
     }
-  }, [range]);
+  }, [range, userId]);
 
   /**
    * Deletes range with DELETE request

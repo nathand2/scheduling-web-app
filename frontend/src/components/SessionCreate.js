@@ -22,7 +22,7 @@ const SessionCreate = () => {
   const [dtStart, setdtStart] = useState(now.toDate());
   // Default session duration is 4 hours
   const [dtEnd, setdtEnd] = useState(now.add(4, "hour").toDate());
-  const [viewOption, setViewOption] = useState("account-only");
+  const [viewOption] = useState("account-only");
 
   const [sessionCreated, setSessionCreated] = useState(false);
   const [sessionId, setSessionId] = useState("");
@@ -37,7 +37,6 @@ const SessionCreate = () => {
   const validateSessionRange = () => {
     const start = dayjs(dtStart);
     const end = dayjs(dtEnd);
-    const currentTime = dayjs();
 
     if (!start.isValid() || !end.isValid()) {
       return "Please select a valid start and end time.";

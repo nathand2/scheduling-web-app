@@ -27,7 +27,7 @@ function App() {
   const [userId, setUserId] = useState(undefined);
   const [displayName, setDisplayName] = useState("");
 
-  const [isDev, setIsDev] = useState(
+  const [isDev] = useState(
     !process.env.NODE_ENV || process.env.NODE_ENV === "development"
   );
 
@@ -38,6 +38,7 @@ function App() {
       await initializeAuth();   // Get fresh accessToken via refresh token — runs last and wins
     };
     init();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /**
@@ -116,24 +117,6 @@ function App() {
     if (accessToken !== undefined && accessToken !== null) {
       await window.sessionStorage.setItem("accessToken", accessToken);
     }
-  };
-
-  /**
-   * Picks up userId/displayName cookies set after Google OAuth redirect.
-   */
-  const getUserData = async () => {
-    const userIdFromCookie = getCookie("userId");
-    const displayNameFromCookie = getCookie("displayName");
-
-    if (userIdFromCookie !== undefined) {
-      await window.localStorage.setItem("userId", userIdFromCookie);
-    }
-    if (displayNameFromCookie !== undefined) {
-      await window.localStorage.setItem("displayName", displayNameFromCookie);
-    }
-
-    await setUserId(localStorage.getItem("userId"));
-    await setDisplayName(decodeURIComponent(localStorage.getItem("displayName")));
   };
 
   /**
@@ -218,7 +201,7 @@ function App() {
   };
 
   return (
-    <Router>
+    <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <div className="App">
         <Header logOut={logOut} loggedIn={loggedIn} displayName={displayName} />
         <Routes>

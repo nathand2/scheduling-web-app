@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useParams } from "react-router-dom";
 
 import Modal from "react-bootstrap/Modal";
@@ -11,48 +11,10 @@ import { RequestHandler } from "../js/requestHandler";
 
 const SessionShareModal = ({ handleClose, show }) => {
   
-  const [params, setParams] = useState(useParams());
+  const [params] = useState(useParams());
   const [isGetInviteLinkLoading, setIsGetInviteLinkLoading] = useState(false);
   const [statusText, setStatusText] = useState('');
   const [statusTextClassName, setStatusTextClassName] = useState('text-success');
-
-  /**
-   * Creates a POST request to generate a invite link (for owners)
-   * @returns undefined
-   */
-  const shareWithLink = async () => {
-    setIsGetInviteLinkLoading(true);
-    let res;
-    try {
-       res = await RequestHandler.req("/v1/sessioninvite", "POST", {
-        sessionCode: params.code,
-      });
-      setIsGetInviteLinkLoading(false);
-
-      if (res.status != 200) {
-        setStatusTextClassName("text-danger");
-        setStatusText(`Error: Unable to get share link [${res.status}]`);
-        console.log("You can't create a share link. You are not an owner.")
-        return;
-      }
-      setStatusTextClassName("text-success");
-      setStatusText(`Share link copied to clipboard!`);
-      const results = await res.json();
-      console.log("Created session invite:", results);
-      console.log(
-        RequestHandler.appRoot + "/sessionjoin?code=" + results.inviteCode
-      );
-
-      const inviteLink = RequestHandler.appRoot + "/sessionjoin?code=" + results.inviteCode
-
-      /* Copy the text inside the text field */
-      navigator.clipboard.writeText(inviteLink);
-      console.log("Share link copied to clipboard")
-
-    } catch (err) {
-      console.log("Error:", err);
-    }
-  };
 
   const dismissModal = () => {
     setStatusText("");
