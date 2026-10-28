@@ -6,7 +6,7 @@ import Row from "react-bootstrap/Row";
 
 const LandingPage = () => {
   return (
-    <div className="border d-flex align-items-center justify-content-center">
+    <div className="d-flex align-items-center justify-content-center">
       <Container className="landingpage-container" fluid>
         <Row style={{ marginBottom: "30px" }}>
           <h1 className="text-accent-blue">A new way of scheduling</h1>

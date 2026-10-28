@@ -2,7 +2,6 @@ import { Navbar, Container, Nav, NavDropdown } from "react-bootstrap";
 import { Link } from "react-router-dom";
 
 const colAccentBlue = "#004E7C";
-const colAccentLink = "#0d6efd";
 
 const Header = ({ logOut, loggedIn, displayName }) => {
   return (

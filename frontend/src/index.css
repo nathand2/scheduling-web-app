@@ -164,8 +164,8 @@
 }
 
 .landingpage-container {
-  background: #eceff0;
-  background: linear-gradient(120deg, #eceff0 14%, #dce1e3 100%);
+  /* background: #eceff0;
+  background: linear-gradient(120deg, #eceff0 14%, #dce1e3 100%); */
   color: #5C5F58;
   padding-top: 100px;
   max-height: 100%;
@@ -202,4 +202,3 @@
   padding: .5rem 1rem !important;
 }
 
-/*# sourceMappingURL=index.css.map */

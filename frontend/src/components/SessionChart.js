@@ -552,7 +552,7 @@ const SessionChart = ({ timeRanges, session, userId, onCreateRange, readOnly }) 
                     );
                     const widthPct = 100 / laneCount;
                     const label = isMine(range)
-                      ? `${range.display_name} (you)`
+                      ? `${range.display_name} (Me)`
                       : range.display_name;
                     const timeText = `${fmtMinute(day.date, seg.startMin)} – ${fmtMinute(
                       day.date,
