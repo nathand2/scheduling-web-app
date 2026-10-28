@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
@@ -8,20 +8,22 @@ import { AiOutlineLoading3Quarters } from "react-icons/ai";
 
 import { RequestHandler } from "../js/requestHandler";
 
-const UserSettings = ({ setAppDisplayName }) => {
-  const [displayName, setDisplayName] = useState(
-    decodeURIComponent(localStorage.getItem("displayName"))
-  );
+const UserSettings = ({ displayName: currentDisplayName, setAppDisplayName }) => {
+  const [displayName, setDisplayName] = useState(currentDisplayName || "");
   const [status, setStatus] = useState("");
   const [statusColor, setStatusColor] = useState("text-danger");
   const [isChangeDisplayNameLoading, setIsChangeDisplayNameLoading] = useState(false);
+
+  useEffect(() => {
+    setDisplayName(currentDisplayName || "");
+  }, [currentDisplayName]);
 
   // Validates new display name and makes PUT request to api
   const changeDisplayName = async (e) => {
     setStatus("");
     setStatusColor("text-secondary");
     e.preventDefault();
-    if (displayName === decodeURIComponent(localStorage.getItem("displayName"))) {
+    if (displayName === currentDisplayName) {
       setStatusColor("text-danger");
       setStatus(`Cannot set same display name`);
       return;
@@ -46,11 +48,7 @@ const UserSettings = ({ setAppDisplayName }) => {
       if (res.status === 204) {
         setStatus("Successfully changed display name");
         setStatusColor("text-success");
-        localStorage.setItem("displayName", reqDisplayName);
         setAppDisplayName(reqDisplayName);
-
-        // Set tokens
-        processJWTs();
       } else {
         console.log("Failed");
         setStatus("Failed to change display name");
@@ -64,61 +62,6 @@ const UserSettings = ({ setAppDisplayName }) => {
     }
   };
 
-  /**
-   * Gets
-   * @param {string} name
-   * @returns
-   */
-  const getCookie = (name) => {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(";").shift();
-  };
-
-  /**
-   * Deletes cookie by name
-   * @param {string} name
-   */
-  const deleteCookie = (name) => {
-    if (!process.env.NODE_ENV || process.env.NODE_ENV === "development") {
-      document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
-    } else {
-      document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.nathandong.com;`;
-    }
-  };
-
-  /**
-   * Sets JWTs into local/session storage taken from cookies
-   */
-  const setStorageJWTs = async () => {
-    // Get JWT and refresh token from cookies.
-    const accessToken = getCookie("accessToken");
-    const refreshToken = getCookie("refreshToken");
-
-    if (accessToken !== undefined) {
-      await window.sessionStorage.setItem("accessToken", accessToken);
-    }
-    if (refreshToken !== undefined) {
-      await window.localStorage.setItem("refreshToken", refreshToken);
-    }
-  };
-
-  /**
-   * Processes JWTs
-   */
-  const processJWTs = async () => {
-    await setStorageJWTs();
-    deleteCookie("accessToken");
-    deleteCookie("refreshToken");
-
-    const displayNameFromCookie = getCookie("displayName");
-    if (displayNameFromCookie !== undefined) {
-      await window.localStorage.setItem("displayName", displayNameFromCookie);
-    }
-    deleteCookie("userId");
-    deleteCookie("displayName");
-  };
-
   return (
     <div>
       <h1 className="text-accent-blue">Settings</h1>
@@ -129,7 +72,7 @@ const UserSettings = ({ setAppDisplayName }) => {
             <div className="d-flex gap-2">
               <Form.Control
                 className="flex-grow-1"
-                placeholder={decodeURIComponent(localStorage.getItem("displayName"))}
+                placeholder={currentDisplayName || "Display name"}
                 onChange={(e) => setDisplayName(e.target.value)}
                 required
               />

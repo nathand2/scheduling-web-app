@@ -38,13 +38,6 @@ module.exports = (app, db, auth, passport, io) => {
     maxAge: auth.jwtAccessTokenCookieMaxAge
   }
 
-  // Non-sensitive, JS-readable UI convenience values only (userId, displayName).
-  // The access token itself lives only in the JSON response body / memory.
-  const semiSecureCookieConfig = {
-    ...baseCookie,
-    maxAge: auth.jwtAccessTokenCookieMaxAge
-  }
-
   // Clear cookie config for logout route
   const clearCookieConfig = {
     ...baseCookie,
@@ -190,9 +183,6 @@ module.exports = (app, db, auth, passport, io) => {
       res.cookie('refreshToken', refreshToken, secureCookieConfig)
       res.cookie('userContextRefresh', randStringRefresh, secureCookieConfig);
 
-      res.cookie('userId', req.user.userId, semiSecureCookieConfig)
-      res.cookie('displayName', req.user.displayName, semiSecureCookieConfig)
-
       if (req.user.redirect !== undefined) {
         res.redirect(req.user.redirect)
       } else {
@@ -225,9 +215,6 @@ module.exports = (app, db, auth, passport, io) => {
 
     res.cookie('refreshToken', refreshToken, secureCookieConfig)
     res.cookie('userContextRefresh', randStringRefresh, secureCookieConfig)
-
-    res.cookie('userId', user.id, semiSecureCookieConfig)
-    res.cookie('displayName', user.display_name, semiSecureCookieConfig)
 
     return {
       accessToken,

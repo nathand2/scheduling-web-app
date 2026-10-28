@@ -1,5 +1,5 @@
 import "./App.css";
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import { BrowserRouter as Router, Route, Routes, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 
 import About from "./components/About";
@@ -20,9 +20,8 @@ import { RequestHandler } from "./js/requestHandler";
 
 const endpointRoot = RequestHandler.endpointRoot;
 
-function App() {
-  const [accessToken, setAccessToken] = useState("");
-  const [refreshToken, setRefreshToken] = useState("");
+function AppContent() {
+  const navigate = useNavigate();
   const [loggedIn, setLoggedIn] = useState(undefined);
   const [userId, setUserId] = useState(undefined);
   const [displayName, setDisplayName] = useState("");
@@ -33,9 +32,7 @@ function App() {
 
   useEffect(() => {
     const init = async () => {
-      await setStorageJWTs();   // Pick up accessToken cookie from Google OAuth redirect if present
-      // await getUserData();      // Pick up userId/displayName cookies from Google OAuth redirect if present
-      await initializeAuth();   // Get fresh accessToken via refresh token — runs last and wins
+      await initializeAuth();
     };
     init();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -54,7 +51,7 @@ function App() {
 
       if (res.status !== 200) {
         setLoggedIn(false);
-        setAccessToken("");
+        RequestHandler.setAccessToken();
         setUserId(undefined);
         setDisplayName("");
         return;
@@ -62,12 +59,7 @@ function App() {
 
       const data = await res.json();
 
-      // Write to sessionStorage so RequestHandler can use it immediately
-      window.sessionStorage.setItem("accessToken", data.accessToken);
-
-      // setAccessToken(data.token);
-      // setUserId(data.userId);
-      // setDisplayName(data.displayName);
+      RequestHandler.setAccessToken(data.accessToken);
       setUserIdentity(data);
       setLoggedIn(true);
     } catch (err) {
@@ -76,47 +68,9 @@ function App() {
     }
   };
 
-  const setUserIdentity = async (data) => {
-    try {
-      setAccessToken(data.accessToken);
-      setUserId(data.userId);
-      setDisplayName(data.displayName);
-      // setAccessToken(data.token);
-    } catch (err) {
-      console.log("Unable to set user identify. Error:", err);
-      throw err;
-    }
-  }
-
-  /**
-   * Gets cookie by name
-   */
-  const getCookie = (name) => {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(";").shift();
-  };
-
-  /**
-   * Deletes cookie by name
-   */
-  const deleteCookie = (name) => {
-    if (!process.env.NODE_ENV || process.env.NODE_ENV === "development") {
-      document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
-    } else {
-      document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.nathandong.dev;`;
-    }
-  };
-
-  /**
-   * Picks up accessToken cookie set after Google OAuth redirect.
-   * Only runs on initial mount — initializeAuth overwrites this with a fresh token.
-   */
-  const setStorageJWTs = async () => {
-    const accessToken = getCookie("accessToken");
-    if (accessToken !== undefined && accessToken !== null) {
-      await window.sessionStorage.setItem("accessToken", accessToken);
-    }
+  const setUserIdentity = (data) => {
+    setUserId(data.userId);
+    setDisplayName(data.displayName);
   };
 
   /**
@@ -124,13 +78,13 @@ function App() {
    * Sets state directly from API response — no need to re-fetch /token.
    */
   const onLoginSuccess = (data) => {
-    window.sessionStorage.setItem("accessToken", data.accessToken);
+    RequestHandler.setAccessToken(data.accessToken);
     setUserIdentity(data);
     setLoggedIn(true);
   };
 
   /**
-   * Logs user out — calls API to clear HttpOnly cookies, clears local storage.
+   * Logs user out — calls API to clear HttpOnly cookies and clears memory state.
    */
   const logOut = async () => {
     console.log("attempt to log out");
@@ -142,41 +96,24 @@ function App() {
     } catch (err) {
       console.log("Error calling logout endpoint:", err);
     }
-    localStorage.removeItem("userId");
-    localStorage.removeItem("displayName");
-    sessionStorage.removeItem("accessToken");
-    deleteCookie("accessToken");
-    deleteCookie("displayName");
-    deleteCookie("userId");
+    RequestHandler.setAccessToken();
     setLoggedIn(false);
-    setAccessToken("");
-    setRefreshToken("");
     setUserId(undefined);
     setDisplayName("");
-    window.location.href = "/";
+    navigate("/");
   };
 
-  /**
-   * Manually refreshes JWT — dev testing only
-   */
-  const refreshAccessToken = async () => {
-    try {
-      const res = await fetch(endpointRoot + "/v2/token", {
-        method: "POST",
-        credentials: "include",
-      });
-      if (res.status === 200) {
-        const data = await res.json();
-        window.sessionStorage.setItem("accessToken", data.token);
-        setAccessToken(data.token);
-      } else {
-        throw new Error("Failed to refresh token");
-      }
-    } catch (err) {
-      console.log(err);
-      logOut();
-    }
-  };
+  useEffect(() => {
+    const handleAuthExpired = () => {
+      RequestHandler.setAccessToken();
+      setLoggedIn(false);
+      setUserId(undefined);
+      setDisplayName("");
+      navigate("/");
+    };
+    window.addEventListener("auth-expired", handleAuthExpired);
+    return () => window.removeEventListener("auth-expired", handleAuthExpired);
+  }, [navigate]);
 
   const testEndpoint = async () => {
     let res;
@@ -186,7 +123,6 @@ function App() {
       console.log("Error:", err);
     }
     console.log("Testing endpoint res:", res);
-    setAccessToken(await window.sessionStorage.getItem("accessToken"));
   };
 
   const testRequest = async () => {
@@ -197,11 +133,9 @@ function App() {
       console.log("Error:", err);
     }
     console.log("Testing Auth res:", res);
-    setAccessToken(await window.sessionStorage.getItem("accessToken"));
   };
 
   return (
-    <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <div className="App">
         <Header logOut={logOut} loggedIn={loggedIn} displayName={displayName} />
         <Routes>
@@ -221,13 +155,7 @@ function App() {
                         <br />
                         displayName: {displayName}
                         <br />
-                        Access Token: {accessToken}
-                        <br />
-                        Refresh Token: {refreshToken}
-                        <br />
                         <button onClick={testRequest}>Test auth stuff</button>
-                        <br />
-                        <button onClick={refreshAccessToken}>Refresh Access token?</button>
                         <br />
                         <button onClick={testEndpoint}>Test an endpoint</button>
                         <br />
@@ -235,7 +163,7 @@ function App() {
                     )}
                   </>
                 )}
-                {loggedIn === false && loggedIn !== undefined && <LandingPage />}
+                {loggedIn === false && <LandingPage />}
               </>
             }
           />
@@ -253,10 +181,17 @@ function App() {
           <Route path="/session/:code" element={<Session userId={userId} />} />
           <Route path="/sessionjoin" element={<SessionJoin loggedIn={loggedIn} />} />
           <Route path="/about" element={<About />} />
-          <Route path="/settings" element={<UserSettings setAppDisplayName={setDisplayName} />} />
+          <Route path="/settings" element={<UserSettings displayName={displayName} setAppDisplayName={setDisplayName} />} />
         </Routes>
         <CookieToast />
       </div>
+  );
+}
+
+function App() {
+  return (
+    <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <AppContent />
     </Router>
   );
 }

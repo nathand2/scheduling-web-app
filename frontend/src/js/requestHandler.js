@@ -1,135 +1,70 @@
 /**
- * Handles API requests, refreshing JWT tokens if needed.
- * 
- * Module handles setting tokens in local/session storage.
+ * API requests and the short-lived access token kept in this page's memory.
+ * The refresh token is held only by the server in an HttpOnly cookie.
  */
+let accessToken;
+let refreshPromise;
 
 export class RequestHandler {
   static endpointRoot = process.env.NODE_ENV === 'development' ? "http://localhost:6500" : "https://api.nathandong.dev/scheduler";
   static webSocketEndpoint = process.env.NODE_ENV === 'development' ? "http://localhost:6500" : "https://api.nathandong.dev";
   static webSocketPath = process.env.NODE_ENV === 'development' ? "/socket/v1" : "/scheduler/socket/v1";
-  static appRoot = process.env.NODE_ENV === 'development' ? "http://localhost:3000" : "https://scheduler.nathandong.dev";  // Frontend url
+  static appRoot = process.env.NODE_ENV === 'development' ? "http://localhost:3000" : "https://scheduler.nathandong.dev";
 
-  // First API request and silent JWT refresh if needed.
-  static async req(resource, reqMethod, reqBody=undefined) {
-    console.log("RequestHandler [Initial Request]")
-    try {
-      const res = await fetch(`${this.endpointRoot + resource}`, {
-        method: reqMethod,
-        credentials: 'include', // Include cookies in request
-        headers: {
-          Authorization: `token ${window.sessionStorage.getItem('accessToken')}`,
-          ...(reqBody && {'Content-Type': 'application/json'})
-        },
-        ...(reqBody && {body: JSON.stringify(reqBody)})
-      });
-      if (
-        res.status >= 200 &&
-        res.status <= 299
-      ) {
-        // JWT token valid, return results.
-        return res;
-      } else if (res.status === 401 ) {
-        return await this.refreshJWT(resource, reqMethod, reqBody);  // Expired Access token, attempt to refresh JWT
-      } else {
-        // Bad request config for internal error.
-        console.log(`Incorrect RequestHandler.res params or internal error [${res.status}]`)
-        return res
-      }
-    } catch(err) {
-      console.log(`RequestHandler Error:`)
-      console.log(err)
-      throw err
-    }
+  static setAccessToken(token) {
+    accessToken = token || undefined;
   }
 
-  /**
-   * 
-   * @param {string} resource 
-   * @param {string} reqMethod 
-   * @param {JSON object} body 
-   * @returns 
-   */
-  static async followUpReq(resource, reqMethod, reqBody=undefined) {
-    console.log("RequestHandler [Follow Up Request]")
-    try {
-      const res = await fetch(`${this.endpointRoot + resource}`, {
-        method: reqMethod,
-        credentials: 'include', // Include cookies in request
-        headers: {
-          Authorization: `token ${window.sessionStorage.getItem('accessToken')}`,
-          ...(reqBody && {'Content-Type': 'application/json'})
-        },
-        ...(reqBody && {body: JSON.stringify(reqBody)})
-      });
-      if (
-        res.status >= 200 &&
-        res.status <= 299
-      ) {
-        // JWT token valid, return results.
-        return res;
-      } else if (
-        res.status >= 400 &&
-        res.status <= 499
-      ) {
-        console.log(`Error [${res.status}]`)
-        return res
-      } else {
-        console.log(`Internal Error [${res.status}]`)
-        return res
-      }
-    } catch(err) {
-      throw err
-    }
+  static getAccessToken() {
+    return accessToken;
   }
 
-  static async refreshJWT(resource, reqMethod, body=undefined) {
-    console.log("RequestHandler [Access Token Refresh]")
-    // if (!window.localStorage.getItem('refreshToken')) {
-    //   console.log("No refresh token")
-    //   return {status: 401}
-    // }
-    try {
-      // Get new access token using refresh token
-      const res = await fetch(this.endpointRoot + '/v2/token', {
-        method: 'POST',
-        credentials: 'include', // Include cookies in request
-        // headers: {
-        //   Authorization: `token ${window.localStorage.getItem('refreshToken')}`
-        // }
-      })
+  static async req(resource, reqMethod, reqBody = undefined) {
+    const response = await this.send(resource, reqMethod, reqBody);
+    // Invalid credentials on login/register are expected and must not trigger
+    // a refresh attempt. Other 401s may indicate an expired access token.
+    if (response.status !== 401 || resource.startsWith('/v2/auth/')) return response;
 
-      if (
-        res.status >= 200 &&
-        res.status <= 299
-      ) {
-        // Successfully retrieved new access token
-        const data = await res.json();
+    const refreshed = await this.refreshAccessToken();
+    if (!refreshed) return response;
+    return this.send(resource, reqMethod, reqBody);
+  }
 
-        // Set new accessToken in sessionStorage and resend original request
-        await window.sessionStorage.setItem('accessToken', data.accessToken);
-        return await this.followUpReq(resource, reqMethod, body);
-      } else if (
-        res.status >= 400 &&
-        res.status <= 499
-      ) {
-        console.log("Invalid refresh token -- force logout")
-        // Clean up and redirect
-        localStorage.removeItem("userId");
-        localStorage.removeItem("displayName");
-        localStorage.removeItem("refreshToken");
-        sessionStorage.removeItem("accessToken");
-        window.location.href = "/login";
-        return res
-      } else {
-        // console.log(res.statusText)
-        
-        console.log(`Internal Error [${res.status}]`)
-        return res
-      }
-    } catch(err) {
-      console.log("Refresh Token Error")
-      throw err
+  static async send(resource, reqMethod, reqBody) {
+    return fetch(`${this.endpointRoot}${resource}`, {
+      method: reqMethod,
+      credentials: 'include',
+      headers: {
+        ...(accessToken && { Authorization: `token ${accessToken}` }),
+        ...(reqBody && { 'Content-Type': 'application/json' })
+      },
+      ...(reqBody && { body: JSON.stringify(reqBody) })
+    });
+  }
+
+  static async refreshAccessToken() {
+    if (!refreshPromise) {
+      refreshPromise = (async () => {
+        try {
+          const response = await fetch(`${this.endpointRoot}/v2/token`, {
+            method: 'POST',
+            credentials: 'include'
+          });
+          if (!response.ok) {
+            this.setAccessToken();
+            if (response.status === 401) {
+              window.dispatchEvent(new Event('auth-expired'));
+            }
+            return false;
+          }
+          const data = await response.json();
+          this.setAccessToken(data.accessToken);
+          return Boolean(data.accessToken);
+        } finally {
+          refreshPromise = undefined;
+        }
+      })();
     }
+    return refreshPromise;
   }
 }

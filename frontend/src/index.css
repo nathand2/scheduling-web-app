@@ -197,4 +197,9 @@
   to { transform: rotate(360deg); }
 }
 
+.header-link {
+  color: #0d6efd !important;
+  padding: .5rem 1rem !important;
+}
+
 /*# sourceMappingURL=index.css.map */

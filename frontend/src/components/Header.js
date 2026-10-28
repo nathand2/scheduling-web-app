@@ -41,10 +41,10 @@ const Header = ({ logOut, loggedIn, displayName }) => {
             <div className="d-flex">
               {!loggedIn && (
                 <>
-                  <Nav.Link variant="light" as={Link} to="/login" style={{color: colAccentLink, padding: ".5rem 1rem"}}>
+                  <Nav.Link className="header-link" variant="light" as={Link} to="/login">
                     Login
                   </Nav.Link>
-                  <Nav.Link variant="light" as={Link} to="/signup" style={{color: colAccentLink, padding: ".5rem 1rem"}}>
+                  <Nav.Link className="header-link" variant="light" as={Link} to="/signup">
                     Sign Up
                   </Nav.Link>
                 </>

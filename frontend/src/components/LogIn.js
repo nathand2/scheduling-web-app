@@ -38,8 +38,6 @@ const LogIn = ({ onLoginSuccess }) => {
 
       if (res.status === 200) {
         const data = await res.json();
-        // Set sessionStorage so RequestHandler can use token immediately
-        window.sessionStorage.setItem("accessToken", data.accessToken);
         // Lift state up to App
         console.log("auth/login body:", data);
         onLoginSuccess(data);

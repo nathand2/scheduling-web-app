@@ -36,8 +36,6 @@ const SignUp = ({ onLoginSuccess }) => {
       // Successful Signup
       if (res.status >= 200 && res.status <= 299) {
         const data = await res.json();
-        // Set sessionStorage so RequestHandler can use token immediately
-        window.sessionStorage.setItem("accessToken", data.accessToken);
         // Lift state up to App
         onLoginSuccess(data);
         setIsSignUpSuccessful(true);  // Redirect to home

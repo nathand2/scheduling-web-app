@@ -101,7 +101,7 @@ const Session = ({ userId }) => {
     const socket = io(webSocketEndpoint, {
       path: RequestHandler.webSocketPath,
       withCredentials: true,
-      auth: (callback) => callback({ token: window.sessionStorage.getItem('accessToken') })
+      auth: (callback) => callback({ token: RequestHandler.getAccessToken() })
     });
 
     // Fires on first connect and on every automatic reconnect, so the room is rejoined
