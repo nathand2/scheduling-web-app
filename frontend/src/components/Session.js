@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 
 import { io } from "socket.io-client";
@@ -169,6 +169,10 @@ const Session = ({ userId }) => {
     setDraftRange(range);
     setShowDtModal(true);
   };
+  const handleNewRangeIdsProcessed = useCallback((processedIds) => {
+    const processed = new Set(processedIds.map(String));
+    setNewRangeIds((prev) => prev.filter((id) => !processed.has(String(id))));
+  }, []);
 
   // Share modal
   const handleCloseShare = () => setShowShareModal(false);
@@ -270,6 +274,7 @@ const Session = ({ userId }) => {
                 <SessionChart
                   timeRanges={timeRanges}
                   newRangeIds={newRangeIds}
+                  onNewRangeIdsProcessed={handleNewRangeIdsProcessed}
                   session={session}
                   userId={userId}
                   onCreateRange={handleDragCreate}

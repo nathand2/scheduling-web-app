@@ -260,26 +260,22 @@
 }
 
 /* Newly received ranges get a brief glow and an inner shimmer. */
-.sc-block.sc-new-own,
-.sc-block.sc-new-other {
+.sc-block.sc-new {
   isolation: isolate;
   animation: sc-new-range-pulse 4.2s ease-out 1 both;
 }
 
-.sc-block.sc-new-own.sc-going,
-.sc-block.sc-new-other.sc-going {
+.sc-block.sc-new.sc-going {
   --sc-new-glow: 65, 176, 226;
   --sc-new-wash: rgba(126, 211, 250, 0.4);
 }
 
-.sc-block.sc-new-own.sc-maybe,
-.sc-block.sc-new-other.sc-maybe {
+.sc-block.sc-new.sc-maybe {
   --sc-new-glow: 245, 157, 42;
   --sc-new-wash: rgba(255, 191, 91, 0.42);
 }
 
-.sc-block.sc-new-own::after,
-.sc-block.sc-new-other::after {
+.sc-block.sc-new::after {
   content: "";
   position: absolute;
   z-index: -1;
@@ -309,10 +305,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .sc-block.sc-new-own,
-  .sc-block.sc-new-other,
-  .sc-block.sc-new-own::after,
-  .sc-block.sc-new-other::after {
+  .sc-block.sc-new,
+  .sc-block.sc-new::after {
     animation-duration: 1ms;
     animation-iteration-count: 1;
   }
