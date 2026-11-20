@@ -110,7 +110,8 @@ const SessionChart = ({ timeRanges, session, userId, onCreateRange, readOnly }) 
 
   /**
    * Slice every range into per-day segments (a range crossing midnight shows in
-   * both columns), then pack overlapping segments in a day into lanes.
+   * both day columns), then group by user and pack overlapping segments into
+   * subcolumns within that user's column.
    */
   const segmentsByDay = useMemo(() => {
     if (!layout) return [];
@@ -134,20 +135,37 @@ const SessionChart = ({ timeRanges, session, userId, onCreateRange, readOnly }) 
         });
       });
 
-      // Greedy lane packing: first lane whose last block has already ended
+      // Keep user columns stable within the day, ordered by display name.
+      const users = [...new Map(
+        (timeRanges || []).map((range) => [userKey(range), {
+          key: userKey(range),
+          name: range.display_name || "Unknown user",
+        }])
+      ).values()].sort((a, b) => a.name.localeCompare(b.name) || a.key.localeCompare(b.key));
+      const userIndex = new Map(users.map((user, index) => [user.key, index]));
+
+      // Greedy subcolumn packing is independent for each user.
       segs.sort((a, b) => a.startMin - b.startMin || a.endMin - b.endMin);
-      const laneEnds = [];
+      const laneEndsByUser = new Map();
       segs.forEach((seg) => {
+        const key = userKey(seg.range);
+        const laneEnds = laneEndsByUser.get(key) || [];
+        laneEndsByUser.set(key, laneEnds);
         let lane = laneEnds.findIndex((endMin) => endMin <= seg.startMin);
         if (lane === -1) {
           lane = laneEnds.length;
-          laneEnds.push(0);
+          laneEnds.push(seg.startMin);
         }
         laneEnds[lane] = seg.endMin;
         seg.lane = lane;
+        seg.userIndex = userIndex.get(key);
       });
 
-      return { segs, laneCount: Math.max(laneEnds.length, 1) };
+      segs.forEach((seg) => {
+        seg.userLaneCount = laneEndsByUser.get(userKey(seg.range)).length;
+      });
+
+      return { segs, users, userCount: Math.max(users.length, 1) };
     });
   }, [layout, timeRanges]);
 
@@ -234,6 +252,10 @@ const SessionChart = ({ timeRanges, session, userId, onCreateRange, readOnly }) 
   const yOf = (minute) => (minute - axisStart) * pxPerMin;
   const isMine = (range) => String(range.user_id) === String(userId);
   const hasRanges = (timeRanges || []).length > 0;
+  const minDayWidth = Math.max(
+    days.length > 3 ? 104 : 140,
+    ...segmentsByDay.map(({ users }) => users.length * 88)
+  );
 
   const minuteFromPointer = (e, dayIdx) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -436,7 +458,7 @@ const SessionChart = ({ timeRanges, session, userId, onCreateRange, readOnly }) 
           className="sc-grid"
           style={{
             gridTemplateColumns: `56px repeat(${days.length}, minmax(${
-              (days.length > 3 ? 104 : 140) + HEAT_STRIP_PX
+              minDayWidth + HEAT_STRIP_PX
             }px, 1fr))`,
           }}
         >
@@ -449,6 +471,15 @@ const SessionChart = ({ timeRanges, session, userId, onCreateRange, readOnly }) 
             >
               <span className="sc-day-name">{d.date.format("ddd")}</span>
               <span className="sc-day-date">{d.date.format("MMM D")}</span>
+              {segmentsByDay[i].users.length > 0 && (
+                <div className="sc-user-heads">
+                  {segmentsByDay[i].users.map((user) => (
+                    <span className="sc-user-head" key={user.key} title={user.name}>
+                      {user.name}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           ))}
 
@@ -462,7 +493,7 @@ const SessionChart = ({ timeRanges, session, userId, onCreateRange, readOnly }) 
           </div>
 
           {days.map((day, dayIdx) => {
-            const { segs, laneCount } = segmentsByDay[dayIdx];
+            const { segs, users, userCount } = segmentsByDay[dayIdx];
             const dragHere = drag && drag.dayIdx === dayIdx;
             const dragLo = dragHere ? Math.min(drag.anchor, drag.current) : 0;
             const dragHi = dragHere ? Math.max(drag.anchor, drag.current) : 0;
@@ -542,15 +573,24 @@ const SessionChart = ({ timeRanges, session, userId, onCreateRange, readOnly }) 
                   })}
                 </div>
 
-                {/* Availability blocks (to the right of the overlap strip) */}
+                {/* User columns (to the right of the overlap strip) */}
                 <div className="sc-lanes" style={{ left: HEAT_STRIP_PX }}>
+                  {users.slice(1).map((user, index) => (
+                    <div
+                      key={`user-divider-${user.key}`}
+                      className="sc-user-divider"
+                      style={{ left: `${((index + 1) / userCount) * 100}%` }}
+                    />
+                  ))}
                   {segs.map((seg) => {
                     const { range } = seg;
                     const height = Math.max(
                       (seg.endMin - seg.startMin) * pxPerMin,
                       MIN_BLOCK_PX
                     );
-                    const widthPct = 100 / laneCount;
+                    const userWidthPct = 100 / userCount;
+                    const laneWidthPct = userWidthPct / seg.userLaneCount;
+                    const leftPct = seg.userIndex * userWidthPct + seg.lane * laneWidthPct;
                     const label = isMine(range)
                       ? `${range.display_name} (Me)`
                       : range.display_name;
@@ -572,8 +612,8 @@ const SessionChart = ({ timeRanges, session, userId, onCreateRange, readOnly }) 
                         style={{
                           top: yOf(seg.startMin),
                           height,
-                          left: `calc(${seg.lane * widthPct}% + 2px)`,
-                          width: `calc(${widthPct}% - 4px)`,
+                          left: `calc(${leftPct}% + 2px)`,
+                          width: `calc(${laneWidthPct}% - 4px)`,
                         }}
                         title={`${label}: ${range.status}\n${timeText}`}
                         tabIndex={0}

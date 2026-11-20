@@ -145,6 +145,30 @@
   color: var(--sc-accent);
 }
 
+.sc-user-heads {
+  display: flex;
+  align-self: stretch;
+  width: 100%;
+  margin-top: 5px;
+  border-top: 1px solid var(--sc-line);
+}
+
+.sc-user-head {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 4px 2px 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #5c5f58;
+}
+
+.sc-user-head + .sc-user-head {
+  border-left: 1px solid var(--sc-line);
+}
+
 /* Time axis */
 .sc-axis {
   position: sticky;

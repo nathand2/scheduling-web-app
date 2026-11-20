@@ -92,6 +92,14 @@ button.sc-chip:focus-visible {
   bottom: 0;
 }
 
+.sc-user-divider {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-left: 1px solid rgba(80, 90, 100, 0.24);
+  pointer-events: none;
+}
+
 /* Best-time window highlight across the column */
 .sc-best-band {
   position: absolute;
