@@ -26,6 +26,7 @@ const Session = ({ userId }) => {
   const params = useParams();
   const [session, setSession] = useState({});
   const [timeRanges, setTimeRanges] = useState([]);
+  const [newRangeIds, setNewRangeIds] = useState([]);
   const [userSessions, setUserSessions] = useState([]);
   const [showDtModal, setShowDtModal] = useState(false);
   const [draftRange, setDraftRange] = useState(null); // Range dragged on the chart, prefills the modal
@@ -37,6 +38,7 @@ const Session = ({ userId }) => {
   const [sessionResStatus, setSessionResStatus] = useState();
   const [otherSessionResViews, setOtherSessionResViews] = useState();
   const socketRef = useRef(null);
+  const knownRangeIds = useRef(new Set());
 
   // Gets session data on load
   useEffect(() => {
@@ -127,11 +129,10 @@ const Session = ({ userId }) => {
       data.dt_created = util.convertUTCStringToDate(data.dt_created);
 
       // Skip if we already have it (e.g. we refetched right after creating it)
-      setTimeRanges((prev) =>
-        data.id !== undefined && prev.some((r) => r.id === data.id)
-          ? prev
-          : [...prev, data]
-      );
+      if (data.id !== undefined && knownRangeIds.current.has(data.id)) return;
+      if (data.id !== undefined) knownRangeIds.current.add(data.id);
+      setTimeRanges((prev) => [...prev, data]);
+      if (data.id !== undefined) setNewRangeIds((prev) => [...prev, data.id]);
 
       if (showDtRangeUpdateToast) {
         if (String(data.user_id) === String(userId)) {
@@ -205,6 +206,7 @@ const Session = ({ userId }) => {
       dt_start: util.convertUTCStringToDate(timeRange.dt_start),
       dt_end: util.convertUTCStringToDate(timeRange.dt_end),
     }));
+    knownRangeIds.current = new Set(timeRangeData.map((range) => range.id));
     setTimeRanges(timeRangeData);
   };
 
@@ -267,6 +269,7 @@ const Session = ({ userId }) => {
                 </div>
                 <SessionChart
                   timeRanges={timeRanges}
+                  newRangeIds={newRangeIds}
                   session={session}
                   userId={userId}
                   onCreateRange={handleDragCreate}

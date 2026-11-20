@@ -189,7 +189,7 @@ const buildOverlapHeat = (layout, segmentsByDay, timeRanges, includeMaybe) => {
  *                or a best-time chip is clicked
  *  - readOnly:   disables drag-to-create (e.g. expired session)
  */
-const SessionChart = ({ timeRanges, session, userId, onCreateRange, readOnly, onRangeDeleted }) => {
+const SessionChart = ({ timeRanges, newRangeIds = [], session, userId, onCreateRange, readOnly, onRangeDeleted }) => {
   const [showSelectRangeModal, setShowSelectRangeModal] = useState(false);
   const [focusRange, setFocusRange] = useState(undefined);
   const [drag, setDrag] = useState(null); // { dayIdx, anchor, current } (minutes from day start)
@@ -198,6 +198,33 @@ const SessionChart = ({ timeRanges, session, userId, onCreateRange, readOnly, on
   const [includeMaybe, setIncludeMaybe] = useState(false); // Do "maybe" responses count toward overlap?
   const [now, setNow] = useState(() => dayjs());
   const downInfo = useRef(null); // { startY, rangeId } for the active pointer
+  const [highlightedRangeIds, setHighlightedRangeIds] = useState(() => new Set());
+  const rangeHighlightTimers = useRef(new Map());
+  const processedNewRangeCount = useRef(0);
+
+  useEffect(() => {
+    const addedIds = newRangeIds.slice(processedNewRangeCount.current);
+    processedNewRangeCount.current = newRangeIds.length;
+    addedIds.forEach((id) => {
+      const key = String(id);
+      if (rangeHighlightTimers.current.has(key)) return;
+      setHighlightedRangeIds((prev) => new Set(prev).add(key));
+      const timer = setTimeout(() => {
+        rangeHighlightTimers.current.delete(key);
+        setHighlightedRangeIds((prev) => {
+          const next = new Set(prev);
+          next.delete(key);
+          return next;
+        });
+      }, 4200);
+      rangeHighlightTimers.current.set(key, timer);
+    });
+  }, [newRangeIds]);
+
+  useEffect(() => () => {
+    rangeHighlightTimers.current.forEach((timer) => clearTimeout(timer));
+    rangeHighlightTimers.current.clear();
+  }, []);
 
   // Current-time line ticks once a minute; interval is cleaned up on unmount
   useEffect(() => {
@@ -610,6 +637,9 @@ const SessionChart = ({ timeRanges, session, userId, onCreateRange, readOnly, on
                           "sc-block",
                           range.status === "maybe" ? "sc-maybe" : "sc-going",
                           isMine(range) ? "sc-mine" : "",
+                          highlightedRangeIds.has(String(range.id))
+                            ? isMine(range) ? "sc-new-own" : "sc-new-other"
+                            : "",
                           seg.continuesBefore ? "cont-before" : "",
                           seg.continuesAfter ? "cont-after" : "",
                         ].join(" ")}
