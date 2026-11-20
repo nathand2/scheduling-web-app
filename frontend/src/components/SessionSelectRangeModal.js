@@ -6,7 +6,7 @@ import { AiOutlineLoading3Quarters } from "react-icons/ai";
 
 import { RequestHandler } from "../js/requestHandler";
 
-const SessionSelectRangeModal = ({ handleClose, show, range, session, userId }) => {
+const SessionSelectRangeModal = ({ handleClose, onDeleted, show, range, session, userId }) => {
   const [warning, setWarning] = useState("");
   const [warningClass, setWarningClass] = useState("text-warning");
   const [showDelete, setShowDelete] = useState(false);
@@ -32,11 +32,10 @@ const SessionSelectRangeModal = ({ handleClose, show, range, session, userId }) 
         userSessionId: range.user_session_id,
         sessionCode: session.code,
       });
-      setIsDeleteLoading(false);
       if (res.status === 204) {
         setShowDelete(false);
-        setWarningClass("text-success");
-        setWarning("Successfully deleted time range");
+        handleClose();
+        onDeleted?.();
       } else if (res.status === 403) {
         setWarningClass("text-warning");
         setWarning("Unable to delete range. You did not create it");
@@ -46,6 +45,10 @@ const SessionSelectRangeModal = ({ handleClose, show, range, session, userId }) 
       }
     } catch (err) {
       console.log(err);
+      setWarningClass("text-warning");
+      setWarning("Error: Could not delete range");
+    } finally {
+      setIsDeleteLoading(false);
     }
   };
 

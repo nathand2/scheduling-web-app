@@ -249,7 +249,6 @@ const Session = ({ userId }) => {
             // Don't rely on the websocket echo for your own data: refetch on success
             onCreated={() => getTimeRanges(session.id)}
           />
-
           <Container fluid>
             <Row className="justify-content-md-center">
               <Col lg={8} md={12}>
@@ -272,6 +271,11 @@ const Session = ({ userId }) => {
                   userId={userId}
                   onCreateRange={handleDragCreate}
                   readOnly={Boolean(expiredSession)}
+                  onRangeDeleted={() => {
+                    setToastTitle("Range deleted");
+                    setToastMessage("Your availability range was deleted.");
+                    setShowToast(true);
+                  }}
                 />
               </Col>
               <Col lg={4} md={12}>

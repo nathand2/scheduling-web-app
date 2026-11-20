@@ -189,7 +189,7 @@ const buildOverlapHeat = (layout, segmentsByDay, timeRanges, includeMaybe) => {
  *                or a best-time chip is clicked
  *  - readOnly:   disables drag-to-create (e.g. expired session)
  */
-const SessionChart = ({ timeRanges, session, userId, onCreateRange, readOnly }) => {
+const SessionChart = ({ timeRanges, session, userId, onCreateRange, readOnly, onRangeDeleted }) => {
   const [showSelectRangeModal, setShowSelectRangeModal] = useState(false);
   const [focusRange, setFocusRange] = useState(undefined);
   const [drag, setDrag] = useState(null); // { dayIdx, anchor, current } (minutes from day start)
@@ -356,6 +356,7 @@ const SessionChart = ({ timeRanges, session, userId, onCreateRange, readOnly }) 
         range={focusRange}
         session={session}
         userId={userId}
+        onDeleted={onRangeDeleted}
       />
 
       <div className="sc-toolbar">
