@@ -162,7 +162,14 @@ const SessionChart = ({ timeRanges, session, userId, onCreateRange, readOnly }) 
       });
 
       segs.forEach((seg) => {
-        seg.userLaneCount = laneEndsByUser.get(userKey(seg.range)).length;
+        const key = userKey(seg.range);
+        seg.userLaneCount = laneEndsByUser.get(key).length;
+        seg.hasConflict = segs.some((other) =>
+          other !== seg &&
+          userKey(other.range) === key &&
+          seg.startMin < other.endMin &&
+          seg.endMin > other.startMin
+        );
       });
 
       return { segs, users, userCount: Math.max(users.length, 1) };
@@ -589,8 +596,12 @@ const SessionChart = ({ timeRanges, session, userId, onCreateRange, readOnly }) 
                       MIN_BLOCK_PX
                     );
                     const userWidthPct = 100 / userCount;
-                    const laneWidthPct = userWidthPct / seg.userLaneCount;
-                    const leftPct = seg.userIndex * userWidthPct + seg.lane * laneWidthPct;
+                    const laneWidthPct = seg.hasConflict
+                      ? userWidthPct / seg.userLaneCount
+                      : userWidthPct;
+                    const leftPct =
+                      seg.userIndex * userWidthPct +
+                      (seg.hasConflict ? seg.lane * laneWidthPct : 0);
                     const label = isMine(range)
                       ? `${range.display_name} (Me)`
                       : range.display_name;
