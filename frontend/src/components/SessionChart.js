@@ -19,6 +19,160 @@ const snap = (m) => Math.round(m / SNAP_MINUTES) * SNAP_MINUTES;
 const fmtMinute = (day, m) => day.add(m, "minute").format("h:mm A");
 const userKey = (range) => String(range.user_id ?? `range-${range.id}`);
 
+// Turn the session window into a shared time axis and one usable window per day.
+const buildChartLayout = (session) => {
+  if (!session?.dt_start || !session?.dt_end) return null;
+
+  const start = dayjs(session.dt_start);
+  const end = dayjs(session.dt_end);
+  if (!start.isValid() || !end.isValid() || !end.isAfter(start)) return null;
+
+  const days = [];
+  let cursor = start.startOf("day");
+  while (cursor.isBefore(end)) {
+    const dayStart = cursor;
+    const dayEnd = cursor.add(1, "day");
+    const winStart = start.isAfter(dayStart) ? start : dayStart;
+    const winEnd = end.isBefore(dayEnd) ? end : dayEnd;
+    days.push({
+      key: dayStart.format("YYYY-MM-DD"),
+      date: dayStart,
+      end: dayEnd,
+      winStartMin: winStart.diff(dayStart, "minute"),
+      winEndMin: winEnd.diff(dayStart, "minute"),
+    });
+    cursor = dayEnd;
+  }
+
+  const axisStart = Math.floor(Math.min(...days.map((day) => day.winStartMin)) / 60) * 60;
+  const axisEnd = Math.ceil(Math.max(...days.map((day) => day.winEndMin)) / 60) * 60;
+  const hours = Math.max((axisEnd - axisStart) / 60, 1);
+  const hourPx = clamp(Math.round(TARGET_BODY_PX / hours), MIN_HOUR_PX, MAX_HOUR_PX);
+  const pxPerMin = hourPx / 60;
+
+  return {
+    days,
+    axisStart,
+    axisEnd,
+    hourPx,
+    pxPerMin,
+    bodyHeight: (axisEnd - axisStart) * pxPerMin,
+    hourLabels: Array.from({ length: hours }, (_, index) => axisStart + index * 60),
+  };
+};
+
+// Split ranges at midnight and assign stable user columns and conflict lanes.
+const buildSegmentsByDay = (layout, timeRanges) => {
+  if (!layout) return [];
+
+  return layout.days.map((day) => {
+    const segs = [];
+    (timeRanges || []).forEach((range) => {
+      const rangeStart = dayjs(range.dt_start);
+      const rangeEnd = dayjs(range.dt_end);
+      if (!rangeEnd.isAfter(day.date) || !rangeStart.isBefore(day.end)) return;
+
+      const segStart = rangeStart.isAfter(day.date) ? rangeStart : day.date;
+      const segEnd = rangeEnd.isBefore(day.end) ? rangeEnd : day.end;
+      segs.push({
+        range,
+        startMin: segStart.diff(day.date, "minute"),
+        endMin: segEnd.diff(day.date, "minute"),
+        continuesBefore: rangeStart.isBefore(day.date),
+        continuesAfter: rangeEnd.isAfter(day.end),
+        lane: 0,
+      });
+    });
+
+    const users = [...new Map(
+      (timeRanges || []).map((range) => [userKey(range), {
+        key: userKey(range),
+        name: range.display_name || "Unknown user",
+      }])
+    ).values()].sort((a, b) => a.name.localeCompare(b.name) || a.key.localeCompare(b.key));
+    const userIndex = new Map(users.map((user, index) => [user.key, index]));
+
+    segs.sort((a, b) => a.startMin - b.startMin || a.endMin - b.endMin);
+    const laneEndsByUser = new Map();
+    segs.forEach((seg) => {
+      const key = userKey(seg.range);
+      const laneEnds = laneEndsByUser.get(key) || [];
+      laneEndsByUser.set(key, laneEnds);
+      let lane = laneEnds.findIndex((endMin) => endMin <= seg.startMin);
+      if (lane === -1) {
+        lane = laneEnds.length;
+        laneEnds.push(seg.startMin);
+      }
+      laneEnds[lane] = seg.endMin;
+      seg.lane = lane;
+      seg.userIndex = userIndex.get(key);
+    });
+
+    segs.forEach((seg) => {
+      const key = userKey(seg.range);
+      seg.userLaneCount = laneEndsByUser.get(key).length;
+      seg.hasConflict = segs.some((other) =>
+        other !== seg && userKey(other.range) === key &&
+        seg.startMin < other.endMin && seg.endMin > other.startMin
+      );
+    });
+
+    return { segs, users, userCount: Math.max(users.length, 1) };
+  });
+};
+
+// Count people available for each half-hour slot and find peak-overlap windows.
+const buildOverlapHeat = (layout, segmentsByDay, timeRanges, includeMaybe) => {
+  if (!layout) return { byDay: [], best: [], peak: 0, participants: 0 };
+
+  const participants = new Set((timeRanges || []).map(userKey)).size;
+  const byDay = layout.days.map((day, dayIdx) => {
+    const { segs } = segmentsByDay[dayIdx];
+    const slots = [];
+
+    for (let startMin = day.winStartMin; startMin < day.winEndMin; startMin += HEAT_SLOT_MINUTES) {
+      const endMin = Math.min(startMin + HEAT_SLOT_MINUTES, day.winEndMin);
+      const people = new Map();
+      segs.forEach((seg) => {
+        if (seg.startMin <= startMin && seg.endMin >= endMin) {
+          const key = userKey(seg.range);
+          const status = seg.range.status === "maybe" ? "maybe" : "going";
+          const previous = people.get(key);
+          if (!previous || (previous.status === "maybe" && status === "going")) {
+            people.set(key, { name: seg.range.display_name, status });
+          }
+        }
+      });
+
+      const going = [...people.values()].filter((person) => person.status === "going").map((person) => person.name);
+      const maybe = [...people.values()].filter((person) => person.status === "maybe").map((person) => person.name);
+      slots.push({ startMin, endMin, going, maybe, score: going.length + (includeMaybe ? maybe.length : 0) });
+    }
+    return { slots };
+  });
+
+  const peak = Math.max(0, ...byDay.flatMap((day) => day.slots.map((slot) => slot.score)));
+  const best = [];
+  if (peak >= 2) {
+    byDay.forEach((day, dayIdx) => {
+      let run = null;
+      day.slots.forEach((slot) => {
+        if (slot.score !== peak) run = null;
+        else if (run && run.endMin === slot.startMin) run.endMin = slot.endMin;
+        else {
+          run = { dayIdx, startMin: slot.startMin, endMin: slot.endMin };
+          best.push(run);
+        }
+      });
+    });
+    best.sort((a, b) =>
+      b.endMin - b.startMin - (a.endMin - a.startMin) || a.dayIdx - b.dayIdx || a.startMin - b.startMin
+    );
+  }
+
+  return { byDay, best, peak, participants };
+};
+
 /**
  * Collaborative availability chart.
  *
@@ -65,116 +219,17 @@ const SessionChart = ({ timeRanges, session, userId, onCreateRange, readOnly }) 
    * Geometry: which days exist, what hours the shared axis covers,
    * and how many pixels one minute is.
    */
-  const layout = useMemo(() => {
-    if (!session?.dt_start || !session?.dt_end) return null;
-
-    const start = dayjs(session.dt_start);
-    const end = dayjs(session.dt_end);
-    if (!start.isValid() || !end.isValid() || !end.isAfter(start)) return null;
-
-    const days = [];
-    let cursor = start.startOf("day");
-    while (cursor.isBefore(end)) {
-      const dayStart = cursor;
-      const dayEnd = cursor.add(1, "day");
-      const winStart = start.isAfter(dayStart) ? start : dayStart;
-      const winEnd = end.isBefore(dayEnd) ? end : dayEnd;
-      days.push({
-        key: dayStart.format("YYYY-MM-DD"),
-        date: dayStart,
-        end: dayEnd,
-        winStartMin: winStart.diff(dayStart, "minute"),
-        winEndMin: winEnd.diff(dayStart, "minute"),
-      });
-      cursor = dayEnd;
-    }
-
-    // Shared axis covers the union of every day's usable window, rounded to hours
-    const axisStart =
-      Math.floor(Math.min(...days.map((d) => d.winStartMin)) / 60) * 60;
-    const axisEnd = Math.ceil(Math.max(...days.map((d) => d.winEndMin)) / 60) * 60;
-    const hours = Math.max((axisEnd - axisStart) / 60, 1);
-    const hourPx = clamp(Math.round(TARGET_BODY_PX / hours), MIN_HOUR_PX, MAX_HOUR_PX);
-    const pxPerMin = hourPx / 60;
-
-    return {
-      days,
-      axisStart,
-      axisEnd,
-      hourPx,
-      pxPerMin,
-      bodyHeight: (axisEnd - axisStart) * pxPerMin,
-      hourLabels: Array.from({ length: hours }, (_, i) => axisStart + i * 60),
-    };
-  }, [session]);
+  const layout = useMemo(() => buildChartLayout(session), [session]);
 
   /**
    * Slice every range into per-day segments (a range crossing midnight shows in
    * both day columns), then group by user and pack overlapping segments into
    * subcolumns within that user's column.
    */
-  const segmentsByDay = useMemo(() => {
-    if (!layout) return [];
-
-    return layout.days.map((day) => {
-      const segs = [];
-      (timeRanges || []).forEach((range) => {
-        const rs = dayjs(range.dt_start);
-        const re = dayjs(range.dt_end);
-        if (!re.isAfter(day.date) || !rs.isBefore(day.end)) return;
-
-        const segStart = rs.isAfter(day.date) ? rs : day.date;
-        const segEnd = re.isBefore(day.end) ? re : day.end;
-        segs.push({
-          range,
-          startMin: segStart.diff(day.date, "minute"),
-          endMin: segEnd.diff(day.date, "minute"),
-          continuesBefore: rs.isBefore(day.date),
-          continuesAfter: re.isAfter(day.end),
-          lane: 0,
-        });
-      });
-
-      // Keep user columns stable within the day, ordered by display name.
-      const users = [...new Map(
-        (timeRanges || []).map((range) => [userKey(range), {
-          key: userKey(range),
-          name: range.display_name || "Unknown user",
-        }])
-      ).values()].sort((a, b) => a.name.localeCompare(b.name) || a.key.localeCompare(b.key));
-      const userIndex = new Map(users.map((user, index) => [user.key, index]));
-
-      // Greedy subcolumn packing is independent for each user.
-      segs.sort((a, b) => a.startMin - b.startMin || a.endMin - b.endMin);
-      const laneEndsByUser = new Map();
-      segs.forEach((seg) => {
-        const key = userKey(seg.range);
-        const laneEnds = laneEndsByUser.get(key) || [];
-        laneEndsByUser.set(key, laneEnds);
-        let lane = laneEnds.findIndex((endMin) => endMin <= seg.startMin);
-        if (lane === -1) {
-          lane = laneEnds.length;
-          laneEnds.push(seg.startMin);
-        }
-        laneEnds[lane] = seg.endMin;
-        seg.lane = lane;
-        seg.userIndex = userIndex.get(key);
-      });
-
-      segs.forEach((seg) => {
-        const key = userKey(seg.range);
-        seg.userLaneCount = laneEndsByUser.get(key).length;
-        seg.hasConflict = segs.some((other) =>
-          other !== seg &&
-          userKey(other.range) === key &&
-          seg.startMin < other.endMin &&
-          seg.endMin > other.startMin
-        );
-      });
-
-      return { segs, users, userCount: Math.max(users.length, 1) };
-    });
-  }, [layout, timeRanges]);
+  const segmentsByDay = useMemo(
+    () => buildSegmentsByDay(layout, timeRanges),
+    [layout, timeRanges]
+  );
 
   /**
    * Overlap: for every half-hour slot, who is free for the WHOLE slot.
@@ -182,73 +237,10 @@ const SessionChart = ({ timeRanges, session, userId, onCreateRange, readOnly }) 
    * ("going" wins over "maybe" if both cover the slot).
    * Best windows = runs of consecutive slots at the peak headcount (peak >= 2).
    */
-  const heat = useMemo(() => {
-    if (!layout) return { byDay: [], best: [], peak: 0, participants: 0 };
-
-    const participants = new Set((timeRanges || []).map(userKey)).size;
-
-    const byDay = layout.days.map((day, dayIdx) => {
-      const { segs } = segmentsByDay[dayIdx];
-      const slots = [];
-
-      for (let t = day.winStartMin; t < day.winEndMin; t += HEAT_SLOT_MINUTES) {
-        const end = Math.min(t + HEAT_SLOT_MINUTES, day.winEndMin);
-        const people = new Map();
-
-        segs.forEach((seg) => {
-          if (seg.startMin <= t && seg.endMin >= end) {
-            const key = userKey(seg.range);
-            const status = seg.range.status === "maybe" ? "maybe" : "going";
-            const prev = people.get(key);
-            if (!prev || (prev.status === "maybe" && status === "going")) {
-              people.set(key, { name: seg.range.display_name, status });
-            }
-          }
-        });
-
-        const going = [...people.values()].filter((p) => p.status === "going").map((p) => p.name);
-        const maybe = [...people.values()].filter((p) => p.status === "maybe").map((p) => p.name);
-        slots.push({
-          startMin: t,
-          endMin: end,
-          going,
-          maybe,
-          score: going.length + (includeMaybe ? maybe.length : 0),
-        });
-      }
-
-      return { slots };
-    });
-
-    let peak = 0;
-    byDay.forEach((d) => d.slots.forEach((s) => (peak = Math.max(peak, s.score))));
-
-    const best = [];
-    if (peak >= 2) {
-      byDay.forEach((d, dayIdx) => {
-        let run = null;
-        d.slots.forEach((s) => {
-          if (s.score !== peak) {
-            run = null;
-          } else if (run && run.endMin === s.startMin) {
-            run.endMin = s.endMin;
-          } else {
-            run = { dayIdx, startMin: s.startMin, endMin: s.endMin };
-            best.push(run);
-          }
-        });
-      });
-      // Longest windows first, then chronological
-      best.sort(
-        (a, b) =>
-          b.endMin - b.startMin - (a.endMin - a.startMin) ||
-          a.dayIdx - b.dayIdx ||
-          a.startMin - b.startMin
-      );
-    }
-
-    return { byDay, best, peak, participants };
-  }, [layout, segmentsByDay, timeRanges, includeMaybe]);
+  const heat = useMemo(
+    () => buildOverlapHeat(layout, segmentsByDay, timeRanges, includeMaybe),
+    [layout, segmentsByDay, timeRanges, includeMaybe]
+  );
 
   if (!layout) {
     return <div className="sc-empty">Loading chart…</div>;
