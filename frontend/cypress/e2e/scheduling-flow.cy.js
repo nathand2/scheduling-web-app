@@ -44,6 +44,8 @@ describe("collaborative session scheduling", () => {
     cy.contains("button", "Get Link").click();
     cy.wait("@findInvite").its("response.statusCode").should("equal", 404);
     cy.wait("@createInvite").then(({ response }) => {
+      cy.log("POST /v1/sessioninvite response", JSON.stringify(response?.body));
+      expect(response, "invite creation response").to.exist;
       expect(response.statusCode).to.equal(200);
       inviteCode = response.body.inviteCode;
       expect(inviteCode).to.be.a("string").and.not.be.empty;
@@ -61,12 +63,18 @@ describe("collaborative session scheduling", () => {
     cy.intercept("POST", "**/v1/joinsession").as("joinSession");
     cy.intercept("POST", "**/v1/sessiontimerange").as("addAvailability");
     cy.intercept("GET", "**/v1/timeranges*").as("getAvailability");
-    cy.visit(`/sessionjoin?code=${encodeURIComponent(inviteCode)}`);
+    cy.then(() => {
+      expect(inviteCode, "invite code captured from POST /v1/sessioninvite").to.be.a("string").and.not.be.empty;
+      cy.visit(`/sessionjoin?code=${encodeURIComponent(inviteCode)}`);
+    });
     cy.wait("@joinSession", { timeout: 15000 })
       .its("response.statusCode")
       .should("equal", 200);
     cy.contains("h1", sessionTitle, { timeout: 15000 }).should("be.visible");
-    cy.wait("@getAvailability").its("response.statusCode").should("equal", 200);
+    // The browser may revalidate a cached response and receive 304 instead.
+    cy.wait("@getAvailability").then(({ response }) => {
+      expect(response.statusCode).to.be.oneOf([200, 304]);
+    });
 
     cy.contains("button", "Add availability").click();
     cy.contains(".modal-title", "Add Date Time Range").should("be.visible");

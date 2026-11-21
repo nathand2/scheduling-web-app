@@ -26,13 +26,11 @@ const SessionShareModal = ({ handleClose, show }) => {
    */
   const getShareLink = async () => {
     setIsGetInviteLinkLoading(true);
-    let res;
     try {
-       res = await RequestHandler.req(
+      let res = await RequestHandler.req(
         `/v1/sessioninvite?code=${params.code}`,
         "GET"
       );
-      setIsGetInviteLinkLoading(false);
 
       // If no invite code exists, create one
       if (res.status === 404) {
@@ -41,27 +39,27 @@ const SessionShareModal = ({ handleClose, show }) => {
         });
       }
 
-      if (res.status < 200 && res.status > 299) {
+      if (!res.ok) {
         setStatusTextClassName("text-danger");
         setStatusText(`Error: Unable to get share link [${res.status}]`);
         return;
       }
-      setStatusTextClassName("text-success");
-      setStatusText(`Share link copied to clipboard!`);
-
       const results = await res.json();
-      console.log("Got invite code:", results);
-      console.log(
-        RequestHandler.endpointRoot + "/sessionjoin?code=" + results.inviteCode
-      );
+      if (typeof results.inviteCode !== "string" || !results.inviteCode.trim()) {
+        throw new Error("Invite response did not include an inviteCode");
+      }
 
-      const inviteLink = RequestHandler.appRoot + "/sessionjoin?code=" + results.inviteCode
+      const inviteLink = `${RequestHandler.appRoot}/sessionjoin?code=${encodeURIComponent(results.inviteCode)}`;
 
-      /* Copy the text inside the text field */
-      navigator.clipboard.writeText(inviteLink);
-      console.log("Share link copied to clipboard")
+      await navigator.clipboard.writeText(inviteLink);
+      setStatusTextClassName("text-success");
+      setStatusText("Share link copied to clipboard!");
     } catch (err) {
-      console.log("Error:", err);
+      console.error("Unable to create or copy session invite link:", err);
+      setStatusTextClassName("text-danger");
+      setStatusText("Unable to create or copy share link.");
+    } finally {
+      setIsGetInviteLinkLoading(false);
     }
   };
 
