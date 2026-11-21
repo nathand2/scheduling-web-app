@@ -158,7 +158,7 @@ jobs:
         with:
           working-directory: frontend
           start: |
-            PORT=6500 npm run start:dev --prefix ../backend/api
+            npm --prefix ../backend/api run start:dev
             npm start
           wait-on: 'http://localhost:6500, http://localhost:3000'
           wait-on-timeout: 120
