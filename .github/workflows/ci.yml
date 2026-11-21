@@ -104,3 +104,62 @@ jobs:
 
       - name: Run MySQL integration tests
         run: npm run test:integration
+
+  e2e:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        command: --default-authentication-plugin=mysql_native_password
+        env:
+          MYSQL_ROOT_PASSWORD: test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --host=127.0.0.1 --user=root --password=test --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+          --health-start-period=30s
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: test
+      DB_DATABASE: scheduler_test
+      NODE_ENV: development
+      ACCESS_TOKEN_SECRET: e2e-access-secret-for-ci-only
+      REFRESH_TOKEN_SECRET: e2e-refresh-secret-for-ci-only
+      GOOGLE_CLIENT_ID: e2e-client-id
+      GOOGLE_CLIENT_SECRET: e2e-client-secret
+      BROWSER: none
+      CI: 'false'
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install backend dependencies
+        run: npm ci
+        working-directory: backend/api
+
+      - name: Initialize disposable test database
+        run: npm run test:db:setup
+        working-directory: backend/api
+
+      - name: Run Cypress E2E flow
+        uses: cypress-io/github-action@v7
+        with:
+          working-directory: frontend
+          start: |
+            PORT=6500 npm run start:dev --prefix ../backend/api
+            npm start
+          wait-on: 'http://localhost:6500, http://localhost:3000'
+          wait-on-timeout: 120
+          command: npm run e2e

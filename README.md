@@ -43,6 +43,7 @@ cd frontend | npm start
 - Frontend tests: `cd frontend` then `npm test -- --watchAll=false`
 - Backend tests: `cd backend/api` then `npm test`
 - MySQL integration tests: set `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, and `DB_DATABASE=scheduler_test`, then run `npm run test:db:setup` followed by `npm run test:integration` from `backend/api`.
-- GitHub Actions runs frontend tests/build, backend route tests, and MySQL integration tests on pushes and pull requests.
+- Browser E2E test: `cd frontend` then `npm run e2e` (requires the app and API running against a test database).
+- GitHub Actions runs frontend tests/build, backend route tests, MySQL integration tests, and the Cypress E2E flow on pushes and pull requests.
 
-Backend route tests exercise local registration and login behavior with an in-memory database double. The MySQL integration tests use a disposable MySQL 8.0 service in GitHub Actions and verify session membership and availability persistence. Test setup derives the schema from `backend/api/init.sql` but only drops and recreates `scheduler_test` on a local test host; never point it at a shared or production database.
+Backend route tests exercise local registration and login behavior with an in-memory database double. The MySQL integration and E2E tests use disposable MySQL 8.0 services in GitHub Actions. The integration tests verify session membership and availability persistence; the browser test covers registration, session creation, invite joining, and availability. Test setup derives the schema from `backend/api/init.sql` but only drops and recreates `scheduler_test` on a local test host; never point it at a shared or production database.
