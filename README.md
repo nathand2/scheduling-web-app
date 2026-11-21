@@ -37,3 +37,12 @@ Frontend: React.js, React Bootstrap, D3
 ## Quickstart Commands from root
 cd backend/api | npm run start:dev
 cd frontend | npm start
+
+## Tests and CI
+
+- Frontend tests: `cd frontend` then `npm test -- --watchAll=false`
+- Backend tests: `cd backend/api` then `npm test`
+- MySQL integration tests: set `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, and `DB_DATABASE=scheduler_test`, then run `npm run test:db:setup` followed by `npm run test:integration` from `backend/api`.
+- GitHub Actions runs frontend tests/build, backend route tests, and MySQL integration tests on pushes and pull requests.
+
+Backend route tests exercise local registration and login behavior with an in-memory database double. The MySQL integration tests use a disposable MySQL 8.0 service in GitHub Actions and verify session membership and availability persistence. Test setup derives the schema from `backend/api/init.sql` but only drops and recreates `scheduler_test` on a local test host; never point it at a shared or production database.

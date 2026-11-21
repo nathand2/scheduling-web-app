@@ -3,3 +3,9 @@
 // expect(element).toHaveTextContent(/react/i)
 // learn more: https://github.com/testing-library/jest-dom
 import '@testing-library/jest-dom';
+
+// React Router 7 uses the Encoding API, which is not provided by Jest's jsdom.
+const { TextDecoder, TextEncoder } = require('util');
+
+global.TextDecoder = TextDecoder;
+global.TextEncoder = TextEncoder;

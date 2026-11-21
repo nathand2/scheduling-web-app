@@ -19,6 +19,9 @@ const formatDate = (isoString) => {
 }
 
 const pool = mysql.createPool(config);
+exports.closePool = () => new Promise((resolve, reject) => {
+  pool.end((error) => error ? reject(error) : resolve());
+});
 pool.on('connection', conn => {
 	conn.query("SET time_zone='+00:00';", error => {
 		if(error){
