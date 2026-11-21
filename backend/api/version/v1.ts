@@ -282,7 +282,7 @@ module.exports = (app, db, auth, passport, io) => {
         const tempSessionCode = util.generateSessionCode();
         const sessionsWithCode = await db.getSessionIdBySessionCode(tempSessionCode)
         // If sessions dont exist with this code, continue
-        if (!sessionsWithCode.length > 0) {
+        if (sessionsWithCode.length === 0) {
           sessionCode = tempSessionCode
         }
         count++
@@ -477,7 +477,7 @@ module.exports = (app, db, auth, passport, io) => {
       
       // Check if user is apart of session
       const userSessions = await db.getUserSessionByUserIdAndSessionId(userId, sessionId)
-      if (!userSessions > 0) {
+      if (userSessions.length === 0) {
         // User not apart of session
         res.sendStatus(403) // Forbidden
         return
@@ -543,7 +543,7 @@ module.exports = (app, db, auth, passport, io) => {
       const userId = res.locals.user.userId  // User Id from JWT token
       // Check if user is apart of session
       const userSessions = await db.getUserSessionByUserIdAndSessionId(userId, sessionId)
-      if (!userSessions > 0) {
+      if (userSessions.length === 0) {
         // User not apart of session
         res.sendStatus(403) // Forbidden
         return
@@ -573,7 +573,7 @@ module.exports = (app, db, auth, passport, io) => {
     try {
       // Check if user is apart of session
       const userSessions = await db.getUserSessionByUserIdAndSessionId(userId, sessionId)
-      if (!userSessions > 0) {
+      if (userSessions.length === 0) {
         // User not apart of session
         res.sendStatus(403) // Forbidden
         return

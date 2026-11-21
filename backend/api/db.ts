@@ -19,7 +19,7 @@ const formatDate = (isoString) => {
 }
 
 const pool = mysql.createPool(config);
-exports.closePool = () => new Promise((resolve, reject) => {
+exports.closePool = () => new Promise<void>((resolve, reject) => {
   pool.end((error) => error ? reject(error) : resolve());
 });
 pool.on('connection', conn => {
@@ -51,7 +51,7 @@ pool.getConnection((err, conn) => {
  * @param {*} db_query sql query as a string
  * @returns query results in an array
  */
-const dbConnection = async (query, params = []) => {
+const dbConnection = async (query: string, params: unknown[] = []): Promise<any> => {
   return new Promise((resolve, reject) => {
     pool.getConnection(function(err, connection) {
       if (err) return reject(err);
@@ -67,13 +67,7 @@ const dbConnection = async (query, params = []) => {
      
         // Don't use the connection here, it has been returned to the pool.
       });
-
-  })
-  }, (result) => {
-    return result
-  }, (err) => {
-    console.log("Error has been thrown")
-    throw err
+    });
   });
 }
 
@@ -91,7 +85,7 @@ exports.googleAuth = async (googleID, displayName) => {
     // console.log("Results length:", typeof(results));
 
     // If google user doesn't yet exist, add google user to db.
-    if (!results.length > 0) {
+    if (results.length === 0) {
       const res = await dbConnection('INSERT INTO user (external_id, external_type, display_name) VALUES (?, ?, ?);', [googleID, 'GOOGLE', displayName]);
       console.log("Added user to db with google_id:", googleID);
       // Assume no username created for new account
