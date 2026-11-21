@@ -12,6 +12,20 @@ describe("collaborative session scheduling", () => {
     cy.contains(`Welcome, ${username}`, { timeout: 10000 }).should("be.visible");
   };
 
+  const waitForSuccessfulJoin = (attempt = 1) =>
+    cy.wait("@joinSession", { timeout: 15000 }).then(({ response }) => {
+      expect(response, `join response attempt ${attempt}`).to.exist;
+      cy.log(`POST /v1/joinsession attempt ${attempt}: ${response.statusCode}`);
+
+      // RequestHandler retries a 401 after refreshing the access token. Wait for
+      // that retry instead of treating the initial response as the final result.
+      if (response.statusCode === 401 && attempt < 3) {
+        return waitForSuccessfulJoin(attempt + 1);
+      }
+
+      expect(response.statusCode).to.equal(200);
+    });
+
   beforeEach(() => {
     cy.visit("/signup");
   });
@@ -67,9 +81,7 @@ describe("collaborative session scheduling", () => {
       expect(inviteCode, "invite code captured from POST /v1/sessioninvite").to.be.a("string").and.not.be.empty;
       cy.visit(`/sessionjoin?code=${encodeURIComponent(inviteCode)}`);
     });
-    cy.wait("@joinSession", { timeout: 15000 })
-      .its("response.statusCode")
-      .should("equal", 200);
+    waitForSuccessfulJoin();
     cy.contains("h1", sessionTitle, { timeout: 15000 }).should("be.visible");
     // The browser may revalidate a cached response and receive 304 instead.
     cy.wait("@getAvailability").then(({ response }) => {
