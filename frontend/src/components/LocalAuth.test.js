@@ -71,4 +71,32 @@ describe("local account access", () => {
       await screen.findByText("Invalid username or password.")
     ).toBeInTheDocument();
   });
+
+  test("shows the missing credentials message for a bad login request", async () => {
+    RequestHandler.req.mockResolvedValue({ status: 400 });
+
+    renderAt("/login", <LogIn onLoginSuccess={jest.fn()} />);
+    fireEvent.click(screen.getByRole("button", { name: "Log in" }));
+
+    expect(
+      await screen.findByText("Please enter a username and password.")
+    ).toBeInTheDocument();
+  });
+
+  test("shows a service error when signup rejects an existing username", async () => {
+    RequestHandler.req.mockResolvedValue({ status: 409 });
+
+    renderAt("/signup", <SignUp onLoginSuccess={jest.fn()} />);
+    fireEvent.change(screen.getByLabelText("Username"), {
+      target: { value: "alex" },
+    });
+    fireEvent.change(screen.getByLabelText("Password"), {
+      target: { value: "correct-horse" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Sign Up" }));
+
+    expect(
+      await screen.findByText("Username already taken. [409]")
+    ).toBeInTheDocument();
+  });
 });

@@ -70,4 +70,33 @@ describe("joining a session from an invite", () => {
     );
     expect(RequestHandler.req).not.toHaveBeenCalled();
   });
+
+  test("shows a retry message for an unexpected invite error", async () => {
+    RequestHandler.req.mockResolvedValue({ status: 500 });
+
+    render(
+      <MemoryRouter initialEntries={["/sessionjoin?code=invite-123"]}>
+        <SessionJoin loggedIn />
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByText("Couldn't join the session")).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "We couldn't join this session (error 500). Please try again."
+    );
+  });
+
+  test("sends logged-out visitors to login with the invite preserved", () => {
+    render(
+      <MemoryRouter initialEntries={["/sessionjoin?code=invite-123"]}>
+        <Routes>
+          <Route path="/sessionjoin" element={<SessionJoin loggedIn={false} />} />
+          <Route path="/login" element={<p>Login page</p>} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText("Login page")).toBeInTheDocument();
+    expect(RequestHandler.req).not.toHaveBeenCalled();
+  });
 });
