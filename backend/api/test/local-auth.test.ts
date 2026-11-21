@@ -50,7 +50,7 @@ before(() => {
   };
 });
 
-const makeResponse = () => ({
+const makeResponse = (): any => ({
   locals: {},
   cookies: [],
   statusCode: 200,

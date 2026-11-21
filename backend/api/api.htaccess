@@ -3,7 +3,7 @@ PassengerAppRoot "/home/nathando/api.nathandong.com"
 PassengerBaseURI "/"
 PassengerNodejs "/home/nathando/nodevenv/api.nathandong.com/10/bin/node"
 PassengerAppType node
-PassengerStartupFile server.js
+PassengerStartupFile dist/server.js
 PassengerAppLogFile "/home/nathando/info.log"
 # DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION END
 <IfModule mod_rewrite.c>

@@ -5,7 +5,7 @@ The frontend and API server run as separate services. The API server also hosts
 the authenticated Socket.IO endpoint at `/socket/v1` in development and
 `/scheduler/socket/v1` in production.
 
-Backend: Node.js, Express.js, Passport.js, JSON Web Tokens, Socket.io
+Backend: Node.js, TypeScript, Express.js, Passport.js, JSON Web Tokens, Socket.io
 
 Frontend: React.js, React Bootstrap, D3
 
@@ -31,7 +31,8 @@ Frontend: React.js, React Bootstrap, D3
     DB_HOST=
     NODE_ENV=development
 4. Connect to Database (ssh)
-5. Start API server: npm run start:dev
+5. Start API server in development: npm run start:dev
+   - For a production build, run `npm run build` then `npm start`.
 
 
 ## Quickstart Commands from root

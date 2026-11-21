@@ -9,8 +9,21 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto')
 
 const createHash = crypto.createHash;
-const accessTokenSecret = process.env.ACCESS_TOKEN_SECRET;
-const refreshTokenSecret = process.env.REFRESH_TOKEN_SECRET;
+const accessTokenSecret = process.env.ACCESS_TOKEN_SECRET as string;
+const refreshTokenSecret = process.env.REFRESH_TOKEN_SECRET as string;
+const hashString = (input: string) => {
+  const hash = createHash('sha256');
+  hash.update(input);
+  return hash.digest('hex');
+};
+const compareStringAndHash = (value: string, expectedHash: string) =>
+  hashString(value) === expectedHash;
+const getRandomString = () => new Promise<string>((resolve, reject) => {
+  crypto.randomBytes(24, (error, buffer) => {
+    if (error) return reject(error);
+    resolve(buffer.toString('base64'));
+  });
+});
 
 // All lifetimes in milliseconds
 const jwtAccessTokenLifetimeMs = process.env.NODE_ENV === "development" ?
@@ -73,7 +86,7 @@ exports.authenticateToken = (req, res, next) => {
 
     // Verify user context.
     try {
-      if (this.compareStringAndHash(userContext, userContextHashed)) {
+      if (compareStringAndHash(userContext, userContextHashed)) {
         // Pass user object from JWT to next middleware.
         res.locals.user = user
         next() // Serve content using next callback
@@ -130,7 +143,7 @@ exports.refreshAccessToken = (req, res, next) => {
 
     // Verify user context.
     try {
-      if (this.compareStringAndHash(userContext, userContextHashed)) {
+      if (compareStringAndHash(userContext, userContextHashed)) {
         // Pass user object from JWT to next middleware.
         res.locals.user = user
         next() // Serve content using next callback
@@ -156,31 +169,14 @@ exports.checkIfFingerPrintExists = (req, res, next) => {
  * Gets random string.
  * @returns random string
  */
- exports.getRandomString = async () => {
-  return await new Promise((resolve, reject) => {
-    crypto.randomBytes(24, (err, buffer) => {
-      if (err) {
-        throw err
-      }
-      resolve(buffer.toString('base64'));
-    });
-  });
-}
+exports.getRandomString = getRandomString;
 
 /**
  * Hashes a string using crypto.
  * @param {string} input 
  * @returns hashed string
  */
- exports.hashString = (input) => {
-  try {
-    const hash = createHash('sha256');
-    hash.update(input);
-    return hash.digest('hex');
-  } catch (err) {
-    throw err
-  }
-}
+exports.hashString = hashString;
 
 /**
  * Generates random string and it's SHA-256 hash
@@ -188,8 +184,8 @@ exports.checkIfFingerPrintExists = (req, res, next) => {
  */
 exports.getRandomStringAndHash = async () => {
   try {
-    const randString = await this.getRandomString();
-    const stringHash = this.hashString(randString);
+    const randString = await getRandomString();
+    const stringHash = hashString(randString);
     return [randString, stringHash];
   } catch (err) {
     throw err
@@ -202,11 +198,4 @@ exports.getRandomStringAndHash = async () => {
  * @param {string} hash 
  * @returns 
  */
-exports.compareStringAndHash = (string, hash) => {
-  try {
-    const hashedString = this.hashString(string)
-    return hashedString === hash;
-  } catch (err) {
-    throw err
-  }
-}
+exports.compareStringAndHash = compareStringAndHash;

@@ -6,18 +6,18 @@
 const cookie = require('cookie');
 
 module.exports = (app, db, auth, passport, io) => {
-  io.use((socket, next) => {
+  io.use((socket: any, next: (error?: Error) => void) => {
     const accessToken = socket.handshake.auth && socket.handshake.auth.token;
     const cookies = cookie.parse(socket.handshake.headers.cookie || '');
     const req = {
       headers: { authorization: accessToken ? `token ${accessToken}` : '' },
       cookies
     };
-    const res = {
+    const res: any = {
       locals: {},
       sendStatus: (status) => {
         const error = new Error('Unauthorized');
-        error.data = { status };
+        (error as Error & { data: { status: number } }).data = { status };
         next(error);
       }
     };
@@ -28,7 +28,7 @@ module.exports = (app, db, auth, passport, io) => {
     });
   });
 
-  io.on('connection', (socket) => {
+  io.on('connection', (socket: any) => {
     socket.on('room', async (room) => {
       if (typeof room !== 'string' || !room.trim()) return;
       try {
