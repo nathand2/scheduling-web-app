@@ -13,6 +13,7 @@ let refreshTokens;
 before(() => {
   users = [];
   refreshTokens = new Set();
+  // In memory database double
   const db = {
     getUserByUsername: async (username) => users.filter((user) => user.username === username),
     createLocalUser: async (username, password, displayName) => {
