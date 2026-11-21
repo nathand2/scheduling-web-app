@@ -52,6 +52,7 @@ describe("collaborative session scheduling", () => {
 
     // The product copies its link; navigate with the returned code so this test
     // does not depend on the browser's clipboard permissions.
+    cy.contains("button", "Done").click();
     cy.get("#dropdown-menu-align-end").click();
     cy.contains(".dropdown-item", "Logout").click();
     cy.visit("/signup");
