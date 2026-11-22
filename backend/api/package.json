@@ -7,7 +7,7 @@
     "build": "tsc --project tsconfig.json",
     "start": "node dist/server.js",
     "start:dev": "tsx watch server.ts",
-    "test": "tsx --test test/local-auth.test.ts",
+    "test": "tsx --test test/local-auth.test.ts test/routes.test.ts",
     "test:db:setup": "tsx test/setup-db.ts",
     "test:integration": "tsx --test integration-tests/mysql.integration.test.ts"
   },

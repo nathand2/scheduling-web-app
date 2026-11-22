@@ -7,7 +7,16 @@ jest.mock("../js/requestHandler", () => ({
 }));
 
 jest.mock("@mui/x-date-pickers/MobileTimePicker", () => ({
-  MobileTimePicker: () => null,
+  MobileTimePicker: ({ label, onChange }) => (
+    <button
+      type="button"
+      onClick={() =>
+        onChange(require("dayjs")("2030-01-01T17:00:00.000Z"))
+      }
+    >
+      Set {label} at session end
+    </button>
+  ),
 }));
 
 jest.mock("@mui/x-date-pickers/MobileDateTimePicker", () => ({
@@ -54,5 +63,31 @@ describe("adding availability", () => {
       })
     );
     expect(onCreated).toHaveBeenCalledTimes(1);
+  });
+
+  test("blocks submission when the range has no duration", async () => {
+    RequestHandler.req.mockResolvedValue({ status: 200 });
+
+    render(
+      <SessionAddRangeModal
+        show
+        session={{
+          id: 42,
+          code: "ABC123",
+          dt_start: "2030-01-01T09:00:00.000Z",
+          dt_end: "2030-01-01T17:00:00.000Z",
+        }}
+        handleClose={jest.fn()}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Set Start at session end" }));
+
+    expect(
+      screen.getByText("End time must be after start time.")
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Submit" })).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "Submit" }));
+    expect(RequestHandler.req).not.toHaveBeenCalled();
   });
 });
