@@ -82,6 +82,10 @@ test('local registration and login enforce account behavior', async () => {
   assert.equal(registeredUser.userId, 1);
   assert.equal(registeredUser.displayName, 'Alex');
   assert.notEqual(users[0].password, 'correct-horse');
+  assert.deepEqual(
+    registrationResponse.cookies.map(({ name }) => name),
+    ['userContextAccess', 'refreshToken', 'userContextRefresh']
+  );
 
   const duplicateResponse = makeResponse();
   await register(
@@ -105,4 +109,20 @@ test('local registration and login enforce account behavior', async () => {
   );
   assert.equal(validLoginResponse.statusCode, 200);
   assert.equal(validLoginResponse.body.displayName, 'Alex');
+});
+
+test('local auth routes reject missing required fields', async () => {
+  const register = routeHandlers('/auth/register', 'post')[0];
+  const login = routeHandlers('/auth/login', 'post')[0];
+
+  const missingRegistrationField = makeResponse();
+  await register(
+    { body: { username: 'alex', password: 'correct-horse' } },
+    missingRegistrationField
+  );
+  assert.equal(missingRegistrationField.statusCode, 400);
+
+  const missingLoginField = makeResponse();
+  await login({ body: { username: 'alex' } }, missingLoginField);
+  assert.equal(missingLoginField.statusCode, 400);
 });
