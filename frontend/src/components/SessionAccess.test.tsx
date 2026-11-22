@@ -21,14 +21,14 @@ jest.mock("socket.io-client", () => ({
 }));
 
 describe("session access errors", () => {
-  beforeEach(() => RequestHandler.req.mockReset());
+  beforeEach(() => (RequestHandler.req as jest.Mock).mockReset());
 
   test.each([
     [401, "Please log in"],
     [403, "Not invited"],
     [404, "Session Not Found"],
   ])("shows the appropriate message for status %i", async (status, message) => {
-    RequestHandler.req.mockResolvedValue({ status });
+    (RequestHandler.req as jest.Mock).mockResolvedValue({ status });
 
     render(
       <MemoryRouter initialEntries={["/session/ABC123"]}>

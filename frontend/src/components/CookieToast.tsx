@@ -7,13 +7,17 @@ import ToastContainer from 'react-bootstrap/ToastContainer';
 
 const CookieToast = () => {
 
-  const [cookiesEnabled, setCookiesEnabled] = useState(sessionStorage.getItem('acceptCookies'))
-  const [show, setShow] = useState(!sessionStorage.getItem('acceptCookies'));
+  const [cookiesEnabled, setCookiesEnabled] = useState(
+    sessionStorage.getItem('acceptCookies') === 'true'
+  );
+  const [show, setShow] = useState(
+    sessionStorage.getItem('acceptCookies') !== 'true'
+  );
 
   const acceptCookies = () => {
     setShow(false)
-    setCookiesEnabled(false)
-    sessionStorage.setItem('acceptCookies', true)
+    setCookiesEnabled(true)
+    sessionStorage.setItem('acceptCookies', 'true')
     console.log("Accepted Cookies")
   }
 
@@ -32,7 +36,7 @@ const CookieToast = () => {
                   <strong className="me-auto">This site uses cookies, sorry.</strong>
                 </Toast.Header>
                 <Toast.Body>Cookies helps us know who you are.</Toast.Body>
-                <Button onClick={acceptCookies} variant="primary" size="None" >Accept Cookies</Button>
+                <Button onClick={acceptCookies} variant="primary">Accept Cookies</Button>
                 <br />
               </Toast>
             </ToastContainer>

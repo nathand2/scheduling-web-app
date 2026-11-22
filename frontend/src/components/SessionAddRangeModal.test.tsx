@@ -24,10 +24,10 @@ jest.mock("@mui/x-date-pickers/MobileDateTimePicker", () => ({
 }));
 
 describe("adding availability", () => {
-  beforeEach(() => RequestHandler.req.mockReset());
+  beforeEach(() => (RequestHandler.req as jest.Mock).mockReset());
 
   test("submits a valid range inside the session window", async () => {
-    RequestHandler.req.mockResolvedValue({ status: 200 });
+    (RequestHandler.req as jest.Mock).mockResolvedValue({ status: 200 });
     const handleClose = jest.fn();
     const onCreated = jest.fn();
     const session = {
@@ -66,7 +66,7 @@ describe("adding availability", () => {
   });
 
   test("blocks submission when the range has no duration", async () => {
-    RequestHandler.req.mockResolvedValue({ status: 200 });
+    (RequestHandler.req as jest.Mock).mockResolvedValue({ status: 200 });
 
     render(
       <SessionAddRangeModal

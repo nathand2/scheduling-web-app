@@ -1,7 +1,10 @@
+export {};
+
 describe("RequestHandler authentication", () => {
   let RequestHandler;
+  let fetchMock: jest.Mock;
 
-  const response = (status, body) => ({
+  const response = (status, body = undefined) => ({
     status,
     ok: status >= 200 && status < 300,
     json: jest.fn().mockResolvedValue(body),
@@ -9,7 +12,8 @@ describe("RequestHandler authentication", () => {
 
   beforeEach(() => {
     jest.resetModules();
-    global.fetch = jest.fn();
+    fetchMock = jest.fn();
+    global.fetch = fetchMock;
     ({ RequestHandler } = require("./requestHandler"));
   });
 
@@ -19,7 +23,7 @@ describe("RequestHandler authentication", () => {
 
   test("sends credentials and the current access token with API requests", async () => {
     const ok = response(200);
-    fetch.mockResolvedValue(ok);
+    fetchMock.mockResolvedValue(ok);
     RequestHandler.setAccessToken("access-1");
 
     await RequestHandler.req("/v1/session/ABC123", "GET");
@@ -38,25 +42,25 @@ describe("RequestHandler authentication", () => {
     const unauthorized = response(401);
     const refreshed = response(200, { accessToken: "access-2" });
     const ok = response(200);
-    fetch.mockResolvedValueOnce(unauthorized).mockResolvedValueOnce(refreshed).mockResolvedValueOnce(ok);
+    fetchMock.mockResolvedValueOnce(unauthorized).mockResolvedValueOnce(refreshed).mockResolvedValueOnce(ok);
     RequestHandler.setAccessToken("access-1");
 
     const result = await RequestHandler.req("/v1/session/ABC123", "GET");
 
     expect(result).toBe(ok);
     expect(fetch).toHaveBeenCalledTimes(3);
-    expect(fetch.mock.calls[1]).toEqual([
+    expect(fetchMock.mock.calls[1]).toEqual([
       expect.stringContaining("/v2/token"),
       { method: "POST", credentials: "include" },
     ]);
-    expect(fetch.mock.calls[2][1].headers).toEqual({
+    expect(fetchMock.mock.calls[2][1].headers).toEqual({
       Authorization: "token access-2",
     });
     expect(RequestHandler.getAccessToken()).toBe("access-2");
   });
 
   test("does not refresh rejected login or registration credentials", async () => {
-    fetch.mockResolvedValue(response(401));
+    fetchMock.mockResolvedValue(response(401));
 
     await RequestHandler.req("/v2/auth/login", "POST", { username: "alex" });
     await RequestHandler.req("/v2/auth/register", "POST", { username: "alex" });
@@ -65,7 +69,7 @@ describe("RequestHandler authentication", () => {
   });
 
   test("clears the token and signals expiration when refresh is rejected", async () => {
-    fetch.mockResolvedValueOnce(response(401)).mockResolvedValueOnce(response(401));
+    fetchMock.mockResolvedValueOnce(response(401)).mockResolvedValueOnce(response(401));
     RequestHandler.setAccessToken("expired-token");
     const expired = jest.fn();
     window.addEventListener("auth-expired", expired);

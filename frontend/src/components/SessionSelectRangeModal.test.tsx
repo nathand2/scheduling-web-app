@@ -17,10 +17,10 @@ const range = {
 };
 
 describe("removing availability", () => {
-  beforeEach(() => RequestHandler.req.mockReset());
+  beforeEach(() => (RequestHandler.req as jest.Mock).mockReset());
 
   test("deletes the user's range and notifies the parent", async () => {
-    RequestHandler.req.mockResolvedValue({ status: 204 });
+    (RequestHandler.req as jest.Mock).mockResolvedValue({ status: 204 });
     const handleClose = jest.fn();
     const onDeleted = jest.fn();
 
@@ -47,7 +47,7 @@ describe("removing availability", () => {
   });
 
   test("explains when the server rejects deletion", async () => {
-    RequestHandler.req.mockResolvedValue({ status: 403 });
+    (RequestHandler.req as jest.Mock).mockResolvedValue({ status: 403 });
 
     render(
       <SessionSelectRangeModal

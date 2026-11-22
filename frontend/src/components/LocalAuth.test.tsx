@@ -24,11 +24,11 @@ const renderAt = (path, page) =>
   );
 
 describe("local account access", () => {
-  beforeEach(() => RequestHandler.req.mockReset());
+  beforeEach(() => (RequestHandler.req as jest.Mock).mockReset());
 
   test("registers a local account and enters the app", async () => {
     const onLoginSuccess = jest.fn();
-    RequestHandler.req.mockResolvedValue({
+    (RequestHandler.req as jest.Mock).mockResolvedValue({
       status: 201,
       json: async () => ({ accessToken: "token-1", userId: 7, displayName: "alex" }),
     });
@@ -56,7 +56,7 @@ describe("local account access", () => {
   });
 
   test("shows a clear message for invalid login credentials", async () => {
-    RequestHandler.req.mockResolvedValue({ status: 401 });
+    (RequestHandler.req as jest.Mock).mockResolvedValue({ status: 401 });
 
     renderAt("/login", <LogIn onLoginSuccess={jest.fn()} />);
     fireEvent.change(screen.getByLabelText("Username"), {
@@ -73,7 +73,7 @@ describe("local account access", () => {
   });
 
   test("shows the missing credentials message for a bad login request", async () => {
-    RequestHandler.req.mockResolvedValue({ status: 400 });
+    (RequestHandler.req as jest.Mock).mockResolvedValue({ status: 400 });
 
     renderAt("/login", <LogIn onLoginSuccess={jest.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: "Log in" }));
@@ -84,7 +84,7 @@ describe("local account access", () => {
   });
 
   test("shows a service error when signup rejects an existing username", async () => {
-    RequestHandler.req.mockResolvedValue({ status: 409 });
+    (RequestHandler.req as jest.Mock).mockResolvedValue({ status: 409 });
 
     renderAt("/signup", <SignUp onLoginSuccess={jest.fn()} />);
     fireEvent.change(screen.getByLabelText("Username"), {
