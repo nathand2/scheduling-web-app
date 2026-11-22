@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, useRef, type ReactNode } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 
 import { io } from "socket.io-client";
@@ -17,29 +17,28 @@ import SessionChart from "./SessionChart";
 import SessionAttendence from "./SessionAttendence";
 
 import { RequestHandler } from "../js/requestHandler";
-import * as util from "../js/util";
-import type { AvailabilityRange, SessionRecord, UserSession } from "../types";
+const util = require("../js/util");
 
 const webSocketEndpoint = RequestHandler.webSocketEndpoint;
 const showDtRangeUpdateToast = false; // Websocket for dtrange add
 
 const Session = ({ userId }) => {
   const params = useParams();
-  const [session, setSession] = useState<SessionRecord>({});
-  const [timeRanges, setTimeRanges] = useState<AvailabilityRange[]>([]);
-  const [newRangeIds, setNewRangeIds] = useState<Array<string | number>>([]);
-  const [userSessions, setUserSessions] = useState<UserSession[]>([]);
+  const [session, setSession] = useState({});
+  const [timeRanges, setTimeRanges] = useState([]);
+  const [newRangeIds, setNewRangeIds] = useState([]);
+  const [userSessions, setUserSessions] = useState([]);
   const [showDtModal, setShowDtModal] = useState(false);
   const [draftRange, setDraftRange] = useState(null); // Range dragged on the chart, prefills the modal
   const [showShareModal, setShowShareModal] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastTitle, setToastTitle] = useState("");
   const [toastMessage, setToastMessage] = useState("");
-  const [expiredSession, setExpiredSession] = useState<boolean | undefined>(undefined);
-  const [sessionResStatus, setSessionResStatus] = useState<number | undefined>(undefined);
-  const [otherSessionResViews, setOtherSessionResViews] = useState<ReactNode>(undefined);
-  const socketRef = useRef<ReturnType<typeof io> | null>(null);
-  const knownRangeIds = useRef<Set<string | number>>(new Set());
+  const [expiredSession, setExpiredSession] = useState(undefined);
+  const [sessionResStatus, setSessionResStatus] = useState();
+  const [otherSessionResViews, setOtherSessionResViews] = useState();
+  const socketRef = useRef(null);
+  const knownRangeIds = useRef(new Set());
 
   // Gets session data on load
   useEffect(() => {

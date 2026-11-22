@@ -12,15 +12,6 @@ import { MobileDateTimePicker } from "@mui/x-date-pickers/MobileDateTimePicker";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
 
 import { RequestHandler } from "../js/requestHandler";
-import type { SessionRecord } from "../types";
-
-interface SessionAddRangeModalProps {
-  handleClose: () => void;
-  show: boolean;
-  session: SessionRecord;
-  initialRange?: { start: Date; end: Date } | null;
-  onCreated?: () => void;
-}
 
 /**
  * Modal for adding an availability range within a session.
@@ -35,7 +26,7 @@ const SessionAddRangeModal = ({
   session,
   initialRange, // Optional { start: Date, end: Date } from dragging on the chart
   onCreated, // Optional callback after a successful POST
-}: SessionAddRangeModalProps) => {
+}) => {
   const [dtStatus, setDtStatus] = useState("going");
   const [dtStart, setdtStart] = useState(new Date());
   const [dtEnd, setdtEnd] = useState(new Date());

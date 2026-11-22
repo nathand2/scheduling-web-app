@@ -6,7 +6,7 @@ import { Alert, Button, Card, Container, Spinner } from "react-bootstrap";
 import SessionCard from "./SessionCard";
 
 import { RequestHandler } from "../js/requestHandler";
-import * as util from "../js/util";
+const util = require("../js/util");
 
 const Sessions = () => {
   const [sessions, setSessions] = useState(undefined);

@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import Card from "react-bootstrap/Card";
 import Badge from "react-bootstrap/Badge";
 
-const SessionCard = ({ code, title, desc, dt_created, status }) => {
+const SessionCard = ({ id, code, title, desc, dt_created, status }) => {
   const navigate = useNavigate();
   
   /**

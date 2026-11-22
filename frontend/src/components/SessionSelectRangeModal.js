@@ -5,19 +5,8 @@ import Button from "react-bootstrap/Button";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
 
 import { RequestHandler } from "../js/requestHandler";
-import dayjs from "dayjs";
-import type { AvailabilityRange, SessionRecord } from "../types";
 
-interface SessionSelectRangeModalProps {
-  handleClose: () => void;
-  onDeleted?: () => void;
-  show: boolean;
-  range?: AvailabilityRange;
-  session: SessionRecord;
-  userId?: string | number;
-}
-
-const SessionSelectRangeModal = ({ handleClose, onDeleted, show, range, session, userId }: SessionSelectRangeModalProps) => {
+const SessionSelectRangeModal = ({ handleClose, onDeleted, show, range, session, userId }) => {
   const [warning, setWarning] = useState("");
   const [warningClass, setWarningClass] = useState("text-warning");
   const [showDelete, setShowDelete] = useState(false);
@@ -81,10 +70,10 @@ const SessionSelectRangeModal = ({ handleClose, onDeleted, show, range, session,
               <Modal.Title>Edit Range</Modal.Title>
             </Modal.Header>
             <Modal.Body>
-              <h5>Created By:&nbsp;{range.display_name}</h5>
-              <p>Status:&nbsp;{range.status}</p>
-              <p>
-                {`${dayjs(range.dt_start).toDate().toLocaleTimeString()} - ${dayjs(range.dt_end).toDate().toLocaleTimeString()}`}
+              <h5 size="sm">Created By:&nbsp;{range.display_name}</h5>
+              <p size="sm">Status:&nbsp;{range.status}</p>
+              <p size="sm">
+                {`${range.dt_start.toLocaleTimeString()} - ${range.dt_end.toLocaleTimeString()}`}
               </p>
               {/* {JSON.stringify(range)} */}
             </Modal.Body>
