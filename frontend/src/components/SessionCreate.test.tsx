@@ -9,11 +9,11 @@ jest.mock("../js/requestHandler", () => ({
 
 describe("session creation", () => {
   beforeEach(() => {
-    RequestHandler.req.mockReset();
+    (RequestHandler.req as jest.Mock).mockReset();
   });
 
   test("submits a valid session and navigates to the created session", async () => {
-    RequestHandler.req.mockResolvedValue({
+    (RequestHandler.req as jest.Mock).mockResolvedValue({
       status: 200,
       json: async () => ({ code: "ABC123" }),
     });
@@ -44,7 +44,7 @@ describe("session creation", () => {
   });
 
   test("shows an error when the API rejects session creation", async () => {
-    RequestHandler.req.mockResolvedValue({ status: 500 });
+    (RequestHandler.req as jest.Mock).mockResolvedValue({ status: 500 });
 
     render(
       <MemoryRouter initialEntries={["/sessioncreate"]}>

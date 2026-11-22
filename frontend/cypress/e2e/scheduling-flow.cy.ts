@@ -1,3 +1,8 @@
+/// <reference types="cypress" />
+import { expect } from "chai";
+
+export {};
+
 describe("collaborative session scheduling", () => {
   const unique = Date.now().toString();
   const owner = `e2e_owner_${unique}`.slice(0, 25);
@@ -13,7 +18,7 @@ describe("collaborative session scheduling", () => {
   };
 
   const waitForSuccessfulJoin = (attempt = 1) =>
-    cy.wait("@joinSession", { timeout: 15000 }).then(({ response }) => {
+    cy.wait("@joinSession").then(({ response }) => {
       expect(response, `join response attempt ${attempt}`).to.exist;
       cy.log(`POST /v1/joinsession attempt ${attempt}: ${response.statusCode}`);
 

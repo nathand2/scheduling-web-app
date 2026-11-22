@@ -84,12 +84,12 @@ const buildSegmentsByDay = (layout, timeRanges) => {
       });
     });
 
-    const users = [...new Map(
+    const users = Array.from(new Map<string, { key: string; name: string }>(
       (timeRanges || []).map((range) => [userKey(range), {
         key: userKey(range),
         name: range.display_name || "Unknown user",
-      }])
-    ).values()].sort((a, b) => a.name.localeCompare(b.name) || a.key.localeCompare(b.key));
+      }] as [string, { key: string; name: string }])
+    ).values()).sort((a, b) => a.name.localeCompare(b.name) || a.key.localeCompare(b.key));
     const userIndex = new Map(users.map((user, index) => [user.key, index]));
 
     segs.sort((a, b) => a.startMin - b.startMin || a.endMin - b.endMin);

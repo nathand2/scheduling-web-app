@@ -9,12 +9,12 @@ jest.mock("../js/requestHandler", () => ({
 
 describe("joining a session from an invite", () => {
   beforeEach(() => {
-    RequestHandler.req.mockReset();
+    (RequestHandler.req as jest.Mock).mockReset();
   });
 
   test("joins with the invite code and opens the session", async () => {
     jest.useFakeTimers();
-    RequestHandler.req.mockResolvedValue({
+    (RequestHandler.req as jest.Mock).mockResolvedValue({
       status: 200,
       json: async () => ({ sessionCode: "ABC123" }),
     });
@@ -42,7 +42,7 @@ describe("joining a session from an invite", () => {
   });
 
   test("explains when an invite cannot be found", async () => {
-    RequestHandler.req.mockResolvedValue({ status: 404 });
+    (RequestHandler.req as jest.Mock).mockResolvedValue({ status: 404 });
 
     render(
       <MemoryRouter initialEntries={["/sessionjoin?code=bad-invite"]}>
@@ -72,7 +72,7 @@ describe("joining a session from an invite", () => {
   });
 
   test("shows a retry message for an unexpected invite error", async () => {
-    RequestHandler.req.mockResolvedValue({ status: 500 });
+    (RequestHandler.req as jest.Mock).mockResolvedValue({ status: 500 });
 
     render(
       <MemoryRouter initialEntries={["/sessionjoin?code=invite-123"]}>
