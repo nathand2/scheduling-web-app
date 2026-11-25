@@ -23,7 +23,7 @@ const SessionHeader = ({ showShareModal }) => {
             </Nav>
           </Navbar.Collapse> */}
           <Navbar.Text className="ms-auto">
-            <Button className="py-1" onClick={showShareModal} style={{ minWidth: "120px" }}>
+            <Button className="py-1" onClick={showShareModal} style={{ minWidth: "120px" }} data-tour="share-session">
               <AiOutlineUserAdd />
               &nbsp;Share&nbsp;
             </Button>

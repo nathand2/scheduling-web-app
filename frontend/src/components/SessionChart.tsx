@@ -24,6 +24,7 @@ interface SessionChartProps {
   readOnly?: boolean;
   onRangeDeleted?: () => void;
   onDeleteRange?: (range: AvailabilityRange) => void;
+  onRangeDetailsChange?: (isOpen: boolean) => void;
   onNewRangeIdsProcessed?: (processedIds: Array<string | number>) => void;
 }
 
@@ -211,6 +212,7 @@ const SessionChart = ({
   readOnly,
   onRangeDeleted,
   onDeleteRange,
+  onRangeDetailsChange,
   onNewRangeIdsProcessed,
 }: SessionChartProps) => {
   const [showSelectRangeModal, setShowSelectRangeModal] = useState(false);
@@ -381,6 +383,7 @@ const SessionChart = ({
     if (range) {
       setFocusRange(range);
       setShowSelectRangeModal(true);
+      onRangeDetailsChange?.(true);
     }
   };
 
@@ -402,7 +405,10 @@ const SessionChart = ({
     <div className={`sc-wrap ${drawMode ? "sc-draw" : ""}`}>
       <SessionSelectRangeModal
         show={showSelectRangeModal}
-        handleClose={() => setShowSelectRangeModal(false)}
+        handleClose={() => {
+          setShowSelectRangeModal(false);
+          onRangeDetailsChange?.(false);
+        }}
         range={focusRange}
         session={session}
         userId={userId}
@@ -430,6 +436,7 @@ const SessionChart = ({
           <button
             type="button"
             className={`sc-draw-toggle ${includeMaybe ? "active" : ""}`}
+            data-tour="count-maybes"
             onClick={() => setIncludeMaybe((v) => !v)}
             aria-pressed={includeMaybe}
             title="Include “maybe” responses in the overlap counts"
@@ -553,6 +560,7 @@ const SessionChart = ({
               <div
                 key={day.key}
                 className={`sc-col ${canDraw ? "can-draw" : ""}`}
+                data-tour="availability-cell"
                 style={{
                   height: bodyHeight,
                   backgroundSize: `100% ${hourPx}px`,
@@ -595,7 +603,7 @@ const SessionChart = ({
                   ))}
 
                 {/* Overlap strip: darker = more people free for the whole slot */}
-                <div className="sc-heat" style={{ width: HEAT_STRIP_PX }}>
+                <div className="sc-heat" data-tour="heat-map" style={{ width: HEAT_STRIP_PX }}>
                   {heat.byDay[dayIdx].slots.map((slot) => {
                     if (slot.score === 0 && slot.maybe.length === 0) return null;
                     const alpha =

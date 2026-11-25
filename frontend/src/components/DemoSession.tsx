@@ -12,10 +12,56 @@ import Row from "react-bootstrap/Row";
 import SessionAttendence from "./SessionAttendence";
 import SessionChart from "./SessionChart";
 import SessionInfo from "./SessionInfo";
+import GuidedTour, { type GuidedTourStep } from "./GuidedTour";
 import type { AvailabilityRange, SessionRecord, UserSession } from "../types";
 
 const STORAGE_KEY = "scheduler-demo-session-v2";
+const DEMO_TOUR_SEEN_KEY = "scheduler-demo-tour-seen-v1";
 const DEMO_USER_ID = "demo-you";
+
+const demoTourSteps: GuidedTourStep[] = [
+  {
+    target: "[data-tour='session-info']",
+    title: "Welcome to the scheduling demo",
+    content: "This sample group is planning a weekend meetup. The attendees and their availability are sample data.",
+  },
+  {
+    target: "[data-tour='availability-cell']",
+    title: "Add your availability",
+    content: "Drag across Friday, Saturday, or Sunday to choose a time. On a touch screen, turn on Draw first. You can also use the Add availability button.",
+    requiresAction: true,
+  },
+  {
+    target: "[data-tour='heat-map']",
+    title: "See where schedules overlap",
+    content: "The green strip summarizes how many attendees are free at each time. Darker green means more people overlap.",
+  },
+  {
+    target: ".sc-best",
+    title: "Find the best times",
+    content: "The chart highlights time windows that work for the most attendees. Select one to prefill your availability form for that time.",
+  },
+  {
+    target: "[data-tour='count-maybes']",
+    title: "Include maybe responses",
+    content: "Turn this on to include maybe responses in overlap counts and best-time suggestions.",
+  },
+  {
+    target: ".sc-block",
+    title: "Inspect a range",
+    content: "Select a block to see who added it. You can remove the availability you added during the demo.",
+  },
+  {
+    target: "[data-tour='attendees']",
+    title: "Meet the sample attendees",
+    content: "The attendee list shows the sample people whose availability is already on the chart, plus you.",
+  },
+  {
+    target: "[data-tour='add-availability']",
+    title: "Enter exact times",
+    content: "Use this button when you want to type specific start and end times instead of dragging on the chart.",
+  },
+];
 
 interface DemoData {
   session: SessionRecord;
@@ -87,9 +133,20 @@ const loadDemoData = (): DemoData => {
 
 const toDateTimeInput = (date: Date) => dayjs(date).format("YYYY-MM-DDTHH:mm");
 
+const isFirstDemoVisit = () => {
+  try {
+    return window.localStorage.getItem(DEMO_TOUR_SEEN_KEY) !== "true";
+  } catch {
+    return false;
+  }
+};
+
 const DemoSession = () => {
   const [demo, setDemo] = useState<DemoData>(loadDemoData);
+  const [showTour, setShowTour] = useState(isFirstDemoVisit);
+  const [tourActionVersion, setTourActionVersion] = useState(0);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showRangeDetails, setShowRangeDetails] = useState(false);
   const [draftRange, setDraftRange] = useState<{ start: Date; end: Date } | null>(null);
   const [rangeStart, setRangeStart] = useState("");
   const [rangeEnd, setRangeEnd] = useState("");
@@ -109,6 +166,15 @@ const DemoSession = () => {
       // The demo still works for this visit if browser storage is disabled.
     }
   }, [demo]);
+
+  useEffect(() => {
+    if (!showTour) return;
+    try {
+      window.localStorage.setItem(DEMO_TOUR_SEEN_KEY, "true");
+    } catch {
+      // The tour remains available from its button if browser storage is disabled.
+    }
+  }, [showTour]);
 
   const openAddModal = (range?: { start: Date; end: Date } | null) => {
     const start = range?.start ?? new Date(demo.session.dt_start as Date);
@@ -145,6 +211,7 @@ const DemoSession = () => {
       dt_created: new Date(),
     };
     setDemo((current) => ({ ...current, timeRanges: [...current.timeRanges, range] }));
+    setTourActionVersion((version) => version + 1);
     setShowAddModal(false);
     setDraftRange(null);
   };
@@ -162,10 +229,13 @@ const DemoSession = () => {
     <Container fluid className="py-4">
       <div className="d-flex flex-wrap justify-content-between align-items-center mb-3">
         <div>
-          <Link to="/" className="text-accent-blue">← Home</Link>
+          {/* <Link to="/" className="text-accent-blue">← Home</Link> */}
           <h1 className="mt-2">Interactive demo</h1>
         </div>
-        <Button variant="outline-secondary" onClick={resetDemo}>Reset demo</Button>
+        <div className="d-flex gap-2">
+          <Button variant="outline-primary" onClick={() => setShowTour(true)}>Replay tour</Button>
+          <Button variant="outline-secondary" onClick={resetDemo}>Reset demo</Button>
+        </div>
       </div>
       <Alert variant="info">
         This is a solo demo with sample attendees. Add or delete your own availability to try it out;
@@ -174,8 +244,15 @@ const DemoSession = () => {
 
       <SessionInfo session={demo.session} expiredSession={false} />
       <div className="d-flex justify-content-end mb-2">
-        <Button onClick={() => openAddModal()}>Add availability</Button>
+        <Button onClick={() => openAddModal()} data-tour="add-availability">Add availability</Button>
       </div>
+      <GuidedTour
+        open={showTour}
+        paused={showAddModal || showRangeDetails}
+        steps={demoTourSteps}
+        actionVersion={tourActionVersion}
+        onClose={() => setShowTour(false)}
+      />
       <Row className="justify-content-md-center">
         <Col lg={8} md={12}>
           <SessionChart
@@ -183,6 +260,7 @@ const DemoSession = () => {
             session={demo.session}
             userId={DEMO_USER_ID}
             onCreateRange={(range) => openAddModal(range)}
+            onRangeDetailsChange={setShowRangeDetails}
             onDeleteRange={(range) =>
               setDemo((current) => ({
                 ...current,
