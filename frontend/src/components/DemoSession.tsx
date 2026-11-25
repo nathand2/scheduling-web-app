@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import dayjs from "dayjs";
+import dayjs, { type Dayjs } from "dayjs";
 import Alert from "react-bootstrap/Alert";
 import Button from "react-bootstrap/Button";
 import Col from "react-bootstrap/Col";
@@ -15,8 +15,8 @@ import SessionInfo from "./SessionInfo";
 import GuidedTour, { type GuidedTourStep } from "./GuidedTour";
 import type { AvailabilityRange, SessionRecord, UserSession } from "../types";
 
-const STORAGE_KEY = "scheduler-demo-session-v2";
-const DEMO_TOUR_SEEN_KEY = "scheduler-demo-tour-seen-v1";
+const USER_RANGES_STORAGE_KEY = "scheduler-demo-user-ranges-v1";
+const LEGACY_SESSION_STORAGE_KEY = "scheduler-demo-session-v2";
 const DEMO_USER_ID = "demo-you";
 
 const demoTourSteps: GuidedTourStep[] = [
@@ -29,7 +29,7 @@ const demoTourSteps: GuidedTourStep[] = [
     target: "[data-tour='availability-cell']",
     title: "Add your availability",
     content: "Drag across Friday, Saturday, or Sunday to choose a time. On a touch screen, turn on Draw first. You can also use the Add availability button.",
-    requiresAction: true,
+    actionPrompt: true,
   },
   {
     target: "[data-tour='heat-map']",
@@ -104,46 +104,61 @@ const makeDemoData = (): DemoData => {
 };
 
 const loadDemoData = (): DemoData => {
+  const freshDemo = makeDemoData();
   try {
-    const saved = window.localStorage.getItem(STORAGE_KEY);
+    window.localStorage.removeItem(LEGACY_SESSION_STORAGE_KEY);
+    const saved = window.localStorage.getItem(USER_RANGES_STORAGE_KEY);
     if (saved) {
-      const parsed = JSON.parse(saved);
-      if (parsed?.session?.dt_start && parsed?.session?.dt_end && Array.isArray(parsed.timeRanges)) {
-        return {
-          session: {
-            ...parsed.session,
-            dt_start: new Date(parsed.session.dt_start),
-            dt_end: new Date(parsed.session.dt_end),
-            dt_created: new Date(parsed.session.dt_created),
-          },
-          timeRanges: parsed.timeRanges.map((range: AvailabilityRange) => ({
-            ...range,
-            dt_start: new Date(range.dt_start),
-            dt_end: new Date(range.dt_end),
-            dt_created: range.dt_created ? new Date(range.dt_created) : undefined,
-          })),
-        };
+      const savedRanges = JSON.parse(saved);
+      if (Array.isArray(savedRanges)) {
+        const currentSessionStart = dayjs(freshDemo.session.dt_start).startOf("day");
+        const guestRanges = savedRanges
+          .filter((range) => range && String(range.user_id) === DEMO_USER_ID)
+          .map((range: AvailabilityRange): AvailabilityRange | null => {
+            const savedStart = dayjs(range.dt_start);
+            const savedEnd = dayjs(range.dt_end);
+            if (!savedStart.isValid() || !savedEnd.isValid() || !savedEnd.isAfter(savedStart)) {
+              return null;
+            }
+
+            // Preserve the visitor's weekday and time if the rolling demo dates change.
+            const startDayOffset = (savedStart.day() - 5 + 7) % 7;
+            const endDayOffset = (savedEnd.day() - 5 + 7) % 7;
+            if (startDayOffset > 2 || endDayOffset > 2) return null;
+
+            const rebaseDate = (date: Dayjs, dayOffset: number) =>
+              currentSessionStart
+                .add(dayOffset, "day")
+                .hour(date.hour())
+                .minute(date.minute())
+                .second(date.second())
+                .millisecond(date.millisecond())
+                .toDate();
+
+            return {
+              ...range,
+              dt_start: rebaseDate(savedStart, startDayOffset),
+              dt_end: rebaseDate(savedEnd, endDayOffset),
+              dt_created: range.dt_created ? new Date(range.dt_created as string) : undefined,
+            };
+          })
+          .filter((range): range is AvailabilityRange => range !== null);
+
+        return { ...freshDemo, timeRanges: [...freshDemo.timeRanges, ...guestRanges] };
       }
     }
   } catch {
-    // Continue with a fresh sample if storage is unavailable or malformed.
+    // Use the fresh in-memory sample if storage is unavailable or malformed.
   }
-  return makeDemoData();
+  return freshDemo;
 };
 
 const toDateTimeInput = (date: Date) => dayjs(date).format("YYYY-MM-DDTHH:mm");
 
-const isFirstDemoVisit = () => {
-  try {
-    return window.localStorage.getItem(DEMO_TOUR_SEEN_KEY) !== "true";
-  } catch {
-    return false;
-  }
-};
-
 const DemoSession = () => {
   const [demo, setDemo] = useState<DemoData>(loadDemoData);
-  const [showTour, setShowTour] = useState(isFirstDemoVisit);
+  const [showTour, setShowTour] = useState(true);
+  const [tourStartDelayMs, setTourStartDelayMs] = useState(900);
   const [tourActionVersion, setTourActionVersion] = useState(0);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showRangeDetails, setShowRangeDetails] = useState(false);
@@ -161,20 +176,14 @@ const DemoSession = () => {
 
   useEffect(() => {
     try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(demo));
+      const userRanges = demo.timeRanges.filter(
+        (range) => String(range.user_id) === DEMO_USER_ID
+      );
+      window.localStorage.setItem(USER_RANGES_STORAGE_KEY, JSON.stringify(userRanges));
     } catch {
       // The demo still works for this visit if browser storage is disabled.
     }
   }, [demo]);
-
-  useEffect(() => {
-    if (!showTour) return;
-    try {
-      window.localStorage.setItem(DEMO_TOUR_SEEN_KEY, "true");
-    } catch {
-      // The tour remains available from its button if browser storage is disabled.
-    }
-  }, [showTour]);
 
   const openAddModal = (range?: { start: Date; end: Date } | null) => {
     const start = range?.start ?? new Date(demo.session.dt_start as Date);
@@ -218,11 +227,22 @@ const DemoSession = () => {
 
   const resetDemo = () => {
     try {
-      window.localStorage.removeItem(STORAGE_KEY);
+      window.localStorage.removeItem(USER_RANGES_STORAGE_KEY);
+      window.localStorage.removeItem(LEGACY_SESSION_STORAGE_KEY);
     } catch {
       // Reset the in-memory demo even when storage is unavailable.
     }
     setDemo(makeDemoData());
+  };
+
+  const restartTour = () => {
+    setTourStartDelayMs(150);
+    if (showTour) {
+      setShowTour(false);
+      window.setTimeout(() => setShowTour(true), 0);
+    } else {
+      setShowTour(true);
+    }
   };
 
   return (
@@ -233,7 +253,7 @@ const DemoSession = () => {
           <h1 className="mt-2">Interactive demo</h1>
         </div>
         <div className="d-flex gap-2">
-          <Button variant="outline-primary" onClick={() => setShowTour(true)}>Replay tour</Button>
+          <Button variant="outline-primary" onClick={restartTour}>Replay tour</Button>
           <Button variant="outline-secondary" onClick={resetDemo}>Reset demo</Button>
         </div>
       </div>
@@ -251,6 +271,7 @@ const DemoSession = () => {
         paused={showAddModal || showRangeDetails}
         steps={demoTourSteps}
         actionVersion={tourActionVersion}
+        startDelayMs={tourStartDelayMs}
         onClose={() => setShowTour(false)}
       />
       <Row className="justify-content-md-center">

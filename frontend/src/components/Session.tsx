@@ -32,8 +32,8 @@ const sessionTourSteps: GuidedTourStep[] = [
   {
     target: "[data-tour='availability-cell']",
     title: "Add your availability",
-    content: "Drag across a day to mark when you’re free. On a touch screen, turn on Draw first. You can also use Add availability to enter exact times.",
-    requiresAction: true,
+    content: "Drag across a day to mark when you're free. On a touch screen, turn on Draw first. You can also use Add availability to enter exact times.",
+    actionPrompt: true,
   },
   {
     target: "[data-tour='heat-map']",
@@ -81,6 +81,7 @@ const Session = ({ userId }) => {
   const [showDtModal, setShowDtModal] = useState(false);
   const [showRangeDetails, setShowRangeDetails] = useState(false);
   const [showTour, setShowTour] = useState(false);
+  const [tourStartDelayMs, setTourStartDelayMs] = useState(150);
   const [tourActionVersion, setTourActionVersion] = useState(0);
   const [draftRange, setDraftRange] = useState(null); // Range dragged on the chart, prefills the modal
   const [showShareModal, setShowShareModal] = useState(false);
@@ -315,9 +316,10 @@ const Session = ({ userId }) => {
             open={showTour}
             paused={showDtModal || showShareModal || showRangeDetails}
             steps={expiredSession
-              ? sessionTourSteps.filter((step) => !step.requiresAction)
+              ? sessionTourSteps.filter((step) => !step.actionPrompt)
               : sessionTourSteps}
             actionVersion={tourActionVersion}
+            startDelayMs={tourStartDelayMs}
             onClose={() => setShowTour(false)}
           />
           <Container fluid>
@@ -331,7 +333,10 @@ const Session = ({ userId }) => {
                   <Button
                     variant="outline-secondary"
                     className="me-2"
-                    onClick={() => setShowTour(true)}
+                    onClick={() => {
+                      setTourStartDelayMs(150);
+                      setShowTour(true);
+                    }}
                   >
                     Take a tour
                   </Button>

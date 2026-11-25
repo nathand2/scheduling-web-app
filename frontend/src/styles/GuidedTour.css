@@ -22,6 +22,31 @@
   text-align: left;
 }
 
+.guided-tour-step-shade {
+  animation: guided-tour-shade-in 350ms ease-out both;
+}
+
+.guided-tour-step-card {
+  animation: guided-tour-card-in 350ms ease-out both;
+}
+
+@keyframes guided-tour-shade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes guided-tour-card-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .guided-tour-step-shade,
+  .guided-tour-step-card {
+    animation-duration: 1ms;
+  }
+}
+
 .guided-tour-card h2 {
   margin: 5px 0 9px;
   color: #004e7c;

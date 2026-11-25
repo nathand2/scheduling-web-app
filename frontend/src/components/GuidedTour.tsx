@@ -5,7 +5,7 @@ export interface GuidedTourStep {
   target: string;
   title: string;
   content: string;
-  requiresAction?: boolean;
+  actionPrompt?: boolean;
 }
 
 interface GuidedTourProps {
@@ -13,6 +13,7 @@ interface GuidedTourProps {
   paused?: boolean;
   steps: GuidedTourStep[];
   actionVersion?: number;
+  startDelayMs?: number;
   onClose: () => void;
 }
 
@@ -25,31 +26,45 @@ interface TargetRect {
   height: number;
 }
 
-const GuidedTour = ({ open, paused = false, steps, actionVersion = 0, onClose }: GuidedTourProps) => {
+const GuidedTour = ({ open, paused = false, steps, actionVersion = 0, startDelayMs = 900, onClose }: GuidedTourProps) => {
   const [stepIndex, setStepIndex] = useState(0);
   const [targetRect, setTargetRect] = useState<TargetRect | null>(null);
   const [actionComplete, setActionComplete] = useState(false);
+  const [introVisible, setIntroVisible] = useState(false);
   const wasOpen = useRef(false);
   const lastActionVersion = useRef(actionVersion);
+  const introTimer = useRef<number | undefined>(undefined);
   const step = steps[stepIndex];
 
   useEffect(() => {
     if (open && !wasOpen.current) {
       setStepIndex(0);
       setActionComplete(false);
+      setIntroVisible(false);
+    } else if (!open) {
+      setIntroVisible(false);
     }
     wasOpen.current = open;
-  }, [open]);
+    if (open && !introVisible && introTimer.current === undefined) {
+      introTimer.current = window.setTimeout(() => setIntroVisible(true), startDelayMs);
+    }
+    return () => {
+      if (introTimer.current !== undefined) {
+        window.clearTimeout(introTimer.current);
+        introTimer.current = undefined;
+      }
+    };
+  }, [open, introVisible, startDelayMs]);
 
   useEffect(() => {
     if (actionVersion !== lastActionVersion.current) {
       lastActionVersion.current = actionVersion;
-      if (step?.requiresAction) setActionComplete(true);
+      if (step?.actionPrompt) setActionComplete(true);
     }
   }, [actionVersion, step]);
 
   useEffect(() => {
-    if (!open || paused || !step) return;
+    if (!open || paused || !introVisible || !step) return;
 
     let animationFrame = 0;
     const element = document.querySelector(step.target) as HTMLElement | null;
@@ -89,13 +104,13 @@ const GuidedTour = ({ open, paused = false, steps, actionVersion = 0, onClose }:
       window.removeEventListener("scroll", scheduleUpdate, true);
       resizeObserver?.disconnect();
     };
-  }, [open, paused, step]);
+  }, [open, paused, introVisible, step]);
 
   useEffect(() => {
     if (!open || paused) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") onClose();
-      if (event.key === "ArrowRight" && (!step?.requiresAction || actionComplete)) {
+      if (event.key === "ArrowRight") {
         setStepIndex((index) => Math.min(index + 1, steps.length - 1));
       }
       if (event.key === "ArrowLeft") setStepIndex((index) => Math.max(index - 1, 0));
@@ -104,14 +119,11 @@ const GuidedTour = ({ open, paused = false, steps, actionVersion = 0, onClose }:
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [open, paused, step, actionComplete, steps.length, onClose]);
 
-  if (!open || paused || !step) return null;
+  if (!open || paused || !introVisible || !step) return null;
 
   const goNext = () => {
     if (stepIndex === steps.length - 1) onClose();
-    else {
-      setStepIndex((index) => index + 1);
-      setActionComplete(false);
-    }
+    else setStepIndex((index) => index + 1);
   };
   const cardWidth = Math.min(360, window.innerWidth - 24);
   const cardLeft = targetRect
@@ -126,7 +138,7 @@ const GuidedTour = ({ open, paused = false, steps, actionVersion = 0, onClose }:
   return (
     <>
       {targetRect && (
-        <svg className="guided-tour-shade" aria-hidden="true">
+        <svg key={`shade-${stepIndex}`} className="guided-tour-shade guided-tour-step-shade" aria-hidden="true">
           <defs>
             <mask id="guided-tour-spotlight-mask" maskUnits="userSpaceOnUse">
               <rect width="100%" height="100%" fill="white" />
@@ -144,7 +156,8 @@ const GuidedTour = ({ open, paused = false, steps, actionVersion = 0, onClose }:
         </svg>
       )}
       <section
-        className="guided-tour-card"
+        key={`card-${stepIndex}`}
+        className="guided-tour-card guided-tour-step-card"
         role="dialog"
         aria-modal="false"
         aria-labelledby="guided-tour-title"
@@ -153,8 +166,12 @@ const GuidedTour = ({ open, paused = false, steps, actionVersion = 0, onClose }:
         <div className="guided-tour-progress">Step {stepIndex + 1} of {steps.length}</div>
         <h2 id="guided-tour-title">{step.title}</h2>
         <p>{step.content}</p>
-        {step.requiresAction && !actionComplete && (
-          <p className="guided-tour-action-hint">Try it now to continue. You can skip the tour at any time.</p>
+        {step.actionPrompt && (
+          <p className="guided-tour-action-hint">
+            {actionComplete
+              ? "Availability saved. Continue when ready."
+              : "Try adding a range now, or continue if you prefer."}
+          </p>
         )}
         <div className="guided-tour-controls">
           <button type="button" className="guided-tour-skip" onClick={onClose}>Skip tour</button>
@@ -164,7 +181,6 @@ const GuidedTour = ({ open, paused = false, steps, actionVersion = 0, onClose }:
               className="guided-tour-secondary"
               onClick={() => {
                 setStepIndex((index) => Math.max(index - 1, 0));
-                setActionComplete(false);
               }}
               disabled={stepIndex === 0}
             >
@@ -174,9 +190,8 @@ const GuidedTour = ({ open, paused = false, steps, actionVersion = 0, onClose }:
               type="button"
               className="guided-tour-primary"
               onClick={goNext}
-              disabled={Boolean(step.requiresAction && !actionComplete)}
             >
-              {stepIndex === steps.length - 1 ? "Finish" : actionComplete || !step.requiresAction ? "Next" : "Try it"}
+              {stepIndex === steps.length - 1 ? "Finish" : "Next"}
             </button>
           </div>
         </div>
