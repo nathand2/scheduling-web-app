@@ -48,7 +48,19 @@ const LandingPage = () => {
             </Link>
             {/* </a> */} to get started
           </p>
+          <p>
+            Want to explore first? Try the{" "}
+            <Link to="/demo" className="text-accent-blue">
+              interactive demo
+            </Link>
+            . It uses sample data and has no collaborative features, so you can
+            try it out on your own without creating an account.
+          </p>
         </Row>
+        <Link to="/demo" className="card-link text-accent-blue">
+          <Button variant="outline-primary">Try the Demo</Button>
+        </Link>
+        &nbsp;&nbsp;&nbsp;&nbsp;
         <Link to="/login" className="card-link text-accent-blue">
           <Button className="text-accent-blue">Login</Button>
         </Link>

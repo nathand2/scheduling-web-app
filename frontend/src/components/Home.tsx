@@ -39,7 +39,24 @@ const Home = ({ displayName }) => {
             </Card.Body>
           </Link>
         </Card>
+        <Card
+          style={{ width: "18rem", height: "10rem" }}
+          bg="light"
+          text="primary"
+        >
+          <Link to="/demo" className="link-plain card-link h-100">
+            <Card.Body className="d-flex align-items-center justify-content-center h-100">
+              <Card.Text className="link-plain mb-0">
+                Try the Solo Demo
+              </Card.Text>
+            </Card.Body>
+          </Link>
+        </Card>
       </Container>
+      <p className="mt-3">
+        Explore with sample data. The demo has no collaborative features; your
+        changes stay in this browser.
+      </p>
     </div>
   );
 };
