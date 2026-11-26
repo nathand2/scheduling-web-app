@@ -15,9 +15,10 @@ interface SessionSelectRangeModalProps {
   range?: AvailabilityRange;
   session: SessionRecord;
   userId?: string | number;
+  onDeleteRange?: (range: AvailabilityRange) => void;
 }
 
-const SessionSelectRangeModal = ({ handleClose, onDeleted, show, range, session, userId }: SessionSelectRangeModalProps) => {
+const SessionSelectRangeModal = ({ handleClose, onDeleted, onDeleteRange, show, range, session, userId }: SessionSelectRangeModalProps) => {
   const [warning, setWarning] = useState("");
   const [warningClass, setWarningClass] = useState("text-warning");
   const [showDelete, setShowDelete] = useState(false);
@@ -38,6 +39,13 @@ const SessionSelectRangeModal = ({ handleClose, onDeleted, show, range, session,
   const deleteRange = async () => {
     try {
       setIsDeleteLoading(true);
+      if (onDeleteRange && range) {
+        onDeleteRange(range);
+        setShowDelete(false);
+        handleClose();
+        onDeleted?.();
+        return;
+      }
       const res = await RequestHandler.req("/v1/sessiontimerange", "DELETE", {
         sessionTimeRangeId: range.id,
         userSessionId: range.user_session_id,

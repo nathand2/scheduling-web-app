@@ -13,6 +13,7 @@ import Sessions from "./components/Sessions";
 import SessionCreate from "./components/SessionCreate";
 import SessionJoin from "./components/SessionJoin";
 import Session from "./components/Session";
+import DemoSession from "./components/DemoSession";
 import Groups from "./components/Groups";
 import UserSettings from "./components/UserSettings";
 
@@ -179,6 +180,7 @@ function AppContent() {
             element={<SignUp onLoginSuccess={onLoginSuccess} />}
           />
           <Route path="/session/:code" element={<Session userId={userId} />} />
+          <Route path="/demo" element={<DemoSession />} />
           <Route path="/sessionjoin" element={<SessionJoin loggedIn={loggedIn} />} />
           <Route path="/about" element={<About />} />
           <Route path="/settings" element={<UserSettings displayName={displayName} setAppDisplayName={setDisplayName} />} />

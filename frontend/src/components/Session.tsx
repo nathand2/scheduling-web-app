@@ -15,6 +15,7 @@ import SessionAddRangeModal from "./SessionAddRangeModal";
 import SessionToast from "./SessionToast";
 import SessionChart from "./SessionChart";
 import SessionAttendence from "./SessionAttendence";
+import GuidedTour, { type GuidedTourStep } from "./GuidedTour";
 
 import { RequestHandler } from "../js/requestHandler";
 import * as util from "../js/util";
@@ -22,6 +23,54 @@ import type { AvailabilityRange, SessionRecord, UserSession } from "../types";
 
 const webSocketEndpoint = RequestHandler.webSocketEndpoint;
 const showDtRangeUpdateToast = false; // Websocket for dtrange add
+const sessionTourSteps: GuidedTourStep[] = [
+  {
+    target: "[data-tour='session-info']",
+    title: "Choose a session window",
+    content: "This session has a date range. The chart below shows each day when people can meet.",
+  },
+  {
+    target: "[data-tour='availability-cell']",
+    title: "Add your availability",
+    content: "Drag across a day to mark when you're free. On a touch screen, turn on Draw first. You can also use Add availability to enter exact times.",
+    actionPrompt: true,
+  },
+  {
+    target: "[data-tour='heat-map']",
+    title: "See where schedules overlap",
+    content: "The shaded strip summarizes how many attendees are free at each time. Darker green means more people overlap.",
+  },
+  {
+    target: ".sc-best",
+    title: "Find the best times",
+    content: "These suggestions highlight the time windows with the most overlap. Select one to prefill your availability form for that time.",
+  },
+  {
+    target: "[data-tour='count-maybes']",
+    title: "Include maybe responses",
+    content: "Turn this on to include maybe responses in the overlap counts and best-time suggestions.",
+  },
+  {
+    target: ".sc-block",
+    title: "Inspect an availability range",
+    content: "Select a block to see who added it and the exact time. You can remove your own ranges from the details.",
+  },
+  {
+    target: "[data-tour='attendees']",
+    title: "Check who has joined",
+    content: "The attendee list shows who is part of this session, including the session owner.",
+  },
+  {
+    target: "[data-tour='add-availability']",
+    title: "Enter exact times",
+    content: "Use Add availability when you want to enter precise start and end times instead of dragging on the chart.",
+  },
+  {
+    target: "[data-tour='share-session']",
+    title: "Invite the group",
+    content: "Share the session link so other attendees can add their availability and see the same live schedule.",
+  },
+];
 
 const Session = ({ userId }) => {
   const params = useParams();
@@ -30,6 +79,10 @@ const Session = ({ userId }) => {
   const [newRangeIds, setNewRangeIds] = useState<Array<string | number>>([]);
   const [userSessions, setUserSessions] = useState<UserSession[]>([]);
   const [showDtModal, setShowDtModal] = useState(false);
+  const [showRangeDetails, setShowRangeDetails] = useState(false);
+  const [showTour, setShowTour] = useState(false);
+  const [tourStartDelayMs, setTourStartDelayMs] = useState(150);
+  const [tourActionVersion, setTourActionVersion] = useState(0);
   const [draftRange, setDraftRange] = useState(null); // Range dragged on the chart, prefills the modal
   const [showShareModal, setShowShareModal] = useState(false);
   const [showToast, setShowToast] = useState(false);
@@ -254,7 +307,20 @@ const Session = ({ userId }) => {
             session={session}
             initialRange={draftRange}
             // Don't rely on the websocket echo for your own data: refetch on success
-            onCreated={() => getTimeRanges(session.id)}
+            onCreated={() => {
+              setTourActionVersion((version) => version + 1);
+              return getTimeRanges(session.id);
+            }}
+          />
+          <GuidedTour
+            open={showTour}
+            paused={showDtModal || showShareModal || showRangeDetails}
+            steps={expiredSession
+              ? sessionTourSteps.filter((step) => !step.actionPrompt)
+              : sessionTourSteps}
+            actionVersion={tourActionVersion}
+            startDelayMs={tourStartDelayMs}
+            onClose={() => setShowTour(false)}
           />
           <Container fluid>
             <Row className="justify-content-md-center">
@@ -265,9 +331,20 @@ const Session = ({ userId }) => {
                 />
                 <div className="d-flex justify-content-end mb-2">
                   <Button
+                    variant="outline-secondary"
+                    className="me-2"
+                    onClick={() => {
+                      setTourStartDelayMs(150);
+                      setShowTour(true);
+                    }}
+                  >
+                    Take a tour
+                  </Button>
+                  <Button
                     variant={!expiredSession ? "primary" : "secondary"}
                     onClick={handleShowDt}
                     disabled={expiredSession}
+                    data-tour="add-availability"
                   >
                     Add availability
                   </Button>
@@ -280,6 +357,7 @@ const Session = ({ userId }) => {
                   userId={userId}
                   onCreateRange={handleDragCreate}
                   readOnly={Boolean(expiredSession)}
+                  onRangeDetailsChange={setShowRangeDetails}
                   onRangeDeleted={() => {
                     setToastTitle("Range deleted");
                     setToastMessage("Your availability range was deleted.");

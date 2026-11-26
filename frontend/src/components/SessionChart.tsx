@@ -3,6 +3,7 @@ import dayjs from "dayjs";
 import SessionSelectRangeModal from "./SessionSelectRangeModal";
 import "../styles/SessionChart.css";
 import "../styles/SessionChartHeat.css";
+import type { AvailabilityRange, SessionRecord } from "../types";
 
 const SNAP_MINUTES = 15; // Drag snaps to this increment
 const DRAG_THRESHOLD_PX = 5; // Movement below this counts as a click, not a drag
@@ -13,6 +14,19 @@ const MAX_HOUR_PX = 80;
 const HEAT_SLOT_MINUTES = 30; // Overlap is computed per slot of this size
 const HEAT_STRIP_PX = 28; // Width of the overlap strip on the left of each day column
 const MAX_BEST_CHIPS = 4; // Best-time windows shown in the bar
+
+interface SessionChartProps {
+  timeRanges: AvailabilityRange[];
+  newRangeIds?: Array<string | number>;
+  session: SessionRecord;
+  userId?: string | number;
+  onCreateRange?: (range: { start: Date; end: Date }) => void;
+  readOnly?: boolean;
+  onRangeDeleted?: () => void;
+  onDeleteRange?: (range: AvailabilityRange) => void;
+  onRangeDetailsChange?: (isOpen: boolean) => void;
+  onNewRangeIdsProcessed?: (processedIds: Array<string | number>) => void;
+}
 
 const clamp = (v, lo, hi) => Math.min(Math.max(v, lo), hi);
 const snap = (m) => Math.round(m / SNAP_MINUTES) * SNAP_MINUTES;
@@ -197,8 +211,10 @@ const SessionChart = ({
   onCreateRange,
   readOnly,
   onRangeDeleted,
+  onDeleteRange,
+  onRangeDetailsChange,
   onNewRangeIdsProcessed,
-}) => {
+}: SessionChartProps) => {
   const [showSelectRangeModal, setShowSelectRangeModal] = useState(false);
   const [focusRange, setFocusRange] = useState(undefined);
   const [drag, setDrag] = useState(null); // { dayIdx, anchor, current } (minutes from day start)
@@ -367,6 +383,7 @@ const SessionChart = ({
     if (range) {
       setFocusRange(range);
       setShowSelectRangeModal(true);
+      onRangeDetailsChange?.(true);
     }
   };
 
@@ -388,11 +405,15 @@ const SessionChart = ({
     <div className={`sc-wrap ${drawMode ? "sc-draw" : ""}`}>
       <SessionSelectRangeModal
         show={showSelectRangeModal}
-        handleClose={() => setShowSelectRangeModal(false)}
+        handleClose={() => {
+          setShowSelectRangeModal(false);
+          onRangeDetailsChange?.(false);
+        }}
         range={focusRange}
         session={session}
         userId={userId}
         onDeleted={onRangeDeleted}
+        onDeleteRange={onDeleteRange}
       />
 
       <div className="sc-toolbar">
@@ -415,6 +436,7 @@ const SessionChart = ({
           <button
             type="button"
             className={`sc-draw-toggle ${includeMaybe ? "active" : ""}`}
+            data-tour="count-maybes"
             onClick={() => setIncludeMaybe((v) => !v)}
             aria-pressed={includeMaybe}
             title="Include “maybe” responses in the overlap counts"
@@ -538,6 +560,7 @@ const SessionChart = ({
               <div
                 key={day.key}
                 className={`sc-col ${canDraw ? "can-draw" : ""}`}
+                data-tour="availability-cell"
                 style={{
                   height: bodyHeight,
                   backgroundSize: `100% ${hourPx}px`,
@@ -580,7 +603,7 @@ const SessionChart = ({
                   ))}
 
                 {/* Overlap strip: darker = more people free for the whole slot */}
-                <div className="sc-heat" style={{ width: HEAT_STRIP_PX }}>
+                <div className="sc-heat" data-tour="heat-map" style={{ width: HEAT_STRIP_PX }}>
                   {heat.byDay[dayIdx].slots.map((slot) => {
                     if (slot.score === 0 && slot.maybe.length === 0) return null;
                     const alpha =

@@ -9,7 +9,7 @@ const SessionInfo = ({ session, expiredSession }) => {
   }, [session]);
   return (
     <div>
-      <Container fluid className="uncenter-content">
+      <Container fluid className="uncenter-content" data-tour="session-info">
         <h1>{session.session_title}</h1>
         <h6>
           {expiredSession ? (

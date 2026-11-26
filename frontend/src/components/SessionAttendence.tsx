@@ -7,7 +7,7 @@ import ListGroup from "react-bootstrap/ListGroup";
 const SessionAttendence = ({ userSessions }) => {
   return (
     <div>
-      <Container>
+      <Container data-tour="attendees">
         <h3>Attendees</h3>
         <ListGroup>
           {userSessions.map((userSession) => (
