@@ -1,8 +1,15 @@
 import { useEffect } from "react";
 import Container from "react-bootstrap/Container";
 import Badge from "react-bootstrap/Badge";
+import dayjs from "dayjs";
+import type { SessionRecord } from "../types";
 
-const SessionInfo = ({ session, expiredSession }) => {
+interface SessionInfoProps {
+  session: SessionRecord;
+  expiredSession: boolean | undefined;
+}
+
+const SessionInfo = ({ session, expiredSession }: SessionInfoProps) => {
   useEffect(() => {
     console.log("From SessionInfo");
     console.log(session)
@@ -21,7 +28,7 @@ const SessionInfo = ({ session, expiredSession }) => {
         {session.session_desc && <h5>{session.session_desc}</h5>}
         <div className="flex-row">
           <p style={{ fontSize: 12 }}>
-            Created {session.dt_created && session.dt_created.toLocaleString()}
+            Created {session.dt_created && dayjs(session.dt_created).toDate().toLocaleString()}
           </p>
         </div>
 

@@ -5,6 +5,8 @@ import Container from "react-bootstrap/Container";
 import { Navigate } from "react-router-dom";
 
 import dayjs from "dayjs";
+import type { Dayjs } from "dayjs";
+import type { FormEvent } from "react";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { MobileDateTimePicker } from "@mui/x-date-pickers/MobileDateTimePicker";
@@ -12,6 +14,7 @@ import { MobileDateTimePicker } from "@mui/x-date-pickers/MobileDateTimePicker";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
 
 import { RequestHandler } from "../js/requestHandler";
+import type { SessionCreatedResponse } from "../types";
 
 const SessionCreate = () => {
   // Memoize current time so it doesn't shift between renders
@@ -22,13 +25,13 @@ const SessionCreate = () => {
   const [dtStart, setdtStart] = useState(now.toDate());
   // Default session duration is 4 hours
   const [dtEnd, setdtEnd] = useState(now.add(4, "hour").toDate());
-  const [viewOption] = useState("account-only");
+  const [viewOption] = useState<"account-only">("account-only");
 
   const [sessionCreated, setSessionCreated] = useState(false);
   const [sessionId, setSessionId] = useState("");
   const [isCreateSessionLoading, setIsCreateSessionLoading] = useState(false);
   const [statusText, setStatusText] = useState("");
-  const [statusTextClass, setStatusTextClass] = useState("text-danger");
+  const [statusTextClass, setStatusTextClass] = useState<"text-danger" | "text-success">("text-danger");
 
   /**
    * Validates that the selected start/end times form a valid session range.
@@ -68,7 +71,7 @@ const SessionCreate = () => {
    * Updates the start time. If the new start is at or after the current end,
    * auto-advances the end time to 4 hours after the new start.
    */
-  const handleStartChange = (value) => {
+  const handleStartChange = (value: Dayjs | null) => {
     if (!value) return;
 
     const newStart = value;
@@ -79,7 +82,7 @@ const SessionCreate = () => {
     }
   };
 
-  const handleEndChange = (value) => {
+  const handleEndChange = (value: Dayjs | null) => {
     if (!value) return;
     setdtEnd(value.toDate());
   };
@@ -89,7 +92,7 @@ const SessionCreate = () => {
    * Navigates to the new session page on success.
    * @param {object} e - form submit event
    */
-  const createSession = async (e) => {
+  const createSession = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setStatusText("");
 
@@ -120,7 +123,7 @@ const SessionCreate = () => {
         return;
       }
 
-      const sessionData = await res.json();
+      const sessionData = (await res.json()) as SessionCreatedResponse;
 
       // Redirect to the newly created session using its code
       setSessionId(sessionData.code);

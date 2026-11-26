@@ -7,11 +7,17 @@ jest.mock("../js/requestHandler", () => ({
 }));
 
 jest.mock("@mui/x-date-pickers/MobileTimePicker", () => ({
-  MobileTimePicker: ({ label, onChange }) => (
+  MobileTimePicker: ({
+    label,
+    onChange,
+  }: {
+    label?: string;
+    onChange?: (value: import("dayjs").Dayjs) => void;
+  }) => (
     <button
       type="button"
       onClick={() =>
-        onChange(require("dayjs")("2030-01-01T17:00:00.000Z"))
+        onChange?.(require("dayjs")("2030-01-01T17:00:00.000Z"))
       }
     >
       Set {label} at session end

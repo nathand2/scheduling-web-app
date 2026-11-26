@@ -9,8 +9,13 @@ import Col from "react-bootstrap/Col";
 import Form from "react-bootstrap/Form";
 import Row from "react-bootstrap/Row";
 import Card from "react-bootstrap/Card";
+import type { AuthResponse } from "../types";
 
-const LogIn = ({ onLoginSuccess }) => {
+interface LogInProps {
+  onLoginSuccess: (data: AuthResponse) => void;
+}
+
+const LogIn = ({ onLoginSuccess }: LogInProps) => {
   const googleAuthEndpoint = RequestHandler.endpointRoot + "/v2/auth/google";
 
   const [searchParams] = useSearchParams();
@@ -27,7 +32,7 @@ const LogIn = ({ onLoginSuccess }) => {
   const googleAuthUrl = new URL(googleAuthEndpoint);
   if (googleRedirect) googleAuthUrl.searchParams.set("redirect", googleRedirect);
 
-  const userNameLogIn = async (event) => {
+  const userNameLogIn = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setStatusText("");
 
@@ -37,7 +42,7 @@ const LogIn = ({ onLoginSuccess }) => {
       const res = await RequestHandler.req("/v2/auth/login", "POST", body);
 
       if (res.status === 200) {
-        const data = await res.json();
+        const data = (await res.json()) as AuthResponse;
         // Lift state up to App
         console.log("auth/login body:", data);
         onLoginSuccess(data);

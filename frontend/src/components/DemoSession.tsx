@@ -13,11 +13,28 @@ import SessionAttendence from "./SessionAttendence";
 import SessionChart from "./SessionChart";
 import SessionInfo from "./SessionInfo";
 import GuidedTour, { type GuidedTourStep } from "./GuidedTour";
-import type { AvailabilityRange, SessionRecord, UserSession } from "../types";
+import type { AvailabilityRange, AvailabilityStatus, SessionRecord, UserSession } from "../types";
 
 const USER_RANGES_STORAGE_KEY = "scheduler-demo-user-ranges-v1";
 const LEGACY_SESSION_STORAGE_KEY = "scheduler-demo-session-v2";
 const DEMO_USER_ID = "demo-you";
+
+const isAvailabilityRange = (value: unknown): value is AvailabilityRange => {
+  if (typeof value !== "object" || value === null) return false;
+  const range = value as Record<string, unknown>;
+  const isIdentifier = (field: unknown) => typeof field === "string" || typeof field === "number";
+  const isDateValue = (field: unknown) => typeof field === "string" || field instanceof Date;
+  return (range.id === undefined || isIdentifier(range.id)) &&
+    (range.user_id === undefined || isIdentifier(range.user_id)) &&
+    (range.user_session_id === undefined || isIdentifier(range.user_session_id)) &&
+    (range.display_name === undefined || typeof range.display_name === "string") &&
+    (range.status === undefined || (typeof range.status === "string" && isAvailabilityStatus(range.status))) &&
+    (range.dt_created === undefined || isDateValue(range.dt_created)) &&
+    isDateValue(range.dt_start) && isDateValue(range.dt_end);
+};
+
+const isAvailabilityStatus = (value: string): value is AvailabilityStatus =>
+  value === "going" || value === "maybe";
 
 const demoTourSteps: GuidedTourStep[] = [
   {
@@ -109,11 +126,12 @@ const loadDemoData = (): DemoData => {
     window.localStorage.removeItem(LEGACY_SESSION_STORAGE_KEY);
     const saved = window.localStorage.getItem(USER_RANGES_STORAGE_KEY);
     if (saved) {
-      const savedRanges = JSON.parse(saved);
+      const savedRanges: unknown = JSON.parse(saved);
       if (Array.isArray(savedRanges)) {
         const currentSessionStart = dayjs(freshDemo.session.dt_start).startOf("day");
         const guestRanges = savedRanges
-          .filter((range) => range && String(range.user_id) === DEMO_USER_ID)
+          .filter(isAvailabilityRange)
+          .filter((range) => String(range.user_id) === DEMO_USER_ID)
           .map((range: AvailabilityRange): AvailabilityRange | null => {
             const savedStart = dayjs(range.dt_start);
             const savedEnd = dayjs(range.dt_end);
@@ -165,7 +183,7 @@ const DemoSession = () => {
   const [draftRange, setDraftRange] = useState<{ start: Date; end: Date } | null>(null);
   const [rangeStart, setRangeStart] = useState("");
   const [rangeEnd, setRangeEnd] = useState("");
-  const [rangeStatus, setRangeStatus] = useState("going");
+  const [rangeStatus, setRangeStatus] = useState<AvailabilityStatus>("going");
   const [formError, setFormError] = useState("");
   const [userSessions] = useState<UserSession[]>([
     { id: 101, display_name: "Alex", role: "owner" },
@@ -303,7 +321,9 @@ const DemoSession = () => {
           <Form>
             <Form.Group className="mb-3">
               <Form.Label>Availability</Form.Label>
-              <Form.Select value={rangeStatus} onChange={(event) => setRangeStatus(event.target.value)}>
+              <Form.Select value={rangeStatus} onChange={(event) => {
+                if (isAvailabilityStatus(event.target.value)) setRangeStatus(event.target.value);
+              }}>
                 <option value="going">Going</option>
                 <option value="maybe">Maybe</option>
               </Form.Select>

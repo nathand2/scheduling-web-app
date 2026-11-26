@@ -3,8 +3,13 @@ import React from "react";
 import Badge from "react-bootstrap/Badge";
 import Container from "react-bootstrap/Container";
 import ListGroup from "react-bootstrap/ListGroup";
+import type { UserSession } from "../types";
 
-const SessionAttendence = ({ userSessions }) => {
+interface SessionAttendenceProps {
+  userSessions: UserSession[];
+}
+
+const SessionAttendence = ({ userSessions }: SessionAttendenceProps) => {
   return (
     <div>
       <Container data-tour="attendees">

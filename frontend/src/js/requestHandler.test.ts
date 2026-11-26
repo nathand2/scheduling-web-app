@@ -1,10 +1,11 @@
 export {};
 
 describe("RequestHandler authentication", () => {
-  let RequestHandler;
+  let RequestHandler: typeof import("./requestHandler").RequestHandler;
   let fetchMock: jest.Mock;
+  const originalFetch = global.fetch;
 
-  const response = (status, body = undefined) => ({
+  const response = (status: number, body?: unknown) => ({
     status,
     ok: status >= 200 && status < 300,
     json: jest.fn().mockResolvedValue(body),
@@ -14,11 +15,11 @@ describe("RequestHandler authentication", () => {
     jest.resetModules();
     fetchMock = jest.fn();
     global.fetch = fetchMock;
-    ({ RequestHandler } = require("./requestHandler"));
+    ({ RequestHandler } = require("./requestHandler") as typeof import("./requestHandler"));
   });
 
   afterEach(() => {
-    delete global.fetch;
+    global.fetch = originalFetch;
   });
 
   test("sends credentials and the current access token with API requests", async () => {

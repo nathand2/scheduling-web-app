@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
+import type { ReactElement } from "react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { RequestHandler } from "../js/requestHandler";
 import LogIn from "./LogIn";
@@ -12,7 +13,7 @@ jest.mock("../js/requestHandler", () => ({
   },
 }));
 
-const renderAt = (path, page) =>
+const renderAt = (path: string, page: ReactElement) =>
   render(
     <MemoryRouter initialEntries={[path]}>
       <Routes>

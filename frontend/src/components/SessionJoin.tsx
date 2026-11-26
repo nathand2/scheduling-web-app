@@ -8,12 +8,21 @@ import Container from "react-bootstrap/Container";
 import Spinner from "react-bootstrap/Spinner";
 
 import { RequestHandler } from "../js/requestHandler";
+import type { JoinSessionResponse } from "../types";
 
-const SessionJoin = ({ loggedIn }) => {
+type JoinState =
+  | { status: "loading" }
+  | { status: "success"; sessionCode: string }
+  | { status: "notFound" }
+  | { status: "error"; message: string };
+
+interface SessionJoinProps {
+  loggedIn: boolean | undefined;
+}
+
+const SessionJoin = ({ loggedIn }: SessionJoinProps) => {
   const [searchParams] = useSearchParams();
-  const [sessionCode, setSessionCode] = useState("");
-  const [status, setStatus] = useState("loading");
-  const [errorMessage, setErrorMessage] = useState("");
+  const [joinState, setJoinState] = useState<JoinState>({ status: "loading" });
   const [redirectToSession, setRedirectToSession] = useState(false);
   const inviteCode = searchParams.get("code");
   // React Router expects an app-relative destination. Passing the absolute app
@@ -23,15 +32,14 @@ const SessionJoin = ({ loggedIn }) => {
 
   useEffect(() => {
     let didCancel = false;
-    let redirectTimer;
+    let redirectTimer: number | undefined;
 
     if (loggedIn === undefined) return () => {};
     if (loggedIn === false) return () => {};
 
     const joinSession = async () => {
       if (!inviteCode) {
-        setErrorMessage("This invite link is missing its invite code.");
-        setStatus("error");
+        setJoinState({ status: "error", message: "This invite link is missing its invite code." });
         return;
       }
 
@@ -42,30 +50,26 @@ const SessionJoin = ({ loggedIn }) => {
 
         if (didCancel) return;
         if (res.status === 404) {
-          setStatus("notFound");
+          setJoinState({ status: "notFound" });
           return;
         }
         if (res.status < 200 || res.status > 299) {
-          setErrorMessage(`We couldn't join this session (error ${res.status}). Please try again.`);
-          setStatus("error");
+          setJoinState({ status: "error", message: `We couldn't join this session (error ${res.status}). Please try again.` });
           return;
         }
 
-        const data = await res.json();
+        const data = (await res.json()) as JoinSessionResponse;
         if (didCancel) return;
         if (!data?.sessionCode) {
-          setErrorMessage("The invite was accepted, but we couldn't open the session. Please try again.");
-          setStatus("error");
+          setJoinState({ status: "error", message: "The invite was accepted, but we couldn't open the session. Please try again." });
           return;
         }
 
-        setSessionCode(data.sessionCode);
-        setStatus("success");
+        setJoinState({ status: "success", sessionCode: data.sessionCode });
         redirectTimer = window.setTimeout(() => setRedirectToSession(true), 1200);
       } catch (err) {
         if (!didCancel) {
-          setErrorMessage("We couldn't connect to the server. Please check your connection and try again.");
-          setStatus("error");
+          setJoinState({ status: "error", message: "We couldn't connect to the server. Please check your connection and try again." });
         }
       }
     };
@@ -78,26 +82,35 @@ const SessionJoin = ({ loggedIn }) => {
   }, [loggedIn, inviteCode]);
 
   if (loggedIn === false) return <Navigate to={loginUrl} replace />;
-  if (redirectToSession) return <Navigate to={`/session/${sessionCode}`} replace />;
+  if (redirectToSession && joinState.status === "success") {
+    return <Navigate to={`/session/${joinState.sessionCode}`} replace />;
+  }
 
-  const content = {
-    loading: {
-      title: "Checking your invite",
-      message: "Please wait while we connect you to the session.",
-    },
-    success: {
-      title: "Success!",
-      message: "You're in. Redirecting to your session…",
-    },
-    notFound: {
-      title: "Invite not found",
-      message: "This invite link may have expired or been copied incorrectly. Ask the session host for a new invite.",
-    },
-    error: {
+  const content = (() => {
+    switch (joinState.status) {
+      case "loading":
+        return {
+          title: "Checking your invite",
+          message: "Please wait while we connect you to the session.",
+        };
+      case "success":
+        return {
+          title: "Success!",
+          message: "You're in. Redirecting to your session…",
+        };
+      case "notFound":
+        return {
+          title: "Invite not found",
+          message: "This invite link may have expired or been copied incorrectly. Ask the session host for a new invite.",
+        };
+      case "error":
+        return {
       title: "Couldn't join the session",
-      message: errorMessage,
-    },
-  }[status];
+          message: joinState.message,
+        };
+    }
+  })();
+  const status = joinState.status;
 
   return (
     <Container className="d-flex align-items-center justify-content-center py-5" style={{ minHeight: "80vh" }}>

@@ -18,13 +18,14 @@ import Groups from "./components/Groups";
 import UserSettings from "./components/UserSettings";
 
 import { RequestHandler } from "./js/requestHandler";
+import type { AuthResponse, Identifier } from "./types";
 
 const endpointRoot = RequestHandler.endpointRoot;
 
 function AppContent() {
   const navigate = useNavigate();
-  const [loggedIn, setLoggedIn] = useState(undefined);
-  const [userId, setUserId] = useState(undefined);
+  const [loggedIn, setLoggedIn] = useState<boolean | undefined>(undefined);
+  const [userId, setUserId] = useState<Identifier | undefined>(undefined);
   const [displayName, setDisplayName] = useState("");
 
   const [isDev] = useState(
@@ -58,7 +59,7 @@ function AppContent() {
         return;
       }
 
-      const data = await res.json();
+      const data = (await res.json()) as AuthResponse;
 
       RequestHandler.setAccessToken(data.accessToken);
       setUserIdentity(data);
@@ -69,7 +70,7 @@ function AppContent() {
     }
   };
 
-  const setUserIdentity = (data) => {
+  const setUserIdentity = (data: AuthResponse) => {
     setUserId(data.userId);
     setDisplayName(data.displayName);
   };
@@ -78,7 +79,7 @@ function AppContent() {
    * Called by LogIn/SignUp components after successful local auth.
    * Sets state directly from API response — no need to re-fetch /token.
    */
-  const onLoginSuccess = (data) => {
+  const onLoginSuccess = (data: AuthResponse) => {
     RequestHandler.setAccessToken(data.accessToken);
     setUserIdentity(data);
     setLoggedIn(true);
@@ -117,7 +118,7 @@ function AppContent() {
   }, [navigate]);
 
   const testEndpoint = async () => {
-    let res;
+    let res: Response | undefined;
     try {
       res = await RequestHandler.req("/v2/sessions", "GET");
     } catch (err) {
@@ -127,7 +128,7 @@ function AppContent() {
   };
 
   const testRequest = async () => {
-    let res;
+    let res: Response | undefined;
     try {
       res = await RequestHandler.req("/v2/testauth", "POST");
     } catch (err) {

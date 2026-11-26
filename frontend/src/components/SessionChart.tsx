@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import dayjs from "dayjs";
+import dayjs, { type Dayjs } from "dayjs";
+import type { PointerEvent as ReactPointerEvent } from "react";
 import SessionSelectRangeModal from "./SessionSelectRangeModal";
 import "../styles/SessionChart.css";
 import "../styles/SessionChartHeat.css";
@@ -28,20 +29,98 @@ interface SessionChartProps {
   onNewRangeIdsProcessed?: (processedIds: Array<string | number>) => void;
 }
 
-const clamp = (v, lo, hi) => Math.min(Math.max(v, lo), hi);
-const snap = (m) => Math.round(m / SNAP_MINUTES) * SNAP_MINUTES;
-const fmtMinute = (day, m) => day.add(m, "minute").format("h:mm A");
-const userKey = (range) => String(range.user_id ?? `range-${range.id}`);
+interface DragState {
+  dayIdx: number;
+  anchor: number;
+  current: number;
+}
+
+interface HoverState {
+  dayIdx: number;
+  minute: number;
+}
+
+interface PointerDownInfo {
+  startY: number;
+  rangeId: string | null;
+}
+
+interface ChartDay {
+  key: string;
+  date: Dayjs;
+  end: Dayjs;
+  winStartMin: number;
+  winEndMin: number;
+}
+
+interface ChartLayout {
+  days: ChartDay[];
+  axisStart: number;
+  axisEnd: number;
+  hourPx: number;
+  pxPerMin: number;
+  bodyHeight: number;
+  hourLabels: number[];
+}
+
+interface ChartUser {
+  key: string;
+  name: string;
+}
+
+interface ChartSegment {
+  range: AvailabilityRange;
+  startMin: number;
+  endMin: number;
+  continuesBefore: boolean;
+  continuesAfter: boolean;
+  lane: number;
+  userIndex: number;
+  userLaneCount: number;
+  hasConflict: boolean;
+}
+
+interface DaySegments {
+  segs: ChartSegment[];
+  users: ChartUser[];
+  userCount: number;
+}
+
+interface HeatSlot {
+  startMin: number;
+  endMin: number;
+  going: string[];
+  maybe: string[];
+  score: number;
+}
+
+interface BestWindow {
+  dayIdx: number;
+  startMin: number;
+  endMin: number;
+}
+
+interface OverlapHeat {
+  byDay: Array<{ slots: HeatSlot[] }>;
+  best: BestWindow[];
+  peak: number;
+  participants: number;
+}
+
+const clamp = (v: number, lo: number, hi: number): number => Math.min(Math.max(v, lo), hi);
+const snap = (m: number): number => Math.round(m / SNAP_MINUTES) * SNAP_MINUTES;
+const fmtMinute = (day: Dayjs, m: number): string => day.add(m, "minute").format("h:mm A");
+const userKey = (range: AvailabilityRange): string => String(range.user_id ?? `range-${range.id}`);
 
 // Turn the session window into a shared time axis and one usable window per day.
-const buildChartLayout = (session) => {
+const buildChartLayout = (session: SessionRecord): ChartLayout | null => {
   if (!session?.dt_start || !session?.dt_end) return null;
 
   const start = dayjs(session.dt_start);
   const end = dayjs(session.dt_end);
   if (!start.isValid() || !end.isValid() || !end.isAfter(start)) return null;
 
-  const days = [];
+  const days: ChartDay[] = [];
   let cursor = start.startOf("day");
   while (cursor.isBefore(end)) {
     const dayStart = cursor;
@@ -76,11 +155,14 @@ const buildChartLayout = (session) => {
 };
 
 // Split ranges at midnight and assign stable user columns and conflict lanes.
-const buildSegmentsByDay = (layout, timeRanges) => {
+const buildSegmentsByDay = (
+  layout: ChartLayout | null,
+  timeRanges: AvailabilityRange[]
+): DaySegments[] => {
   if (!layout) return [];
 
   return layout.days.map((day) => {
-    const segs = [];
+    const segs: ChartSegment[] = [];
     (timeRanges || []).forEach((range) => {
       const rangeStart = dayjs(range.dt_start);
       const rangeEnd = dayjs(range.dt_end);
@@ -95,6 +177,9 @@ const buildSegmentsByDay = (layout, timeRanges) => {
         continuesBefore: rangeStart.isBefore(day.date),
         continuesAfter: rangeEnd.isAfter(day.end),
         lane: 0,
+        userIndex: 0,
+        userLaneCount: 1,
+        hasConflict: false,
       });
     });
 
@@ -104,10 +189,10 @@ const buildSegmentsByDay = (layout, timeRanges) => {
         name: range.display_name || "Unknown user",
       }] as [string, { key: string; name: string }])
     ).values()).sort((a, b) => a.name.localeCompare(b.name) || a.key.localeCompare(b.key));
-    const userIndex = new Map(users.map((user, index) => [user.key, index]));
+    const userIndex = new Map<string, number>(users.map((user, index) => [user.key, index]));
 
     segs.sort((a, b) => a.startMin - b.startMin || a.endMin - b.endMin);
-    const laneEndsByUser = new Map();
+    const laneEndsByUser = new Map<string, number[]>();
     segs.forEach((seg) => {
       const key = userKey(seg.range);
       const laneEnds = laneEndsByUser.get(key) || [];
@@ -119,12 +204,12 @@ const buildSegmentsByDay = (layout, timeRanges) => {
       }
       laneEnds[lane] = seg.endMin;
       seg.lane = lane;
-      seg.userIndex = userIndex.get(key);
+      seg.userIndex = userIndex.get(key) ?? 0;
     });
 
     segs.forEach((seg) => {
       const key = userKey(seg.range);
-      seg.userLaneCount = laneEndsByUser.get(key).length;
+      seg.userLaneCount = laneEndsByUser.get(key)?.length ?? 1;
       seg.hasConflict = segs.some((other) =>
         other !== seg && userKey(other.range) === key &&
         seg.startMin < other.endMin && seg.endMin > other.startMin
@@ -136,24 +221,29 @@ const buildSegmentsByDay = (layout, timeRanges) => {
 };
 
 // Count people available for each half-hour slot and find peak-overlap windows.
-const buildOverlapHeat = (layout, segmentsByDay, timeRanges, includeMaybe) => {
+const buildOverlapHeat = (
+  layout: ChartLayout | null,
+  segmentsByDay: DaySegments[],
+  timeRanges: AvailabilityRange[],
+  includeMaybe: boolean
+): OverlapHeat => {
   if (!layout) return { byDay: [], best: [], peak: 0, participants: 0 };
 
   const participants = new Set((timeRanges || []).map(userKey)).size;
   const byDay = layout.days.map((day, dayIdx) => {
     const { segs } = segmentsByDay[dayIdx];
-    const slots = [];
+      const slots: HeatSlot[] = [];
 
     for (let startMin = day.winStartMin; startMin < day.winEndMin; startMin += HEAT_SLOT_MINUTES) {
       const endMin = Math.min(startMin + HEAT_SLOT_MINUTES, day.winEndMin);
-      const people = new Map();
+      const people = new Map<string, { name: string; status: "going" | "maybe" }>();
       segs.forEach((seg) => {
         if (seg.startMin <= startMin && seg.endMin >= endMin) {
           const key = userKey(seg.range);
           const status = seg.range.status === "maybe" ? "maybe" : "going";
           const previous = people.get(key);
           if (!previous || (previous.status === "maybe" && status === "going")) {
-            people.set(key, { name: seg.range.display_name, status });
+            people.set(key, { name: seg.range.display_name || "Unknown user", status });
           }
         }
       });
@@ -166,10 +256,10 @@ const buildOverlapHeat = (layout, segmentsByDay, timeRanges, includeMaybe) => {
   });
 
   const peak = Math.max(0, ...byDay.flatMap((day) => day.slots.map((slot) => slot.score)));
-  const best = [];
+  const best: BestWindow[] = [];
   if (peak >= 2) {
     byDay.forEach((day, dayIdx) => {
-      let run = null;
+      let run: BestWindow | null = null;
       day.slots.forEach((slot) => {
         if (slot.score !== peak) run = null;
         else if (run && run.endMin === slot.startMin) run.endMin = slot.endMin;
@@ -216,18 +306,18 @@ const SessionChart = ({
   onNewRangeIdsProcessed,
 }: SessionChartProps) => {
   const [showSelectRangeModal, setShowSelectRangeModal] = useState(false);
-  const [focusRange, setFocusRange] = useState(undefined);
-  const [drag, setDrag] = useState(null); // { dayIdx, anchor, current } (minutes from day start)
-  const [hover, setHover] = useState(null); // { dayIdx, minute }
+  const [focusRange, setFocusRange] = useState<AvailabilityRange | undefined>(undefined);
+  const [drag, setDrag] = useState<DragState | null>(null); // { dayIdx, anchor, current } (minutes from day start)
+  const [hover, setHover] = useState<HoverState | null>(null);
   const [drawMode, setDrawMode] = useState(false); // Touch devices: opt in so scrolling still works
   const [includeMaybe, setIncludeMaybe] = useState(false); // Do "maybe" responses count toward overlap?
   const [now, setNow] = useState(() => dayjs());
-  const downInfo = useRef(null); // { startY, rangeId } for the active pointer
-  const [highlightedRangeIds, setHighlightedRangeIds] = useState(() => new Set());
-  const rangeHighlightTimers = useRef(new Map());
+  const downInfo = useRef<PointerDownInfo | null>(null);
+  const [highlightedRangeIds, setHighlightedRangeIds] = useState<Set<string>>(() => new Set());
+  const rangeHighlightTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   useEffect(() => {
-    const processedIds = [];
+    const processedIds: Array<string | number> = [];
     newRangeIds.forEach((id) => {
       const key = String(id);
       if (rangeHighlightTimers.current.has(key)) return;
@@ -260,7 +350,7 @@ const SessionChart = ({
   // Escape cancels an in-progress drag
   useEffect(() => {
     if (!drag) return;
-    const onKey = (e) => {
+    const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setDrag(null);
     };
     window.addEventListener("keydown", onKey);
@@ -300,44 +390,44 @@ const SessionChart = ({
 
   const { days, axisStart, hourPx, pxPerMin, bodyHeight, hourLabels } = layout;
   const canDraw = !readOnly;
-  const yOf = (minute) => (minute - axisStart) * pxPerMin;
-  const isMine = (range) => String(range.user_id) === String(userId);
+  const yOf = (minute: number): number => (minute - axisStart) * pxPerMin;
+  const isMine = (range: AvailabilityRange): boolean => String(range.user_id) === String(userId);
   const hasRanges = (timeRanges || []).length > 0;
   const minDayWidth = Math.max(
     days.length > 3 ? 104 : 140,
     ...segmentsByDay.map(({ users }) => users.length * 88)
   );
 
-  const minuteFromPointer = (e, dayIdx) => {
+  const minuteFromPointer = (e: ReactPointerEvent<HTMLDivElement>, dayIdx: number): number => {
     const rect = e.currentTarget.getBoundingClientRect();
     const raw = axisStart + (e.clientY - rect.top) / pxPerMin;
     const day = days[dayIdx];
     return clamp(snap(raw), day.winStartMin, day.winEndMin);
   };
 
-  const handlePointerDown = (e, dayIdx) => {
+  const handlePointerDown = (e: ReactPointerEvent<HTMLDivElement>, dayIdx: number): void => {
     if (e.pointerType === "mouse" && e.button !== 0) return;
 
     // Not drawing (read-only, or touch without draw mode): taps on a block still open it
     if (!canDraw || (e.pointerType === "touch" && !drawMode)) {
-      const blockEl = e.target.closest("[data-range-id]");
+      const blockEl = e.target instanceof HTMLElement ? e.target.closest<HTMLElement>("[data-range-id]") : null;
       downInfo.current = blockEl
-        ? { startY: e.clientY, rangeId: blockEl.dataset.rangeId }
+        ? { startY: e.clientY, rangeId: blockEl.dataset.rangeId ?? null }
         : null;
       return;
     }
 
     e.currentTarget.setPointerCapture(e.pointerId);
-    const blockEl = e.target.closest("[data-range-id]");
+    const blockEl = e.target instanceof HTMLElement ? e.target.closest<HTMLElement>("[data-range-id]") : null;
     downInfo.current = {
       startY: e.clientY,
-      rangeId: blockEl ? blockEl.dataset.rangeId : null,
+      rangeId: blockEl?.dataset.rangeId ?? null,
     };
     const m = minuteFromPointer(e, dayIdx);
     setDrag({ dayIdx, anchor: m, current: m });
   };
 
-  const handlePointerMove = (e, dayIdx) => {
+  const handlePointerMove = (e: ReactPointerEvent<HTMLDivElement>, dayIdx: number): void => {
     const m = minuteFromPointer(e, dayIdx);
     if (e.pointerType === "mouse") setHover({ dayIdx, minute: m });
     if (drag && drag.dayIdx === dayIdx) {
@@ -345,7 +435,7 @@ const SessionChart = ({
     }
   };
 
-  const handlePointerUp = (e, dayIdx) => {
+  const handlePointerUp = (e: ReactPointerEvent<HTMLDivElement>, dayIdx: number): void => {
     const info = downInfo.current;
     downInfo.current = null;
 
@@ -378,7 +468,7 @@ const SessionChart = ({
     }
   };
 
-  const openRangeById = (id) => {
+  const openRangeById = (id: string | number | undefined): void => {
     const range = (timeRanges || []).find((r) => String(r.id) === String(id));
     if (range) {
       setFocusRange(range);
@@ -392,7 +482,7 @@ const SessionChart = ({
   );
   const nowMinute = nowDayIdx >= 0 ? now.diff(days[nowDayIdx].date, "minute") : null;
 
-  const slotTitle = (day, slot) => {
+  const slotTitle = (day: ChartDay, slot: HeatSlot): string => {
     const lines = [`${fmtMinute(day.date, slot.startMin)} – ${fmtMinute(day.date, slot.endMin)}`];
     lines.push(
       `${slot.going.length} going${slot.going.length ? ": " + slot.going.join(", ") : ""}`
@@ -716,7 +806,7 @@ const SessionChart = ({
                 )}
 
                 {/* Current time */}
-                {nowDayIdx === dayIdx &&
+                {nowDayIdx === dayIdx && nowMinute !== null &&
                   nowMinute >= day.winStartMin &&
                   nowMinute <= day.winEndMin && (
                     <div className="sc-now" style={{ top: yOf(nowMinute) }} />

@@ -1,12 +1,13 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { RequestHandler } from "../js/requestHandler";
 import SessionSelectRangeModal from "./SessionSelectRangeModal";
+import type { AvailabilityRange } from "../types";
 
 jest.mock("../js/requestHandler", () => ({
   RequestHandler: { req: jest.fn() },
 }));
 
-const range = {
+const range: AvailabilityRange = {
   id: 8,
   user_session_id: 5,
   user_id: 7,

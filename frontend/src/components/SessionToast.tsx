@@ -1,7 +1,14 @@
 import Toast from "react-bootstrap/Toast";
 import ToastContainer from "react-bootstrap/ToastContainer";
 
-const SessionToast = ({ title, message, show, setShow }) => {
+interface SessionToastProps {
+  title: string;
+  message: string;
+  show: boolean;
+  setShow: (show: boolean) => void;
+}
+
+const SessionToast = ({ title, message, show, setShow }: SessionToastProps) => {
   return (
     <div>
       <div aria-live="polite" aria-atomic="true" className="fixed-bottom">

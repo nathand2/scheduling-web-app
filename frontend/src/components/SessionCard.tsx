@@ -3,8 +3,17 @@ import { useNavigate } from "react-router-dom";
 
 import Card from "react-bootstrap/Card";
 import Badge from "react-bootstrap/Badge";
+import type { SessionStatus } from "../types";
 
-const SessionCard = ({ code, title, desc, dt_created, status }) => {
+interface SessionCardProps {
+  code: string;
+  title: string;
+  desc?: string;
+  dt_created: string;
+  status: SessionStatus;
+}
+
+const SessionCard = ({ code, title, desc, dt_created, status }: SessionCardProps) => {
   const navigate = useNavigate();
   
   /**

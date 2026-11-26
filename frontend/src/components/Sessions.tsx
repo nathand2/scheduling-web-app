@@ -7,10 +7,12 @@ import SessionCard from "./SessionCard";
 
 import { RequestHandler } from "../js/requestHandler";
 import * as util from "../js/util";
+import type { SessionListResponse, SessionStatus, SessionSummary } from "../types";
 
 const Sessions = () => {
-  const [sessions, setSessions] = useState(undefined);
+  const [sessions, setSessions] = useState<SessionSummary[] | undefined>(undefined);
   const [loadError, setLoadError] = useState(false);
+  const sessionList = sessions ?? [];
 
   useEffect(() => {
     // Gets sessions
@@ -21,13 +23,9 @@ const Sessions = () => {
         if (res.status < 200 || res.status > 299) {
           throw new Error(`Sessions request failed with status ${res.status}`);
         }
-        const data = await res.json();
+        const data = (await res.json()) as Partial<SessionListResponse>;
         if (didCancel) return;
-        const sessionList = Array.isArray(data.sessions) ? data.sessions : [];
-        sessionList.forEach((session) => {
-          session.dt_created = util.convertUTCStringToDate(session.dt_created);
-        });
-        setSessions(sessionList);
+        setSessions(Array.isArray(data.sessions) ? data.sessions : []);
       } catch (err) {
         console.error("Unable to load sessions:", err);
         if (!didCancel) setLoadError(true);
@@ -45,11 +43,13 @@ const Sessions = () => {
    * @param {string} dtEndString
    * @returns string
    */
-  const calculateSessionStatus = (dtStartString, dtEndString) => {
+  const calculateSessionStatus = (dtStart: Date | string, dtEnd: Date | string): SessionStatus => {
     const now = new Date();
-    if (util.convertUTCStringToDate(dtEndString) < now) {
+    const start = dtStart instanceof Date ? dtStart : util.convertUTCStringToDate(dtStart);
+    const end = dtEnd instanceof Date ? dtEnd : util.convertUTCStringToDate(dtEnd);
+    if (end < now) {
       return "Expired";
-    } else if (util.convertUTCStringToDate(dtStartString) > now) {
+    } else if (start > now) {
       return "Upcoming";
     } else {
       return "Active";
@@ -74,7 +74,7 @@ const Sessions = () => {
         </Alert>
       ) : (
         <>
-          {sessions.length === 0 && (
+          {sessionList.length === 0 && (
             <Alert variant="light" className="sessions-message border text-center">
               <h2 className="h5">No sessions yet</h2>
               <p className="text-muted mb-0">Create a session to get started, or check back when someone invites you.</p>
@@ -89,13 +89,13 @@ const Sessions = () => {
                 </Card.Body>
               </Link>
             </Card>
-            {sessions.map((session) => (
+            {sessionList.map((session) => (
               <SessionCard
                 key={session.id}
                 code={session.code}
                 title={session.session_title}
                 desc={session.session_desc}
-                dt_created={session.dt_created.toLocaleString()}
+                dt_created={(session.dt_created instanceof Date ? session.dt_created : util.convertUTCStringToDate(session.dt_created)).toLocaleString()}
                 status={calculateSessionStatus(session.dt_start, session.dt_end)}
               />
             ))}

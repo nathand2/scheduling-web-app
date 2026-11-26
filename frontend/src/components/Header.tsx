@@ -1,9 +1,15 @@
 import { Navbar, Container, Nav, NavDropdown } from "react-bootstrap";
 import { Link } from "react-router-dom";
 
+interface HeaderProps {
+  logOut: () => void;
+  loggedIn: boolean | undefined;
+  displayName: string;
+}
+
 const colAccentBlue = "#004E7C";
 
-const Header = ({ logOut, loggedIn, displayName }) => {
+const Header = ({ logOut, loggedIn, displayName }: HeaderProps) => {
   return (
     <div className="header-container">
       <Navbar className="py-0" expand="lg">
