@@ -5,8 +5,37 @@
  * access and refresh tokens.
  */
 
-const jwt = require('jsonwebtoken');
-const crypto = require('crypto')
+import type { NextFunction } from 'express'
+import type { JwtPayload } from 'jsonwebtoken'
+
+const jwt = require('jsonwebtoken') as typeof import('jsonwebtoken')
+const crypto = require('crypto') as typeof import('crypto')
+
+type AuthType = 'GOOGLE' | 'LOCAL'
+
+interface AuthToken extends JwtPayload {
+  userId: number
+  displayName: string
+  hash: string
+  type: AuthType
+}
+
+interface AuthRequest {
+  headers: { authorization?: string }
+  cookies: Record<string, string | undefined>
+}
+
+interface AuthResponse {
+  locals: { user?: AuthToken; refreshToken?: string }
+  sendStatus: (status: number) => AuthResponse
+}
+
+const isAuthToken = (value: unknown): value is AuthToken => {
+  if (typeof value !== 'object' || value === null) return false
+  const payload = value as Partial<AuthToken>
+  return typeof payload.userId === 'number' && typeof payload.displayName === 'string' &&
+    typeof payload.hash === 'string' && (payload.type === 'GOOGLE' || payload.type === 'LOCAL')
+}
 
 const createHash = crypto.createHash;
 const accessTokenSecret = process.env.ACCESS_TOKEN_SECRET as string;
@@ -49,7 +78,7 @@ exports.jwtRefreshTokenExpiresIn = jwtRefreshTokenExpiresIn
  * @param {*} req a request
  * @param {*} res a response
  */
-exports.authenticateToken = (req, res, next) => {
+exports.authenticateToken = (req: AuthRequest, res: AuthResponse, next: NextFunction): void => {
 
 
   const authHeader = req.headers.authorization;
@@ -75,20 +104,24 @@ exports.authenticateToken = (req, res, next) => {
     return;
   }
 
-  jwt.verify(token, accessTokenSecret, (err, user) => {
+  jwt.verify(token, accessTokenSecret, (err, decoded) => {
     if (err) {
       console.log("401: Could not verify JWT")
       console.log("Token: ", token)
       console.log(err)
       return res.sendStatus(401);
     }
-    const userContextHashed = user.hash; // User context for access token
+    if (!isAuthToken(decoded)) {
+      res.sendStatus(401)
+      return
+    }
+    const userContextHashed = decoded.hash; // User context for access token
 
     // Verify user context.
     try {
       if (compareStringAndHash(userContext, userContextHashed)) {
         // Pass user object from JWT to next middleware.
-        res.locals.user = user
+        res.locals.user = decoded
         next() // Serve content using next callback
       } else {
         console.log("401: Could not verify user context (fingerprint)")
@@ -105,7 +138,7 @@ exports.authenticateToken = (req, res, next) => {
  * @param {*} user JS object with name key
  * @returns jwt access token
  */
-exports.generateAccessToken = (user) => {
+exports.generateAccessToken = (user: AuthToken): string => {
   console.log("Generating access token for user:", user)
   const accessToken = jwt.sign(user, accessTokenSecret, { expiresIn: jwtAccessTokenExpiresIn });
   return accessToken;
@@ -116,7 +149,7 @@ exports.generateAccessToken = (user) => {
  * @param {*} user JS object with name key
  * @returns jwt refresh token
  */
-exports.generateRefreshToken = (user) => {
+exports.generateRefreshToken = (user: AuthToken): string => {
   console.log("Generating refresh token for user:", user)
   // const accessToken = jwt.sign(user, jwtRefreshTokenExpiresIn);
   const accessToken = jwt.sign(user, refreshTokenSecret, { expiresIn: jwtRefreshTokenExpiresIn });
@@ -130,22 +163,28 @@ exports.generateRefreshToken = (user) => {
  * @param {*} refreshToken JWT refresh token
  * @returns JWT access token
  */
-exports.refreshAccessToken = (req, res, next) => {
+exports.refreshAccessToken = (req: AuthRequest, res: AuthResponse, next: NextFunction): void => {
   const refreshToken = res.locals.refreshToken
+  if (!refreshToken) {
+    res.sendStatus(401)
+    return
+  }
   
   const userContext = req.cookies.userContextRefresh;
 
   // Verify user context
-  jwt.verify(refreshToken, refreshTokenSecret, (err, user) => {
+  jwt.verify(refreshToken, refreshTokenSecret, (err, decoded) => {
     if (err) return res.sendStatus(401);
 
-    const userContextHashed = user.hash; // User context for access token
+    if (!isAuthToken(decoded)) return res.sendStatus(401)
+
+    const userContextHashed = decoded.hash; // User context for access token
 
     // Verify user context.
     try {
       if (compareStringAndHash(userContext, userContextHashed)) {
         // Pass user object from JWT to next middleware.
-        res.locals.user = user
+        res.locals.user = decoded
         next() // Serve content using next callback
       } else {
         return res.sendStatus(401)
@@ -156,7 +195,7 @@ exports.refreshAccessToken = (req, res, next) => {
   })
 }
 
-exports.checkIfFingerPrintExists = (req, res, next) => {
+exports.checkIfFingerPrintExists = (req: AuthRequest, res: AuthResponse, next: NextFunction): void => {
   if(!req.cookies.userContextRefresh) {
     console.log("401: No userContextRefresh fingerprint")
     res.sendStatus(401); // No fingerprint
@@ -182,7 +221,7 @@ exports.hashString = hashString;
  * Generates random string and it's SHA-256 hash
  * @returns array [string, string]
  */
-exports.getRandomStringAndHash = async () => {
+exports.getRandomStringAndHash = async (): Promise<[string, string]> => {
   try {
     const randString = await getRandomString();
     const stringHash = hashString(randString);
