@@ -12,8 +12,13 @@ import Form from "react-bootstrap/Form";
 import Row from "react-bootstrap/Row";
 import Card from "react-bootstrap/Card";
 import { Navigate } from "react-router-dom";
+import type { AuthResponse } from "../types";
 
-const SignUp = ({ onLoginSuccess }) => {
+interface SignUpProps {
+  onLoginSuccess: (data: AuthResponse) => void;
+}
+
+const SignUp = ({ onLoginSuccess }: SignUpProps) => {
   const googleAuthEndpoint = RequestHandler.endpointRoot + "/v2/auth/google";
 
   const [searchParams] = useSearchParams();
@@ -22,20 +27,19 @@ const SignUp = ({ onLoginSuccess }) => {
   const [statusText, setStatusText] = useState('')
   const [isSignUpSuccessful, setIsSignUpSuccessful] = useState(false)
 
-  const userNameSignUp = async (event) => {
+  const userNameSignUp = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const body = {
       username: userName,
       password: password,
       displayName: userName
     }
-    let res;
     try {
-      res = await RequestHandler.req("/v2/auth/register", "POST", body);
+      const res = await RequestHandler.req("/v2/auth/register", "POST", body);
 
       // Successful Signup
       if (res.status >= 200 && res.status <= 299) {
-        const data = await res.json();
+        const data = (await res.json()) as AuthResponse;
         // Lift state up to App
         onLoginSuccess(data);
         setIsSignUpSuccessful(true);  // Redirect to home
@@ -45,7 +49,7 @@ const SignUp = ({ onLoginSuccess }) => {
       }
     } catch (err) {
       console.log(err)
-      setStatusText(`Unable to sign up at this time. [${res.status}]`);
+      setStatusText("Unable to sign up at this time. Please try again.");
     }
   }
 

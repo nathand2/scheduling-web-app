@@ -7,28 +7,30 @@ describe("collaborative session scheduling", () => {
   const owner = `e2e_owner_${unique}`.slice(0, 25);
   const attendee = `e2e_guest_${unique}`.slice(0, 25);
   const sessionTitle = `E2E session ${unique}`;
-  let inviteCode;
+  let inviteCode: string | undefined;
 
-  const signUp = (username) => {
+  const signUp = (username: string) => {
     cy.get('input[placeholder="Username"]').type(username);
     cy.get('input[placeholder="Password"]').type("Cypress-test-password");
     cy.contains("button", "Sign Up").click();
     cy.contains(`Welcome, ${username}`, { timeout: 10000 }).should("be.visible");
   };
 
-  const waitForSuccessfulJoin = (attempt = 1) =>
+  const waitForSuccessfulJoin = (): void => {
     cy.wait("@joinSession").then(({ response }) => {
-      expect(response, `join response attempt ${attempt}`).to.exist;
-      cy.log(`POST /v1/joinsession attempt ${attempt}: ${response.statusCode}`);
+      if (!response) throw new Error("Join request did not return a response");
+      cy.log(`POST /v1/joinsession: ${response.statusCode}`);
 
       // RequestHandler retries a 401 after refreshing the access token. Wait for
       // that retry instead of treating the initial response as the final result.
-      if (response.statusCode === 401 && attempt < 3) {
-        return waitForSuccessfulJoin(attempt + 1);
+      if (response.statusCode === 401) {
+        cy.wait("@joinSession").its("response.statusCode").should("equal", 200);
+        return;
       }
 
       expect(response.statusCode).to.equal(200);
     });
+  };
 
   beforeEach(() => {
     cy.visit("/signup");
@@ -42,6 +44,7 @@ describe("collaborative session scheduling", () => {
     cy.get('input[placeholder="Title"]').type(sessionTitle);
     cy.contains("button", "Create Session").click();
     cy.wait("@createSession").then(({ response }) => {
+      if (!response) throw new Error("Session creation did not return a response");
       expect(response.statusCode).to.equal(200);
     });
     cy.contains("h1", sessionTitle, { timeout: 15000 }).should("be.visible");
@@ -49,7 +52,7 @@ describe("collaborative session scheduling", () => {
     cy.intercept("GET", "**/v1/sessioninvite*").as("findInvite");
     cy.intercept("POST", "**/v1/sessioninvite").as("createInvite");
     cy.window().then((win) => {
-      if (win.navigator.clipboard?.writeText) {
+      if (win.navigator.clipboard) {
         cy.stub(win.navigator.clipboard, "writeText").resolves();
       } else {
         Object.defineProperty(win.navigator, "clipboard", {
@@ -63,9 +66,13 @@ describe("collaborative session scheduling", () => {
     cy.wait("@findInvite").its("response.statusCode").should("equal", 404);
     cy.wait("@createInvite").then(({ response }) => {
       cy.log("POST /v1/sessioninvite response", JSON.stringify(response?.body));
-      expect(response, "invite creation response").to.exist;
+      if (!response) throw new Error("Invite creation did not return a response");
       expect(response.statusCode).to.equal(200);
-      inviteCode = response.body.inviteCode;
+      const responseInviteCode: unknown = response.body.inviteCode;
+      if (typeof responseInviteCode !== "string" || !responseInviteCode.trim()) {
+        throw new Error("Invite creation response did not include an invite code");
+      }
+      inviteCode = responseInviteCode;
       expect(inviteCode).to.be.a("string").and.not.be.empty;
     });
     cy.contains("Share link copied to clipboard!").should("be.visible");
@@ -82,13 +89,14 @@ describe("collaborative session scheduling", () => {
     cy.intercept("POST", "**/v1/sessiontimerange").as("addAvailability");
     cy.intercept("GET", "**/v1/timeranges*").as("getAvailability");
     cy.then(() => {
-      expect(inviteCode, "invite code captured from POST /v1/sessioninvite").to.be.a("string").and.not.be.empty;
+      if (!inviteCode) throw new Error("Invite code was not captured from POST /v1/sessioninvite");
       cy.visit(`/sessionjoin?code=${encodeURIComponent(inviteCode)}`);
     });
     waitForSuccessfulJoin();
     cy.contains("h1", sessionTitle, { timeout: 15000 }).should("be.visible");
     // The browser may revalidate a cached response and receive 304 instead.
     cy.wait("@getAvailability").then(({ response }) => {
+      if (!response) throw new Error("Availability request did not return a response");
       expect(response.statusCode).to.be.oneOf([200, 304]);
     });
 
@@ -97,6 +105,7 @@ describe("collaborative session scheduling", () => {
     cy.contains("button", "Submit").click();
     cy.wait("@addAvailability").its("response.statusCode").should("equal", 200);
     cy.wait("@getAvailability").then(({ response }) => {
+      if (!response) throw new Error("Availability request did not return a response");
       expect(response.body.results).to.have.length(1);
       expect(response.body.results[0].display_name).to.equal(attendee);
     });

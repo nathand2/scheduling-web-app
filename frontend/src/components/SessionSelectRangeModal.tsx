@@ -37,9 +37,10 @@ const SessionSelectRangeModal = ({ handleClose, onDeleted, onDeleteRange, show, 
    * Deletes range with DELETE request
    */
   const deleteRange = async () => {
+    if (!range) return;
     try {
       setIsDeleteLoading(true);
-      if (onDeleteRange && range) {
+      if (onDeleteRange) {
         onDeleteRange(range);
         setShowDelete(false);
         handleClose();

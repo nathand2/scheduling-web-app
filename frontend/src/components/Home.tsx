@@ -3,7 +3,11 @@ import { Container } from "react-bootstrap";
 import Card from "react-bootstrap/Card";
 import { IoMdAddCircle } from "react-icons/io";
 
-const Home = ({ displayName }) => {
+interface HomeProps {
+  displayName: string;
+}
+
+const Home = ({ displayName }: HomeProps) => {
   return (
     <div className="flex home-container" style={{ marginTop: "50px" }}>
       <div style={{ marginBottom: "50px" }}>

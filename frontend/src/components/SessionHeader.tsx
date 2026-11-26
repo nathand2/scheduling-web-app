@@ -3,7 +3,11 @@ import Button from "react-bootstrap/Button";
 
 import { AiOutlineUserAdd } from "react-icons/ai";
 
-const SessionHeader = ({ showShareModal }) => {
+interface SessionHeaderProps {
+  showShareModal: () => void;
+}
+
+const SessionHeader = ({ showShareModal }: SessionHeaderProps) => {
   return (
     <div>
       <Navbar

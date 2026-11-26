@@ -5,6 +5,10 @@
 let accessToken: string | undefined;
 let refreshPromise: Promise<boolean> | undefined;
 
+interface RefreshTokenResponse {
+  accessToken?: string;
+}
+
 export class RequestHandler {
   static endpointRoot: string = process.env.NODE_ENV === 'development' ? "http://localhost:6500" : "https://api.nathandong.dev/scheduler";
   static webSocketEndpoint: string = process.env.NODE_ENV === 'development' ? "http://localhost:6500" : "https://api.nathandong.dev";
@@ -35,10 +39,10 @@ export class RequestHandler {
       method: reqMethod,
       credentials: 'include',
       headers: {
-        ...(accessToken && { Authorization: `token ${accessToken}` }),
-        ...(reqBody && { 'Content-Type': 'application/json' })
+        ...(accessToken ? { Authorization: `token ${accessToken}` } : {}),
+        ...(reqBody ? { 'Content-Type': 'application/json' } : {})
       },
-      ...(reqBody && { body: JSON.stringify(reqBody) })
+      ...(reqBody ? { body: JSON.stringify(reqBody) } : {})
     });
   }
 
@@ -57,7 +61,7 @@ export class RequestHandler {
             }
             return false;
           }
-          const data = await response.json();
+          const data = (await response.json()) as RefreshTokenResponse;
           this.setAccessToken(data.accessToken);
           return Boolean(data.accessToken);
         } finally {

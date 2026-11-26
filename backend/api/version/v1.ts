@@ -7,6 +7,7 @@ const express = require("express");
 // const router = express.Router();
 
 const util = require('../services/util');
+import * as requestValidation from '../services/requestValidation'
 
 const versionEndpoint = "/v1";
 const resource = process.env.NODE_ENV === 'development' ? "" : "/scheduler";
@@ -100,7 +101,7 @@ module.exports = (app, db, auth, passport, io) => {
     (req, res, next) => {
       console.log("uhhh")
       // req._toParam = "Hello there";
-      passport.authenticate('google', { scope: [ 'email', 'profile' ], state: req.query.redirect})(req,res,next)
+      passport.authenticate('google', { scope: [ 'email', 'profile' ], state: requestValidation.parseQueryString(req.query.redirect)})(req,res,next)
     }
   );
 
@@ -196,8 +197,9 @@ module.exports = (app, db, auth, passport, io) => {
 
   // Register
   apiV1.post('/auth/register', async (req, res) => {
-    const { username, password, displayName } = req.body
-    if (!username || !password || !displayName) return res.sendStatus(400)
+    const input = requestValidation.parseRegistration(req.body)
+    if (!input) return res.sendStatus(400)
+    const { username, password, displayName } = input
 
     try {
       const existing = await db.getUserByUsername(username)
@@ -218,8 +220,9 @@ module.exports = (app, db, auth, passport, io) => {
 
   // Login
   apiV1.post('/auth/login', async (req, res) => {
-    const { username, password } = req.body
-    if (!username || !password) return res.sendStatus(400)
+    const input = requestValidation.parseCredentials(req.body)
+    if (!input) return res.sendStatus(400)
+    const { username, password } = input
 
     try {
       const users = await db.getUserByUsername(username)
@@ -267,12 +270,9 @@ module.exports = (app, db, auth, passport, io) => {
    * Creates a session
    */
   apiV1.post("/session", auth.authenticateToken, async (req, res) => {
-    let title, desc, dtStart, dtEnd, attendType;
-    try {
-      ({title, desc, dtStart, dtEnd, attendType} = req.body);
-    } catch {
-      res.sendStatus(400) // Internal db error.
-    }
+    const input = requestValidation.parseSessionInput(req.body)
+    if (!input) return res.sendStatus(400)
+    const { title, desc, dtStart, dtEnd, attendType } = input
 
     try {
       // Generate valid session code
@@ -360,7 +360,8 @@ module.exports = (app, db, auth, passport, io) => {
 
   apiV1.post("/sessioninvite", auth.authenticateToken, async (req, res) => {
     try {
-      const { sessionCode } = req.body
+      const sessionCode = requestValidation.parseSessionInviteCode(req.body)
+      if (!sessionCode) return res.sendStatus(400)
       const userId = res.locals.user.userId
 
       // Check if user is apart of the session
@@ -383,9 +384,9 @@ module.exports = (app, db, auth, passport, io) => {
 
   apiV1.get("/sessioninvite", auth.authenticateToken, async (req, res) => {
     try {
-      const sessionCode = req.query.code
+      const sessionCode = requestValidation.parseQueryString(req.query.code)
       if (!sessionCode) {
-        res.sendStatus(400) // No session code
+        return res.sendStatus(400) // No session code
       }
       const user = res.locals.user
       const userId = user.userId
@@ -417,7 +418,8 @@ module.exports = (app, db, auth, passport, io) => {
 
   apiV1.post("/joinsession", auth.authenticateToken, async (req, res) => {
     try {
-      const inviteCode = req.body.inviteCode.inviteCode
+      const inviteCode = requestValidation.parseJoinSessionInput(req.body)
+      if (!inviteCode) return res.sendStatus(400)
       const userId = res.locals.user.userId
 
       console.log("Userid:", userId)
@@ -453,7 +455,9 @@ module.exports = (app, db, auth, passport, io) => {
   apiV1.post('/sessiontimerange', auth.authenticateToken, async (req, res) => {
     try {
       const userId = res.locals.user.userId  // User Id from JWT token
-      const { sessionId, sessionCode, dtStart, dtEnd, status } = req.body  // Post body
+      const input = requestValidation.parseSessionTimeRange(req.body)
+      if (!input) return res.sendStatus(400)
+      const { sessionId, sessionCode, dtStart, dtEnd, status } = input
       const dateStart = new Date(dtStart)
       const dateEnd = new Date(dtEnd)
       // Check for valid dt range
@@ -507,10 +511,9 @@ module.exports = (app, db, auth, passport, io) => {
   apiV1.delete('/sessiontimerange', auth.authenticateToken, async (req, res) => {
     try {
       const userId = res.locals.user.userId  // User Id from JWT token
-      const {sessionTimeRangeId, userSessionId, sessionCode} = req.body;
-      
-      // Not sessionTimeRangeId in body, return 400
-      if (!sessionTimeRangeId) return res.sendStatus(400);
+      const input = requestValidation.parseDeleteSessionTimeRange(req.body)
+      if (!input) return res.sendStatus(400)
+      const { sessionTimeRangeId, userSessionId, sessionCode } = input
 
       const results = await db.deleteSessionTimeRangeByIdAndUserId(userId, sessionTimeRangeId, userSessionId)
 
@@ -532,8 +535,8 @@ module.exports = (app, db, auth, passport, io) => {
   apiV1.get('/timeranges', auth.authenticateToken, async (req, res) => {
       
     try {
-      const sessionId = req.query.sessionid
-      if (!sessionId) {
+      const sessionId = requestValidation.parsePositiveInteger(req.query.sessionid)
+      if (sessionId === undefined) {
         console.log("No Session id")
         res.sendStatus(400)  // Client error
         return
@@ -561,10 +564,10 @@ module.exports = (app, db, auth, passport, io) => {
 
   apiV1.get("/usersessions", auth.authenticateToken, async (req, res) => {
     // Get user sessions for specific session
-    const sessionId = req.query.sessionid
+    const sessionId = requestValidation.parsePositiveInteger(req.query.sessionid)
     const userId = res.locals.user.userId  // User Id from JWT token
 
-    if (!sessionId) {
+    if (sessionId === undefined) {
       console.log("No Session id")
       res.sendStatus(400)  // Client error
       return
@@ -592,9 +595,9 @@ module.exports = (app, db, auth, passport, io) => {
   apiV1.put('/displayname', auth.authenticateToken, async (req, res) => {
     try {
       const userId = res.locals.user.userId  // User Id from JWT token
-      const {displayName} = req.body;
+      const displayName = requestValidation.parseDisplayName(req.body)
   
-      if (!displayName || displayName.length > 25 || displayName.length < 4) {
+      if (!displayName) {
         console.log("Invalid username")
         res.sendStatus(400)
         return

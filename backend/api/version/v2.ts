@@ -7,6 +7,7 @@ const bcrypt = require('bcrypt');
 const express = require("express");
 
 const util = require('../services/util');
+import * as requestValidation from '../services/requestValidation'
 
 const versionEndpoint = "/v2";
 const resource = process.env.NODE_ENV === 'development' ? "" : "/scheduler";
@@ -145,7 +146,7 @@ module.exports = (app, db, auth, passport, io) => {
 
   router.get('/auth/google',
     (req, res, next) => {
-      passport.authenticate('google', { scope: ['email', 'profile'], state: req.query.redirect })(req, res, next)
+      passport.authenticate('google', { scope: ['email', 'profile'], state: requestValidation.parseQueryString(req.query.redirect) })(req, res, next)
     }
   );
 
@@ -233,8 +234,9 @@ module.exports = (app, db, auth, passport, io) => {
 
   // Register
   router.post('/auth/register', async (req, res) => {
-    const { username, password, displayName } = req.body
-    if (!username || !password || !displayName) return res.sendStatus(400)
+    const input = requestValidation.parseRegistration(req.body)
+    if (!input) return res.sendStatus(400)
+    const { username, password, displayName } = input
 
     try {
       const existing = await db.getUserByUsername(username)
@@ -254,8 +256,9 @@ module.exports = (app, db, auth, passport, io) => {
 
   // Login
   router.post('/auth/login', async (req, res) => {
-    const { username, password } = req.body
-    if (!username || !password) return res.sendStatus(400)
+    const input = requestValidation.parseCredentials(req.body)
+    if (!input) return res.sendStatus(400)
+    const { username, password } = input
 
     try {
       const users = await db.getUserByUsername(username)

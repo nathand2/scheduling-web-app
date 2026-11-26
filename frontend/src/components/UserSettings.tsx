@@ -8,7 +8,12 @@ import { AiOutlineLoading3Quarters } from "react-icons/ai";
 
 import { RequestHandler } from "../js/requestHandler";
 
-const UserSettings = ({ displayName: currentDisplayName, setAppDisplayName }) => {
+interface UserSettingsProps {
+  displayName: string;
+  setAppDisplayName: (displayName: string) => void;
+}
+
+const UserSettings = ({ displayName: currentDisplayName, setAppDisplayName }: UserSettingsProps) => {
   const [displayName, setDisplayName] = useState(currentDisplayName || "");
   const [status, setStatus] = useState("");
   const [statusColor, setStatusColor] = useState("text-danger");
@@ -19,7 +24,7 @@ const UserSettings = ({ displayName: currentDisplayName, setAppDisplayName }) =>
   }, [currentDisplayName]);
 
   // Validates new display name and makes PUT request to api
-  const changeDisplayName = async (e) => {
+  const changeDisplayName = async (e: React.FormEvent<HTMLFormElement>) => {
     setStatus("");
     setStatusColor("text-secondary");
     e.preventDefault();
@@ -39,10 +44,9 @@ const UserSettings = ({ displayName: currentDisplayName, setAppDisplayName }) =>
     setIsChangeDisplayNameLoading(true);
     setStatus(`Trying to submit`);
     console.log("Simulate display name change");
-    let res;
     try {
       const reqDisplayName = displayName; // If they fiddle with form
-      res = await RequestHandler.req(`/v1/displayname`, "PUT", {
+      const res = await RequestHandler.req(`/v1/displayname`, "PUT", {
         displayName: displayName,
       });
       if (res.status === 204) {

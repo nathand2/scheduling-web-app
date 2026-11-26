@@ -3,7 +3,8 @@ import Modal from "react-bootstrap/Modal";
 import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
 
-import dayjs from "dayjs";
+import dayjs, { type Dayjs } from "dayjs";
+import type { ChangeEvent } from "react";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { MobileTimePicker } from "@mui/x-date-pickers/MobileTimePicker";
@@ -36,7 +37,7 @@ const SessionAddRangeModal = ({
   initialRange, // Optional { start: Date, end: Date } from dragging on the chart
   onCreated, // Optional callback after a successful POST
 }: SessionAddRangeModalProps) => {
-  const [dtStatus, setDtStatus] = useState("going");
+  const [dtStatus, setDtStatus] = useState<"going" | "maybe">("going");
   const [dtStart, setdtStart] = useState(new Date());
   const [dtEnd, setdtEnd] = useState(new Date());
   const [isCreateRangeLoading, setIsCreateRangeLoading] = useState(false);
@@ -44,12 +45,12 @@ const SessionAddRangeModal = ({
 
   // Parse session boundaries once and memoize to avoid redundant re-computation
   const sessionStart = useMemo(
-    () => (session?.dt_start ? dayjs(session.dt_start) : null),
+    () => (session?.dt_start ? dayjs(session.dt_start) : undefined),
     [session]
   );
 
   const sessionEnd = useMemo(
-    () => (session?.dt_end ? dayjs(session.dt_end) : null),
+    () => (session?.dt_end ? dayjs(session.dt_end) : undefined),
     [session]
   );
 
@@ -60,7 +61,7 @@ const SessionAddRangeModal = ({
   const sessionDays = useMemo(() => {
     if (!sessionStart || !sessionEnd) return [];
 
-    const days = [];
+    const days: Dayjs[] = [];
     let cursor = sessionStart.startOf("day");
     const lastDay = sessionEnd.startOf("day");
 
@@ -110,7 +111,7 @@ const SessionAddRangeModal = ({
    * @param {dayjs.Dayjs} day - the date to use (time fields ignored)
    * @param {dayjs.Dayjs} timeValue - the time to apply
    */
-  const combineDayAndTime = (day, timeValue) => {
+  const combineDayAndTime = (day: Dayjs, timeValue: Dayjs): Dayjs => {
     return day
       .hour(timeValue.hour())
       .minute(timeValue.minute())
@@ -122,7 +123,7 @@ const SessionAddRangeModal = ({
    * Clamps a datetime to within [sessionStart, sessionEnd].
    * Prevents the user from selecting times outside the session boundaries.
    */
-  const clampToSession = (value) => {
+  const clampToSession = (value: Dayjs): Dayjs => {
     if (!sessionStart || !sessionEnd) return value;
     if (value.isBefore(sessionStart)) return sessionStart;
     if (value.isAfter(sessionEnd)) return sessionEnd;
@@ -130,8 +131,8 @@ const SessionAddRangeModal = ({
   };
 
   // Helpers to check whether a given date falls on the session's first/last day
-  const isSessionStartDay = (date) => dayjs(date).isSame(sessionStart, "day");
-  const isSessionEndDay = (date) => dayjs(date).isSame(sessionEnd, "day");
+  const isSessionStartDay = (date: Date): boolean => dayjs(date).isSame(sessionStart, "day");
+  const isSessionEndDay = (date: Date): boolean => dayjs(date).isSame(sessionEnd, "day");
 
   /**
    * Min/max time bounds for the start time picker.
@@ -179,7 +180,7 @@ const SessionAddRangeModal = ({
    * Handles start day dropdown changes in the two-day picker.
    * Preserves the existing start time, then auto-advances end if needed.
    */
-  const handleStartDayChange = (e) => {
+  const handleStartDayChange = (e: ChangeEvent<HTMLSelectElement>) => {
     const selectedDay = dayjs(e.target.value);
     let newStart = combineDayAndTime(selectedDay, dayjs(dtStart));
     newStart = clampToSession(newStart);
@@ -197,7 +198,7 @@ const SessionAddRangeModal = ({
    * Handles end day dropdown changes in the two-day picker.
    * Preserves the existing end time, then pulls end back if it precedes start.
    */
-  const handleEndDayChange = (e) => {
+  const handleEndDayChange = (e: ChangeEvent<HTMLSelectElement>) => {
     const selectedDay = dayjs(e.target.value);
     let newEnd = combineDayAndTime(selectedDay, dayjs(dtEnd));
     newEnd = clampToSession(newEnd);
@@ -214,11 +215,11 @@ const SessionAddRangeModal = ({
    * On single-day sessions, anchors the date to sessionStart's day.
    * Auto-advances end time if it would become invalid.
    */
-  const handleStartTimeChange = (value) => {
+  const handleStartTimeChange = (value: Dayjs | null) => {
     if (!value) return;
 
     let newStart = isSameDay
-      ? combineDayAndTime(sessionStart.startOf("day"), value)
+      ? combineDayAndTime((sessionStart ?? dayjs(dtStart)).startOf("day"), value)
       : combineDayAndTime(dayjs(dtStart).startOf("day"), value);
 
     newStart = clampToSession(newStart);
@@ -234,11 +235,11 @@ const SessionAddRangeModal = ({
    * Handles end time picker changes.
    * Clamps the result and corrects end if it would precede start.
    */
-  const handleEndTimeChange = (value) => {
+  const handleEndTimeChange = (value: Dayjs | null) => {
     if (!value) return;
 
     let newEnd = isSameDay
-      ? combineDayAndTime(sessionStart.startOf("day"), value)
+      ? combineDayAndTime((sessionStart ?? dayjs(dtEnd)).startOf("day"), value)
       : combineDayAndTime(dayjs(dtEnd).startOf("day"), value);
 
     newEnd = clampToSession(newEnd);
@@ -325,15 +326,15 @@ const SessionAddRangeModal = ({
   const renderSameDayPicker = () => (
     <>
       <div className="mb-2 text-muted">
-        {sessionStart.format("ddd, MMM D YYYY")}
+        {sessionStart?.format("ddd, MMM D YYYY")}
       </div>
 
       <div className="d-flex flex-column gap-3">
         <MobileTimePicker
           label="Start"
           value={dayjs(dtStart)}
-          minTime={sessionStart}
-          maxTime={sessionEnd}
+        minTime={sessionStart}
+        maxTime={sessionEnd}
           onChange={handleStartTimeChange}
           openTo="hours"
           views={["hours", "minutes"]}
@@ -457,7 +458,11 @@ const SessionAddRangeModal = ({
           <Form.Select
             aria-label="Availability status"
             value={dtStatus}
-            onChange={(e) => setDtStatus(e.target.value)}
+            onChange={(e) => {
+              if (e.target.value === "going" || e.target.value === "maybe") {
+                setDtStatus(e.target.value);
+              }
+            }}
           >
             <option value="going">Going 👍</option>
             <option value="maybe">Maybe 🤷‍♂️</option>

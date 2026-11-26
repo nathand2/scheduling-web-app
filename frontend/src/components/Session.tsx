@@ -19,7 +19,17 @@ import GuidedTour, { type GuidedTourStep } from "./GuidedTour";
 
 import { RequestHandler } from "../js/requestHandler";
 import * as util from "../js/util";
-import type { AvailabilityRange, SessionRecord, UserSession } from "../types";
+import type {
+  ApiAvailabilityRange,
+  AvailabilityRange,
+  DeleteSessionTimeRangeEvent,
+  Identifier,
+  SessionDetailResponse,
+  SessionRecord,
+  TimeRangeListResponse,
+  UserSession,
+  UserSessionListResponse,
+} from "../types";
 
 const webSocketEndpoint = RequestHandler.webSocketEndpoint;
 const showDtRangeUpdateToast = false; // Websocket for dtrange add
@@ -72,7 +82,11 @@ const sessionTourSteps: GuidedTourStep[] = [
   },
 ];
 
-const Session = ({ userId }) => {
+interface SessionProps {
+  userId?: Identifier;
+}
+
+const Session = ({ userId }: SessionProps) => {
   const params = useParams();
   const [session, setSession] = useState<SessionRecord>({});
   const [timeRanges, setTimeRanges] = useState<AvailabilityRange[]>([]);
@@ -83,7 +97,7 @@ const Session = ({ userId }) => {
   const [showTour, setShowTour] = useState(false);
   const [tourStartDelayMs, setTourStartDelayMs] = useState(150);
   const [tourActionVersion, setTourActionVersion] = useState(0);
-  const [draftRange, setDraftRange] = useState(null); // Range dragged on the chart, prefills the modal
+  const [draftRange, setDraftRange] = useState<{ start: Date; end: Date } | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastTitle, setToastTitle] = useState("");
@@ -111,15 +125,15 @@ const Session = ({ userId }) => {
           return;
         }
 
-        const data = await res.json();
+        const data = (await res.json()) as SessionDetailResponse;
         if (!isMounted) return;
-        const sessionData = data.session;
+        const sessionData = {
+          ...data.session,
+          dt_end: util.convertUTCStringToDate(data.session.dt_end),
+          dt_start: util.convertUTCStringToDate(data.session.dt_start),
+          dt_created: util.convertUTCStringToDate(data.session.dt_created),
+        };
 
-        sessionData.dt_end = util.convertUTCStringToDate(sessionData.dt_end);
-        sessionData.dt_start = util.convertUTCStringToDate(sessionData.dt_start);
-        sessionData.dt_created = util.convertUTCStringToDate(
-          sessionData.dt_created
-        );
         setSession(sessionData);
         setExpiredSession(new Date() > sessionData.dt_end);
 
@@ -150,7 +164,7 @@ const Session = ({ userId }) => {
    * Sets up Web Socket Connection
    * @param {string} code - Session Code
    */
-  const setUpWebSocketConnection = (code) => {
+  const setUpWebSocketConnection = (code: string | undefined) => {
     if (code === undefined) return null;
 
     // socket.io reconnects on its own with backoff; no manual connect_error retry needed
@@ -165,38 +179,42 @@ const Session = ({ userId }) => {
       socket.emit("room", code);
     });
 
-    socket.on("message", (data) => {
+    socket.on("message", (data: unknown) => {
       console.log("Incoming message:", data);
     });
 
-    socket.on("joinSession", (data) => {
+    socket.on("joinSession", (data: UserSession) => {
       setUserSessions((prev) => [...prev, data]);
       setToastTitle(`Someone joined!`);
       setToastMessage(`${data.display_name} joined the session!`);
       setShowToast(true);
     });
 
-    socket.on("postSessionTimeRange", (data) => {
+    socket.on("postSessionTimeRange", (data: ApiAvailabilityRange) => {
       // Convert UTC date strings to dates
-      data.dt_end = util.convertUTCStringToDate(data.dt_end);
-      data.dt_start = util.convertUTCStringToDate(data.dt_start);
-      data.dt_created = util.convertUTCStringToDate(data.dt_created);
+      const range: AvailabilityRange = {
+        ...data,
+        dt_end: util.convertUTCStringToDate(data.dt_end),
+        dt_start: util.convertUTCStringToDate(data.dt_start),
+        dt_created: util.convertUTCStringToDate(data.dt_created),
+      };
 
       // Skip if we already have it (e.g. we refetched right after creating it)
-      if (data.id !== undefined && knownRangeIds.current.has(data.id)) return;
-      if (data.id !== undefined) knownRangeIds.current.add(data.id);
-      setTimeRanges((prev) => [...prev, data]);
-      if (data.id !== undefined) setNewRangeIds((prev) => [...prev, data.id]);
+      if (range.id !== undefined && knownRangeIds.current.has(range.id)) return;
+      if (range.id !== undefined) knownRangeIds.current.add(range.id);
+      setTimeRanges((prev) => [...prev, range]);
+      const rangeId = range.id;
+      if (rangeId !== undefined) setNewRangeIds((prev) => [...prev, rangeId]);
 
       if (showDtRangeUpdateToast) {
-        if (String(data.user_id) === String(userId)) {
+        if (String(range.user_id) === String(userId)) {
           setToastTitle(`Thanks for joining!`);
           setToastMessage(`We'll let everyone here know`);
         } else {
           setToastTitle(`Good News!`);
           setToastMessage(
-            `${data.display_name} is ${
-              data.status === "maybe" ? "maybe " : ""
+            `${range.display_name} is ${
+              range.status === "maybe" ? "maybe " : ""
             }coming!`
           );
         }
@@ -204,7 +222,7 @@ const Session = ({ userId }) => {
       }
     });
 
-    socket.on("deleteSessionTimeRange", (data) => {
+    socket.on("deleteSessionTimeRange", (data: DeleteSessionTimeRangeEvent) => {
       setTimeRanges((prev) =>
         prev.filter((range) => range.id !== data.sessionTimeRangeId)
       );
@@ -219,11 +237,11 @@ const Session = ({ userId }) => {
     setDraftRange(null);
     setShowDtModal(true);
   };
-  const handleDragCreate = (range) => {
+  const handleDragCreate = (range: { start: Date; end: Date }) => {
     setDraftRange(range);
     setShowDtModal(true);
   };
-  const handleNewRangeIdsProcessed = useCallback((processedIds) => {
+  const handleNewRangeIdsProcessed = useCallback((processedIds: Array<string | number>) => {
     const processed = new Set(processedIds.map(String));
     setNewRangeIds((prev) => prev.filter((id) => !processed.has(String(id))));
   }, []);
@@ -236,7 +254,7 @@ const Session = ({ userId }) => {
    * Change view for non-OK responses.
    * @param {object} res
    */
-  const changeOtherSessionViews = (res) => {
+  const changeOtherSessionViews = (res: Response): void => {
     if (res.status === 401) {
       setOtherSessionResViews(<>Please log in</>);
     } else if (res.status === 403) {
@@ -252,19 +270,21 @@ const Session = ({ userId }) => {
    * Gets time ranges from api
    * @param {int} sessionId
    */
-  const getTimeRanges = async (sessionId) => {
+  const getTimeRanges = async (sessionId: Identifier) => {
     const res = await RequestHandler.req(
       `/v1/timeranges?sessionid=${sessionId}`,
       "GET"
     );
-    const data = await res.json();
+    const data = (await res.json()) as TimeRangeListResponse;
     const timeRangeData = data.results.map((timeRange) => ({
       ...timeRange,
       dt_created: util.convertUTCStringToDate(timeRange.dt_created),
       dt_start: util.convertUTCStringToDate(timeRange.dt_start),
       dt_end: util.convertUTCStringToDate(timeRange.dt_end),
     }));
-    knownRangeIds.current = new Set(timeRangeData.map((range) => range.id));
+    knownRangeIds.current = new Set(
+      timeRangeData.flatMap((range) => range.id === undefined ? [] : [range.id])
+    );
     setTimeRanges(timeRangeData);
   };
 
@@ -272,12 +292,12 @@ const Session = ({ userId }) => {
    * Gets user sessions from api
    * @param {int} sessionId
    */
-  const getUserSessions = async (sessionId) => {
+  const getUserSessions = async (sessionId: Identifier) => {
     const res = await RequestHandler.req(
       `/v1/usersessions?sessionid=${sessionId}`,
       "GET"
     );
-    const data = await res.json();
+    const data = (await res.json()) as UserSessionListResponse;
     setUserSessions(data.userSessions);
   };
 
@@ -309,7 +329,7 @@ const Session = ({ userId }) => {
             // Don't rely on the websocket echo for your own data: refetch on success
             onCreated={() => {
               setTourActionVersion((version) => version + 1);
-              return getTimeRanges(session.id);
+              return session.id === undefined ? undefined : getTimeRanges(session.id);
             }}
           />
           <GuidedTour

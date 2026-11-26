@@ -8,8 +8,14 @@ import { IoMdLink } from "react-icons/io";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
 
 import { RequestHandler } from "../js/requestHandler";
+import type { SessionInviteResponse } from "../types";
 
-const SessionShareModal = ({ handleClose, show }) => {
+interface SessionShareModalProps {
+  handleClose: () => void;
+  show: boolean;
+}
+
+const SessionShareModal = ({ handleClose, show }: SessionShareModalProps) => {
   
   const [params] = useState(useParams());
   const [isGetInviteLinkLoading, setIsGetInviteLinkLoading] = useState(false);
@@ -44,7 +50,7 @@ const SessionShareModal = ({ handleClose, show }) => {
         setStatusText(`Error: Unable to get share link [${res.status}]`);
         return;
       }
-      const results = await res.json();
+      const results = (await res.json()) as Partial<SessionInviteResponse>;
       if (typeof results.inviteCode !== "string" || !results.inviteCode.trim()) {
         throw new Error("Invite response did not include an inviteCode");
       }
